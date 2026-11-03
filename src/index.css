@@ -1742,3 +1742,31 @@ img, video, svg {
   .quick-action-overlay { opacity: 1; transform: none; padding: 8px; background: linear-gradient(to top, rgba(15, 23, 42, 0.68), transparent); }
   .quick-action-overlay .btn { min-height: 38px; }
 }
+
+
+/* Final admin layout correction: card headers stay fixed while only table data scrolls */
+.admin-card:has(.admin-table) { overflow: hidden; }
+.admin-table-scroll { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+.admin-table-scroll::-webkit-scrollbar { height: 8px; }
+.admin-table-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+.admin-table-scroll .admin-table { min-width: 980px; }
+.admin-table-scroll .admin-table th { position: sticky; top: 0; z-index: 1; }
+.admin-card:has(.admin-table) .admin-card-header { position: relative; z-index: 2; }
+/* The backdrop is meaningful only while the mobile drawer is open. */
+.admin-sidebar-backdrop.open { opacity: 0; pointer-events: none; }
+@media (max-width: 900px) {
+  .admin-sidebar-backdrop.open { opacity: 1; pointer-events: auto; }
+  .admin-table-scroll { margin: 0; width: 100%; }
+  .admin-table-scroll .admin-table { min-width: 900px; }
+  .admin-card:has(.admin-table) { overflow: hidden; }
+  .admin-header-actions .btn { font-size: 0 !important; }
+  .admin-header-actions .btn > span { display: none; }
+  .admin-header-actions .btn > i { display: inline-block; font-size: 15px; }
+  .admin-header-actions #admin-refresh-data-btn::after,
+  .admin-header-actions #admin-logout-btn::after { content: none; }
+}
+@media (min-width: 901px) {
+  .admin-sidebar-backdrop { display: none; }
+  .admin-header-actions .btn { font-size: 12px !important; }
+  .admin-header-actions .btn > span, .admin-header-actions .btn > i { display: inline-block; }
+}

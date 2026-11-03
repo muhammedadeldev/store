@@ -305,8 +305,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
           <div class="admin-header-actions">
             <!-- Instant Refresh Data Button -->
             <button id="admin-refresh-data-btn" class="btn btn-sm btn-secondary" style="font-size: 12px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-weight: 600;">
-              <span><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></span>
-              <span>تحديث البيانات</span>
+              <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><span>تحديث البيانات</span>
             </button>
 
             <!-- Admin Profile Badge -->
@@ -322,7 +321,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
 
             <!-- Admin Sign Out Button -->
             <button id="admin-logout-btn" class="btn btn-sm btn-ghost" style="color: #b91c1c; border: 1px solid #fecaca; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 9999px;" title="تسجيل الخروج من لوحة الإدارة">
-              تسجيل الخروج ⏻
+              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span>تسجيل الخروج</span>
             </button>
           </div>
         </header>
@@ -397,7 +396,7 @@ function renderAdminSection(section: string, data: any): string {
             <a href="#admin/orders" class="btn btn-secondary btn-sm" style="font-size: 12px;">عرض كافة الطلبات (${orders.length}) ←</a>
           </div>
 
-          <table class="admin-table">
+          <div class="admin-table-scroll"><table class="admin-table">
             <thead>
               <tr>
                 <th>رقم الطلب</th>
@@ -430,7 +429,7 @@ function renderAdminSection(section: string, data: any): string {
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
 
@@ -449,7 +448,7 @@ function renderAdminSection(section: string, data: any): string {
             </div>
           </div>
 
-          <table class="admin-table">
+          <div class="admin-table-scroll"><table class="admin-table">
             <thead>
               <tr>
                 <th>القطعة والصورة</th>
@@ -492,7 +491,7 @@ function renderAdminSection(section: string, data: any): string {
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
 
@@ -588,7 +587,7 @@ function renderAdminSection(section: string, data: any): string {
             </div>
           </div>
 
-          <table class="admin-table">
+          <div class="admin-table-scroll"><table class="admin-table">
             <thead>
               <tr>
                 <th>رقم الطلب</th>
@@ -622,7 +621,7 @@ function renderAdminSection(section: string, data: any): string {
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
 
@@ -635,7 +634,7 @@ function renderAdminSection(section: string, data: any): string {
               <h3 style="font-size: 17px; font-weight: 700;">مصفوفة مخزون المقاسات والألوان الحية</h3>
               <button id="admin-adjust-stock-btn" class="btn btn-primary btn-sm" style="font-size: 12px;">+ تعديل المخزون يدوياً</button>
             </div>
-            <table class="admin-table">
+            <div class="admin-table-scroll"><table class="admin-table">
               <thead>
                 <tr>
                   <th>القطعة</th>
@@ -658,7 +657,7 @@ function renderAdminSection(section: string, data: any): string {
                   </tr>
                 `)).join('')}
               </tbody>
-            </table>
+            </table></div>
           </div>
 
           <!-- Movement History Audit Trail -->
@@ -694,7 +693,7 @@ function renderAdminSection(section: string, data: any): string {
             </div>
             <button id="admin-add-category-btn" class="btn btn-primary btn-sm" style="font-size: 12px;">+ إضافة قسم جديد</button>
           </div>
-          <table class="admin-table">
+          <div class="admin-table-scroll"><table class="admin-table">
             <thead>
               <tr>
                 <th>القسم والصورة</th>
@@ -723,7 +722,7 @@ function renderAdminSection(section: string, data: any): string {
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
 
@@ -736,7 +735,7 @@ function renderAdminSection(section: string, data: any): string {
               <p style="font-size: 12px; color: #64748b;">فحص حالة القطعة المسترجعة، إعادة المخزون، واعتماد الاستبدال أو رد الأموال</p>
             </div>
           </div>
-          <table class="admin-table">
+          <div class="admin-table-scroll"><table class="admin-table">
             <thead>
               <tr>
                 <th>رقم الطلب</th>
@@ -767,7 +766,7 @@ function renderAdminSection(section: string, data: any): string {
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
 
@@ -781,7 +780,7 @@ function renderAdminSection(section: string, data: any): string {
             </div>
             <button id="admin-add-coupon-btn" class="btn btn-primary btn-sm" style="font-size: 12px;">+ إنشاء كود خصم جديد</button>
           </div>
-          <table class="admin-table">
+          <div class="admin-table-scroll"><table class="admin-table">
             <thead>
               <tr>
                 <th>رمز الكوبون</th>
@@ -808,7 +807,7 @@ function renderAdminSection(section: string, data: any): string {
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
 
@@ -923,7 +922,7 @@ function renderAdminSection(section: string, data: any): string {
               <p style="font-size: 12px; color: #64748b;">سجلات الشراء، بيانات الاتصال، وإجمالي الإنفاق للعملاء</p>
             </div>
           </div>
-          <table class="admin-table">
+          <div class="admin-table-scroll"><table class="admin-table">
             <thead>
               <tr>
                 <th>اسم العميل</th>
@@ -958,7 +957,7 @@ function renderAdminSection(section: string, data: any): string {
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
     }
@@ -973,7 +972,7 @@ function renderAdminSection(section: string, data: any): string {
             </div>
             <button id="admin-add-zone-btn" class="btn btn-primary btn-sm" style="font-size: 12px;">+ إضافة منطقة جديدة</button>
           </div>
-          <table class="admin-table">
+          <div class="admin-table-scroll"><table class="admin-table">
             <thead>
               <tr>
                 <th>المنطقة والمحافظات</th>
@@ -1002,7 +1001,7 @@ function renderAdminSection(section: string, data: any): string {
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
 
@@ -1015,7 +1014,7 @@ function renderAdminSection(section: string, data: any): string {
               <p style="font-size: 12px; color: #64748b;">مراجعة واعتماد تعليقات المشترين قبل ظهورها على صفحة المنتج</p>
             </div>
           </div>
-          <table class="admin-table">
+          <div class="admin-table-scroll"><table class="admin-table">
             <thead>
               <tr>
                 <th>اسم العميل</th>
@@ -1055,7 +1054,7 @@ function renderAdminSection(section: string, data: any): string {
                 </tr>
               `).join('')}
             </tbody>
-          </table>
+          </table></div>
         </div>
       `;
 
@@ -1314,6 +1313,7 @@ export function setupAdminEvents(section: string) {
   const sidebarBackdrop = document.getElementById('admin-sidebar-backdrop');
 
   function toggleAdminSidebar() {
+    if (window.innerWidth > 900) return;
     if (sidebar) {
       sidebar.classList.toggle('open');
       if (sidebarBackdrop) sidebarBackdrop.classList.toggle('open');
