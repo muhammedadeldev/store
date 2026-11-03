@@ -175,7 +175,7 @@ export async function renderProductView(productId: string): Promise<string> {
                 ${state.t('sizeGuide')} <i class="fa-solid fa-ruler-combined" aria-hidden="true"></i>
               </button>
             </div>
-            <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
+            <div class="product-size-options" style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
               ${sizes.map((s: string, idx: number) => `
                 <button 
                   type="button"
@@ -198,7 +198,7 @@ export async function renderProductView(productId: string): Promise<string> {
           </div>
 
           <!-- Quantity & Add to Cart Actions -->
-          <div style="display: flex; gap: var(--space-md); margin-bottom: var(--space-xl); align-items: center;">
+          <div class="product-purchase-actions" style="display: flex; gap: var(--space-md); margin-bottom: var(--space-xl); align-items: center;">
             <!-- Stepper -->
             <div style="display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: #ffffff;">
               <button id="qty-dec-btn" type="button" style="padding: 12px 16px; font-size: 16px;">-</button>
@@ -207,7 +207,7 @@ export async function renderProductView(productId: string): Promise<string> {
             </div>
 
             <!-- Add to Cart Button -->
-            <button id="add-to-bag-btn" class="btn btn-primary btn-lg" style="flex: 1;" ${initialStock <= 0 ? 'disabled' : ''}>
+            <button id="add-to-bag-btn" class="btn btn-primary btn-lg add-to-bag-btn" style="flex: 1;" ${initialStock <= 0 ? 'disabled' : ''}>
               ${initialStock > 0 ? state.t('addToBag') : state.t('outOfStock')}
             </button>
 
@@ -465,10 +465,8 @@ export function setupProductEvents(productData: any) {
   if (wishBtn) {
     wishBtn.onclick = () => {
       state.toggleWishlist(productData.id);
-      const svg = wishBtn.querySelector('svg');
-      if (svg) {
-        svg.setAttribute('fill', state.getWishlist().includes(productData.id) ? 'var(--color-brand)' : 'none');
-      }
+      const heart = wishBtn.querySelector('.fa-heart');
+      if (heart) heart.classList.toggle('is-active', state.getWishlist().includes(productData.id));
     };
   }
 
@@ -484,7 +482,7 @@ export function setupProductEvents(productData: any) {
           ${lang === 'ar' ? 'القياسات بالسنتيمتر (cm) للمحيط الحقيقي للجسم.' : 'Measurements in centimeters (cm) corresponding to body proportions.'}
         </p>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; margin-bottom: 20px;">
+        <div class="size-guide-table-scroll"><table style="width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px; text-align: center; margin-bottom: 20px;">
           <thead>
             <tr style="background: var(--color-surface-muted); border-bottom: 1px solid var(--color-border);">
               <th style="padding: 10px;">Size</th>
@@ -501,7 +499,7 @@ export function setupProductEvents(productData: any) {
             <tr style="border-bottom: 1px solid var(--color-border-subtle);"><td style="padding: 8px; font-weight: 600;">L</td><td>40 / 44</td><td>92 - 96</td><td>72 - 76</td><td>98 - 102</td></tr>
             <tr><td style="padding: 8px; font-weight: 600;">XL</td><td>42 / 46</td><td>96 - 102</td><td>76 - 82</td><td>102 - 108</td></tr>
           </tbody>
-        </table>
+        </table></div>
 
         <button class="btn btn-primary btn-sm btn-full" onclick="document.getElementById('global-modal').classList.remove('open');">
           ${lang === 'ar' ? 'فهمت المقاس' : 'Close Size Guide'}

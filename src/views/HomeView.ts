@@ -45,7 +45,7 @@ export async function renderHomeView(): Promise<string> {
                 <span>${heroCtaText}</span>
               </a>
               <a href="#shop" class="btn btn-lg hero-btn-secondary">
-                <span>🧥</span>
+                <span><i class="fa-solid fa-shirt" aria-hidden="true"></i></span>
                 <span>${lang === 'ar' ? 'الهوديز والتيشيرتات' : 'Explore Streetwear'}</span>
               </a>
             </div>
@@ -246,7 +246,7 @@ export function renderProductCard(prod: any, lang: 'ar' | 'en'): string {
 
         <div class="quick-action-overlay">
           <a href="#product?id=${prod.id}" class="btn btn-primary btn-sm btn-full" style="font-size: 11px;">
-            ${lang === 'ar' ? 'عرض التفاصيل واختيار المقاس' : 'Select Size & Details'}
+            ${lang === 'ar' ? 'عرض التفاصيل' : 'View Details'}
           </a>
         </div>
       </div>

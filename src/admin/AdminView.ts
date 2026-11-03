@@ -283,7 +283,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
 
         <div style="padding: var(--space-md); border-top: 1px solid #1e293b;">
           <a href="#home" class="btn btn-secondary btn-full btn-sm" style="color: #ffffff; border-color: #334155; font-size: 12px; font-weight: 600;">
-            ← العودة لواجهة المتجر للعملاء
+            العودة إلى المتجر
           </a>
         </div>
       </aside>
@@ -293,7 +293,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
         
         <!-- Header -->
         <header class="admin-header">
-          <div style="display: flex; align-items: center; gap: var(--space-md);">
+          <div class="admin-header-title">
             <button id="admin-sidebar-toggle" class="icon-btn" style="border: 1px solid #e2e8f0;">
               <i class="fa-solid fa-bars" aria-hidden="true" style="font-size: 20px;"></i>
             </button>
@@ -302,7 +302,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
             </h2>
           </div>
 
-          <div style="display: flex; align-items: center; gap: var(--space-md);">
+          <div class="admin-header-actions">
             <!-- Instant Refresh Data Button -->
             <button id="admin-refresh-data-btn" class="btn btn-sm btn-secondary" style="font-size: 12px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-weight: 600;">
               <span><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></span>
@@ -310,7 +310,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
             </button>
 
             <!-- Admin Profile Badge -->
-            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155;">
+            <div class="admin-profile" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155;">
               <div style="width: 34px; height: 34px; border-radius: 50%; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">
                 م
               </div>
@@ -365,7 +365,7 @@ function renderAdminSection(section: string, data: any): string {
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
             <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">إجمالي المبيعات والإيرادات</span>
             <div style="font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 4px; font-family: 'Cairo', sans-serif;">${state.formatPrice(totalRevenue)}</div>
-            <div style="font-size: 12px; color: #16a34a; margin-top: 4px;">✓ مزامنة فورية مع فايربيز Firestore</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">إجمالي المبيعات غير الملغاة</div>
           </div>
 
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
@@ -628,7 +628,7 @@ function renderAdminSection(section: string, data: any): string {
 
     case 'inventory':
       return `
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-xl);">
+        <div class="inventory-layout" style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-xl);">
           <!-- Live Inventory Table -->
           <div class="admin-card">
             <div class="admin-card-header">

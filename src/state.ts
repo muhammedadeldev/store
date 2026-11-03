@@ -526,7 +526,7 @@ export function openModal(contentHtml: string, onClose?: () => void) {
   backdrop.innerHTML = `
     <div class="modal-box">
       <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-        <button id="modal-close-btn" style="font-size: 22px; color: var(--color-text-muted);">&times;</button>
+        <button id="modal-close-btn" class="modal-close-btn" aria-label="Close modal"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
       </div>
       <div id="modal-body-content">
         ${contentHtml}

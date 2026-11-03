@@ -1682,3 +1682,63 @@ img, video, svg {
   .product-card .price-current { font-size: 13px !important; }
   .footer-grid { gap: 20px; }
 }
+
+/* Requested mobile polish: product cards, product controls and modal tables */
+.quick-action-overlay .btn { border-radius: 10px; min-height: 42px; padding: 10px 14px; font-size: 12px !important; }
+.add-to-bag-btn { border-radius: 12px !important; min-height: 50px; padding: 12px 20px !important; white-space: nowrap; }
+.size-guide-table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; padding-bottom: 6px; }
+.size-guide-table-scroll table { white-space: nowrap; }
+.modal-close-btn { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; color: var(--color-text-muted); background: #f1f5f9; font-size: 17px; }
+.modal-close-btn:hover { background: #e2e8f0; color: #0f172a; }
+#toggle-wishlist-btn .fa-heart.is-active { color: var(--color-brand); }
+
+/* Admin mobile layout: one comfortable column, compact single-row toolbar, scrollable data */
+.admin-header-title { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.admin-header-title h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-header-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.admin-content { scrollbar-width: none; }
+.admin-content::-webkit-scrollbar, .admin-nav::-webkit-scrollbar, .modal-box::-webkit-scrollbar { width: 0; height: 0; }
+.admin-table { min-width: 980px; }
+.admin-card:has(.admin-table) { overflow-x: auto; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+.admin-card:has(.admin-table)::-webkit-scrollbar { height: 8px; }
+.admin-card:has(.admin-table)::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+.admin-card:has(.admin-table) .admin-table th, .admin-card:has(.admin-table) .admin-table td { white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .admin-header { height: 64px; min-height: 64px; padding: 8px 12px; flex-wrap: nowrap; gap: 8px; }
+  .admin-header-title { gap: 8px; }
+  .admin-header-title h2 { font-size: 15px !important; }
+  .admin-header-actions { gap: 5px; }
+  .admin-header-actions .admin-profile { display: none; }
+  .admin-header-actions .btn { min-height: 38px; padding: 7px 10px !important; font-size: 0 !important; border-radius: 10px !important; }
+  .admin-header-actions .btn .fa-solid { font-size: 15px; }
+  .admin-header-actions #admin-refresh-data-btn::after { content: '\f2f1'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 15px; }
+  .admin-header-actions #admin-logout-btn::after { content: '\f2f5'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 15px; }
+  .admin-content { padding: 14px 10px 82px; }
+  .kpi-grid { grid-template-columns: 1fr !important; gap: 12px !important; margin-bottom: 18px !important; }
+  .kpi-grid .admin-card { min-height: 118px; padding: 18px !important; }
+  .kpi-grid .admin-card div { font-size: 25px !important; }
+  .admin-card { margin-bottom: 16px; border-radius: 14px; }
+  .admin-card-header { padding: 15px; gap: 12px; }
+  .admin-card-header h3 { font-size: 15px !important; line-height: 1.5; }
+  .admin-card-header .btn { min-height: 40px; }
+  .inventory-layout { grid-template-columns: 1fr !important; gap: 14px !important; }
+  .inventory-layout .admin-card { min-width: 0; }
+  .inventory-layout .admin-card:has(.admin-table) { overflow-x: auto; }
+  .admin-table { min-width: 900px; }
+  .admin-table th, .admin-table td { padding: 14px 16px; }
+}
+@media (max-width: 560px) {
+  .product-purchase-actions { gap: 8px !important; align-items: stretch !important; }
+  .product-purchase-actions > div:first-child { flex: 0 0 auto; }
+  .add-to-bag-btn { min-width: 0; font-size: 13px !important; padding: 10px 12px !important; }
+  .product-purchase-actions #toggle-wishlist-btn { width: 46px !important; height: 46px !important; align-self: center; }
+  .modal-backdrop { padding: 10px; }
+  .modal-box { max-height: 92vh; padding: 18px; border-radius: 16px; }
+  .modal-box h3 { font-size: 19px !important; line-height: 1.4; }
+  .size-guide-table-scroll { margin-inline: -2px; width: calc(100% + 4px); }
+}
+@media (max-width: 768px) {
+  .quick-action-overlay { opacity: 1; transform: none; padding: 8px; background: linear-gradient(to top, rgba(15, 23, 42, 0.68), transparent); }
+  .quick-action-overlay .btn { min-height: 38px; }
+}

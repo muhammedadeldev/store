@@ -80,12 +80,7 @@ export async function renderAccountView(urlParams: URLSearchParams): Promise<str
             </button>
           </form>
 
-          <!-- Direct Admin Access Helper for Store Owner -->
-          <div style="margin-top: var(--space-xl); padding-top: var(--space-md); border-top: 1px dashed var(--color-border); text-align: center;">
-            <a href="#admin" style="font-size: 13px; color: var(--color-brand-primary); text-decoration: underline; font-weight: 700;">
-              <i class="fa-solid fa-star" aria-hidden="true"></i> ${lang === 'ar' ? 'الدخول المباشر للوحة التحكم الإدارية (Admin Portal)' : 'Direct Access to Admin Dashboard'}
-            </a>
-          </div>
+        </div>
 
         </div>
       </div>
@@ -124,11 +119,6 @@ export async function renderAccountView(urlParams: URLSearchParams): Promise<str
         </div>
 
         <div style="display: flex; gap: var(--space-sm);">
-          ${state.isAdmin() ? `
-            <a href="#admin" class="btn btn-secondary btn-sm" style="border-color: var(--color-brand-gold); color: var(--color-brand-gold);">
-              <i class="fa-solid fa-star" aria-hidden="true"></i> ${state.t('adminDashboard')}
-            </a>
-          ` : ''}
           <button id="account-signout-btn" class="btn btn-ghost btn-sm" style="color: var(--color-danger);">
             ${state.t('logout')}
           </button>

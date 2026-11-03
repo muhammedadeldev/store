@@ -24,10 +24,10 @@ export function renderFooter(): string {
             </p>
             <div style="display: flex; gap: var(--space-sm); color: #ffffff;">
               <a href="${settings.socialInstagram}" target="_blank" rel="noopener" class="icon-btn" style="color: #ffffff; background: #222120;" title="Instagram">
-                <i class="fa-solid fa-instagram" aria-hidden="true" style="font-size: 18px;"></i>
+                <i class="fa-brands fa-instagram" aria-hidden="true" style="font-size: 18px;"></i>
               </a>
               <a href="https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, '')}" target="_blank" rel="noopener" class="icon-btn" style="color: #ffffff; background: #222120;" title="WhatsApp">
-                <i class="fa-solid fa-whatsapp" aria-hidden="true" style="font-size: 18px;"></i>
+                <i class="fa-brands fa-whatsapp" aria-hidden="true" style="font-size: 18px;"></i>
               </a>
             </div>
           </div>
