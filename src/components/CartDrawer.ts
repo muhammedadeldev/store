@@ -19,7 +19,7 @@ export function renderCartDrawer(): string {
           <span style="font-size: 13px; color: var(--color-text-subtle);">(${state.getCartCount()} ${state.t('itemCount')})</span>
         </div>
         <button id="close-cart-drawer-btn" class="icon-btn" aria-label="Close">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <i class="fa-solid fa-xmark" aria-hidden="true" style="font-size: 22px;"></i>
         </button>
       </div>
 
@@ -45,7 +45,7 @@ export function renderCartDrawer(): string {
       <div class="cart-drawer-body">
         ${cart.length === 0 ? `
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--color-text-subtle); padding: var(--space-xl) 0;">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="margin-bottom: var(--space-md);"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line></svg>
+            <i class="fa-solid fa-bag-shopping" aria-hidden="true" style="font-size: 48px;"></i>
             <p style="font-size: 16px; font-weight: 500; color: var(--color-text-main); margin-bottom: 8px;">
               ${state.t('emptyCart')}
             </p>

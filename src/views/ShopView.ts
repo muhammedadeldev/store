@@ -65,7 +65,7 @@ export async function renderShopView(urlParams: URLSearchParams): Promise<string
 
           <!-- Search Bar -->
           <div style="display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: #ffffff; padding: 4px 12px; width: 300px; max-width: 100%;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-text-subtle);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true" style="font-size: 18px;"></i>
             <input 
               type="text" 
               id="shop-search-input" 
@@ -83,10 +83,10 @@ export async function renderShopView(urlParams: URLSearchParams): Promise<string
           ${lang === 'ar' ? 'الكل' : 'All'} (${products.length})
         </a>
         <a href="#shop?filter=new" class="mobile-chip ${filterType === 'new' ? 'active' : ''}">
-          ✨ ${state.t('newArrivals')}
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> ${state.t('newArrivals')}
         </a>
         <a href="#shop?filter=bestseller" class="mobile-chip ${filterType === 'bestseller' ? 'active' : ''}">
-          🔥 ${state.t('bestSellers')}
+          <i class="fa-solid fa-fire" aria-hidden="true"></i> ${state.t('bestSellers')}
         </a>
         ${categories.map(c => `
           <a href="#shop?cat=${c.id}" class="mobile-chip ${selectedCat === c.id ? 'active' : ''}">
@@ -131,10 +131,10 @@ export async function renderShopView(urlParams: URLSearchParams): Promise<string
             </h3>
             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
               <a href="#shop?filter=new" style="color: ${filterType === 'new' ? 'var(--color-brand)' : 'var(--color-text-muted)'}; font-weight: ${filterType === 'new' ? '600' : '400'};">
-                ✦ ${state.t('newArrivals')}
+                <i class="fa-solid fa-star" aria-hidden="true"></i> ${state.t('newArrivals')}
               </a>
               <a href="#shop?filter=bestseller" style="color: ${filterType === 'bestseller' ? 'var(--color-brand)' : 'var(--color-text-muted)'}; font-weight: ${filterType === 'bestseller' ? '600' : '400'};">
-                ✦ ${state.t('bestSellers')}
+                <i class="fa-solid fa-star" aria-hidden="true"></i> ${state.t('bestSellers')}
               </a>
             </div>
           </div>
@@ -165,7 +165,7 @@ export async function renderShopView(urlParams: URLSearchParams): Promise<string
         <div>
           ${filtered.length === 0 ? `
             <div style="text-align: center; padding: var(--space-4xl) 0; color: var(--color-text-muted); background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-sm);">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="margin-bottom: 12px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true" style="font-size: 48px;"></i>
               <h3 style="font-size: 18px; color: var(--color-text-main); margin-bottom: 8px;">
                 ${lang === 'ar' ? 'لم يتم العثور على قطع مطابقة' : 'No matching pieces found'}
               </h3>

@@ -41,7 +41,7 @@ export async function renderHomeView(): Promise<string> {
             <p class="hero-description">${heroSubtitle}</p>
             <div style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center; margin-top: 8px;">
               <a href="${settings.heroCtaLink || '#shop'}" class="btn btn-lg hero-btn-primary">
-                <span>✦</span>
+                <span><i class="fa-solid fa-star" aria-hidden="true"></i></span>
                 <span>${heroCtaText}</span>
               </a>
               <a href="#shop" class="btn btn-lg hero-btn-secondary">
@@ -58,28 +58,28 @@ export async function renderHomeView(): Promise<string> {
         <div class="container">
           <div class="pillars-grid">
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
-              <span style="font-size: 24px; color: var(--color-brand-gold);">✦</span>
+              <span style="font-size: 24px; color: var(--color-brand-gold);"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
               <div>
                 <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'خامات طبيعية نقية 100%' : 'Noble Fibers'}</h4>
                 <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'كشمير منغولي وحرير التوت الإيطالي' : 'Mongolian cashmere & Mulberry silk'}</p>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
-              <span style="font-size: 24px; color: var(--color-brand-gold);">✦</span>
+              <span style="font-size: 24px; color: var(--color-brand-gold);"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
               <div>
                 <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'حرفية آتيليه يدوية' : 'Atelier Craft'}</h4>
                 <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'حياكة دقيقة وقصات باريسية متقنة' : 'Parisian cuts & artisanal finishing'}</p>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
-              <span style="font-size: 24px; color: var(--color-brand-gold);">✦</span>
+              <span style="font-size: 24px; color: var(--color-brand-gold);"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
               <div>
                 <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'شحن سريع لجميع المحافظات' : 'Fast Express Across Egypt'}</h4>
                 <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'توصيل مجاني للطلبات فوق 1,500 ج.م' : 'Free express on orders over 1,500 EGP'}</p>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
-              <span style="font-size: 24px; color: var(--color-brand-gold);">✦</span>
+              <span style="font-size: 24px; color: var(--color-brand-gold);"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
               <div>
                 <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'إرجاع واستبدال مجاني' : '14-Day Returns'}</h4>
                 <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'استبدال واسترجاع سلس بدون عناء' : 'Effortless courier pick-up'}</p>

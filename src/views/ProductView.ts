@@ -172,7 +172,7 @@ export async function renderProductView(productId: string): Promise<string> {
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
               <span>${state.t('size')}</span>
               <button id="open-size-guide-btn" type="button" style="text-decoration: underline; color: var(--color-brand-gold); cursor: pointer; font-size: 11px;">
-                ${state.t('sizeGuide')} 📏
+                ${state.t('sizeGuide')} <i class="fa-solid fa-ruler-combined" aria-hidden="true"></i>
               </button>
             </div>
             <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
@@ -213,7 +213,7 @@ export async function renderProductView(productId: string): Promise<string> {
 
             <!-- Wishlist Button -->
             <button id="toggle-wishlist-btn" class="icon-btn" style="width: 50px; height: 50px; border: 1px solid var(--color-border);" title="${state.t('wishlist')}">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="${state.getWishlist().includes(product.id) ? 'var(--color-brand)' : 'none'}" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+              <i class="fa-solid fa-heart" aria-hidden="true" style="font-size: 22px;"></i>
             </button>
           </div>
 
@@ -222,7 +222,7 @@ export async function renderProductView(productId: string): Promise<string> {
             ${product.fabric ? `
               <div>
                 <h4 style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 12px; margin-bottom: 4px;">
-                  ✦ ${lang === 'ar' ? 'الخامة والتكوين' : 'Fabric & Composition'}
+                  <i class="fa-solid fa-star" aria-hidden="true"></i> ${lang === 'ar' ? 'الخامة والتكوين' : 'Fabric & Composition'}
                 </h4>
                 <p style="color: var(--color-text-muted); line-height: 1.6;">${product.fabric}</p>
               </div>
@@ -231,7 +231,7 @@ export async function renderProductView(productId: string): Promise<string> {
             ${product.careInstructions ? `
               <div>
                 <h4 style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 12px; margin-bottom: 4px;">
-                  ✦ ${state.t('fabricCare')}
+                  <i class="fa-solid fa-star" aria-hidden="true"></i> ${state.t('fabricCare')}
                 </h4>
                 <p style="color: var(--color-text-muted); line-height: 1.6;">${product.careInstructions}</p>
               </div>
@@ -239,7 +239,7 @@ export async function renderProductView(productId: string): Promise<string> {
 
             <div>
               <h4 style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 12px; margin-bottom: 4px;">
-                ✦ ${lang === 'ar' ? 'التوصيل والضمان' : 'Complimentary White-Glove Delivery'}
+                <i class="fa-solid fa-star" aria-hidden="true"></i> ${lang === 'ar' ? 'التوصيل والضمان' : 'Complimentary White-Glove Delivery'}
               </h4>
               <p style="color: var(--color-text-muted); line-height: 1.6;">
                 ${lang === 'ar' 
@@ -266,7 +266,7 @@ export async function renderProductView(productId: string): Promise<string> {
           </div>
           
           <button id="open-write-review-btn" class="btn btn-secondary btn-sm">
-            ✦ ${state.t('writeReview')}
+            <i class="fa-solid fa-star" aria-hidden="true"></i> ${state.t('writeReview')}
           </button>
         </div>
 

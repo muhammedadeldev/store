@@ -58,7 +58,7 @@ export async function renderPageView(slug: string): Promise<string> {
           ${lang === 'ar' ? 'استعراض تشكيلة المتجر' : 'Explore Current Collection'}
         </a>
         <a href="https://wa.me/201012345678" target="_blank" class="btn btn-secondary btn-sm">
-          💬 ${lang === 'ar' ? 'محادثة خدمة عملاء المتجر (واتساب)' : 'Chat with Store Support (WhatsApp)'}
+          <i class="fa-solid fa-comment" aria-hidden="true"></i> ${lang === 'ar' ? 'محادثة خدمة عملاء المتجر (واتساب)' : 'Chat with Store Support (WhatsApp)'}
         </a>
       </div>
     </div>

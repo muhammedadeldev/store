@@ -236,7 +236,7 @@ export async function renderCheckoutView(): Promise<string> {
             </button>
 
             <div style="margin-top: var(--space-md); text-align: center; font-size: 11px; color: var(--color-text-subtle);">
-              ✦ ${lang === 'ar' ? 'سيتم إرسال رسالة بريد إلكتروني وSMS بتفاصيل الطلب فوراً' : 'Order confirmation will be sent via SMS & Email'}
+              <i class="fa-solid fa-star" aria-hidden="true"></i> ${lang === 'ar' ? 'سيتم إرسال رسالة بريد إلكتروني وSMS بتفاصيل الطلب فوراً' : 'Order confirmation will be sent via SMS & Email'}
             </div>
           </div>
         </div>

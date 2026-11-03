@@ -209,74 +209,74 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
 
         <nav class="admin-nav" style="direction: rtl;">
           <a href="#admin/overview" class="admin-nav-item ${currentSection === 'overview' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <i class="fa-solid fa-table-cells-large" aria-hidden="true" style="font-size: 18px;"></i>
             <span>نظرة عامة والمؤشرات</span>
           </a>
 
           <a href="#admin/products" class="admin-nav-item ${currentSection === 'products' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line></svg>
+            <i class="fa-solid fa-bag-shopping" aria-hidden="true" style="font-size: 18px;"></i>
             <span>إدارة المنتجات والمتغيرات</span>
             <span style="margin-right: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${products.length}</span>
           </a>
 
           <a href="#admin/media" class="admin-nav-item ${currentSection === 'media' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            <i class="fa-solid fa-image" aria-hidden="true" style="font-size: 18px;"></i>
             <span>مكتبة الوسائط ورفع الصور</span>
             <span style="margin-right: auto; font-size: 10px; background: #15803d; color: #fff; padding: 2px 6px; border-radius: 4px;">مجاني</span>
           </a>
 
           <a href="#admin/categories" class="admin-nav-item ${currentSection === 'categories' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <i class="fa-solid fa-folder" aria-hidden="true" style="font-size: 18px;"></i>
             <span>التصنيفات والمجموعات</span>
             <span style="margin-right: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${categories.length}</span>
           </a>
 
           <a href="#admin/inventory" class="admin-nav-item ${currentSection === 'inventory' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <i class="fa-solid fa-boxes-stacked" aria-hidden="true" style="font-size: 18px;"></i>
             <span>المخزون وحركة القطع</span>
             ${lowStockProducts.length > 0 ? `<span style="margin-right: auto; font-size: 11px; background: #b91c1c; color: #fff; padding: 2px 6px; border-radius: 4px;">${lowStockProducts.length} منخفض</span>` : ''}
           </a>
 
           <a href="#admin/orders" class="admin-nav-item ${currentSection === 'orders' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            <i class="fa-solid fa-cart-shopping" aria-hidden="true" style="font-size: 18px;"></i>
             <span>إدارة الطلبات</span>
             ${newOrdersCount > 0 ? `<span style="margin-right: auto; font-size: 11px; background: #2563eb; color: #fff; padding: 2px 6px; border-radius: 4px;">${newOrdersCount} جديد</span>` : ''}
           </a>
 
           <a href="#admin/returns" class="admin-nav-item ${currentSection === 'returns' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+            <i class="fa-solid fa-arrows-rotate" aria-hidden="true" style="font-size: 18px;"></i>
             <span>المرتجعات والاستبدال</span>
             <span style="margin-right: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${returns.length}</span>
           </a>
 
           <a href="#admin/customers" class="admin-nav-item ${currentSection === 'customers' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <i class="fa-solid fa-users" aria-hidden="true" style="font-size: 18px;"></i>
             <span>قاعدة العملاء</span>
           </a>
 
           <a href="#admin/coupons" class="admin-nav-item ${currentSection === 'coupons' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
+            <i class="fa-solid fa-tags" aria-hidden="true" style="font-size: 18px;"></i>
             <span>الكوبونات والعروض</span>
             <span style="margin-right: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${coupons.length}</span>
           </a>
 
           <a href="#admin/cms" class="admin-nav-item ${currentSection === 'cms' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <i class="fa-solid fa-layer-group" aria-hidden="true" style="font-size: 18px;"></i>
             <span>إدارة المحتوى والواجهة (CMS)</span>
           </a>
 
           <a href="#admin/shipping" class="admin-nav-item ${currentSection === 'shipping' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+            <i class="fa-solid fa-truck" aria-hidden="true" style="font-size: 18px;"></i>
             <span>إعدادات الشحن والمناطق</span>
           </a>
 
           <a href="#admin/reviews" class="admin-nav-item ${currentSection === 'reviews' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <i class="fa-solid fa-comment" aria-hidden="true" style="font-size: 18px;"></i>
             <span>مراجعة التقييمات</span>
           </a>
 
           <a href="#admin/reports" class="admin-nav-item ${currentSection === 'reports' ? 'active' : ''}">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <i class="fa-solid fa-chart-column" aria-hidden="true" style="font-size: 18px;"></i>
             <span>التقارير المالية والأرباح</span>
           </a>
         </nav>
@@ -295,7 +295,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
         <header class="admin-header">
           <div style="display: flex; align-items: center; gap: var(--space-md);">
             <button id="admin-sidebar-toggle" class="icon-btn" style="border: 1px solid #e2e8f0;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+              <i class="fa-solid fa-bars" aria-hidden="true" style="font-size: 20px;"></i>
             </button>
             <h2 style="font-size: 20px; font-weight: 700; color: #0f172a;">
               ${sectionTitles[currentSection] || 'لوحة التحكم الإدارية'}
@@ -305,7 +305,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
           <div style="display: flex; align-items: center; gap: var(--space-md);">
             <!-- Instant Refresh Data Button -->
             <button id="admin-refresh-data-btn" class="btn btn-sm btn-secondary" style="font-size: 12px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-weight: 600;">
-              <span>⟳</span>
+              <span><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></span>
               <span>تحديث البيانات</span>
             </button>
 
@@ -514,7 +514,7 @@ function renderAdminSection(section: string, data: any): string {
 
             <!-- Upload Button -->
             <label class="btn btn-gold btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; padding: 10px 18px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <i class="fa-solid fa-upload" aria-hidden="true" style="font-size: 18px;"></i>
               <span>+ رفع صور من جهازك</span>
               <input type="file" id="media-bulk-upload-input" accept="image/*" multiple style="display: none;" />
             </label>
@@ -523,7 +523,7 @@ function renderAdminSection(section: string, data: any): string {
           <!-- Drag and drop zone -->
           <div id="media-dropzone" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 32px 20px; text-align: center; background: #f8fafc; transition: all 0.2s; cursor: pointer;">
             <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(197, 160, 89, 0.15); color: var(--color-brand-gold); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <i class="fa-solid fa-image" aria-hidden="true" style="font-size: 24px;"></i>
             </div>
             <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">اسحب الصور وأفلتها هنا أو اضغط للاختيار من جهازك</h4>
             <p style="font-size: 12px; color: #64748b; margin: 0;">
@@ -541,7 +541,7 @@ function renderAdminSection(section: string, data: any): string {
 
           ${mediaItems.length === 0 ? `
             <div style="text-align: center; padding: 48px 20px; color: #64748b;">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; opacity: 0.5;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <i class="fa-solid fa-image" aria-hidden="true" style="font-size: 48px;"></i>
               <p style="font-size: 14px; font-weight: 600;">لم يتم رفع أي صور بعد.</p>
               <p style="font-size: 12px;">اضغط على زر "رفع صور من جهازك" أعلاه لبدء رفع صور تصاميمك وملابسك مجاناً.</p>
             </div>
@@ -564,10 +564,10 @@ function renderAdminSection(section: string, data: any): string {
                     
                     <div style="display: flex; gap: 6px; margin-top: 10px;">
                       <button class="btn btn-secondary btn-sm admin-copy-url-btn" data-url="${m.url}" style="flex: 1; font-size: 11px; padding: 4px 8px;" title="نسخ الرابط المباشر">
-                        📋 نسخ الرابط
+                        <i class="fa-solid fa-clipboard" aria-hidden="true"></i> نسخ الرابط
                       </button>
                       <button class="btn btn-ghost btn-sm admin-del-media-btn" data-id="${m.id}" style="color: #b91c1c; font-size: 11px; padding: 4px 8px;" title="حذف الصورة">
-                        🗑
+                        <i class="fa-solid fa-trash" aria-hidden="true"></i>
                       </button>
                     </div>
                   </div>

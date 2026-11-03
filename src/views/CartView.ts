@@ -26,7 +26,7 @@ export function renderCartView(): string {
 
       ${cart.length === 0 ? `
         <div style="text-align: center; padding: var(--space-4xl) 0; background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-sm);">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="margin-bottom: 16px; color: var(--color-text-subtle);"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line></svg>
+          <i class="fa-solid fa-bag-shopping" aria-hidden="true" style="font-size: 64px;"></i>
           <h2 style="font-size: 22px; font-weight: 500; margin-bottom: 8px;">${state.t('emptyCart')}</h2>
           <p style="font-size: 14px; color: var(--color-text-muted); max-width: 320px; margin: 0 auto var(--space-xl) auto;">
             ${lang === 'ar' ? 'لم تقم بإضافة أي قطع إلى سلة التسوق بعد.' : 'Your shopping cart is currently empty.'}
@@ -88,7 +88,7 @@ export function renderCartView(): string {
                 ← ${state.t('continueShopping')}
               </a>
               <button id="clear-cart-btn" class="btn btn-ghost btn-sm" style="color: var(--color-danger); font-size: 12px;">
-                ${lang === 'ar' ? 'تفريغ السلة بالكامل 🗑' : 'Clear Entire Cart 🗑'}
+                ${lang === 'ar' ? 'تفريغ السلة بالكامل <i class="fa-solid fa-trash" aria-hidden="true"></i>' : 'Clear Entire Cart <i class="fa-solid fa-trash" aria-hidden="true"></i>'}
               </button>
             </div>
           </div>

@@ -48,7 +48,7 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
       <!-- Material 3 Header Section -->
       <div style="text-align: center; margin-bottom: 32px;">
         <div style="display: inline-flex; align-items: center; gap: 8px; background: #e0e7ff; color: #3730a3; padding: 6px 16px; border-radius: 9999px; font-size: 13px; font-weight: 700; margin-bottom: 12px;">
-          <span>📦</span>
+          <span><i class="fa-solid fa-box" aria-hidden="true"></i></span>
           <span>${lang === 'ar' ? 'خدمة المتابعة والشحن المباشر' : 'Live Order Tracking'}</span>
         </div>
         <h1 style="font-size: clamp(26px, 3.5vw, 36px); font-weight: 800; color: #111827; margin-bottom: 8px;">
@@ -74,7 +74,7 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
             />
           </div>
           <button type="submit" class="btn-m3-filled" style="height: 52px; padding: 0 28px; border-radius: 16px; background: #0f172a; color: #ffffff; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; transition: all 0.2s;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true" style="font-size: 18px;"></i>
             <span>${lang === 'ar' ? 'بحث وتتبع' : 'Track'}</span>
           </button>
         </form>
@@ -133,7 +133,7 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
             </div>
           ` : `
             <div style="padding: 16px; background: #fef2f2; border: 1px solid #fee2e2; border-radius: 16px; color: #991b1b; margin-bottom: 24px; font-size: 14px; display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 20px;">⚠️</span>
+              <span style="font-size: 20px;"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
               <span>${lang === 'ar' ? 'تم إلغاء هذا الطلب وإعادة العناصر للمخزون.' : 'This order has been cancelled and items were returned to inventory.'}</span>
             </div>
           `}
@@ -175,14 +175,14 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
           <!-- Address and Summary Card -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid #f1f5f9; padding-top: 20px; font-size: 13px; line-height: 1.8; color: #475569;" class="form-row-2">
             <div>
-              <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">📍 ${state.t('shippingAddress')}:</div>
+              <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${state.t('shippingAddress')}:</div>
               <div><strong>${state.t('fullName')}:</strong> ${foundOrder.customerName}</div>
               <div><strong>${state.t('phone')}:</strong> ${foundOrder.customerPhone}</div>
               <div>${foundOrder.shippingAddress?.city || ''} - ${foundOrder.shippingAddress?.address || ''}</div>
             </div>
 
             <div style="text-align: ${lang === 'ar' ? 'left' : 'right'};">
-              <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">💳 ${state.t('paymentMethod')}:</div>
+              <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;"><i class="fa-solid fa-credit-card" aria-hidden="true"></i> ${state.t('paymentMethod')}:</div>
               <div>${foundOrder.paymentMethod === 'cod' ? 'الدفع عند الاستلام كاش' : (foundOrder.paymentMethod === 'vodafone_cash' ? 'فودافون كاش / إنستاباي' : (foundOrder.paymentMethod?.toUpperCase() || 'دفع إلكتروني'))}</div>
               <div style="margin-top: 6px; font-size: 16px; font-weight: 800; color: #0f172a;">
                 ${state.t('total')}: <span style="color: #0f172a;">${state.formatPrice(foundOrder.total)}</span>
@@ -194,7 +194,7 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
       ` : (orderParam ? `
         <div class="m3-card-elevated" style="text-align: center; padding: 48px 24px; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 24px;">
           <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px;">
-            ✕
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
           </div>
           <h3 style="font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 6px;">
             ${lang === 'ar' ? `لم يتم العثور على طلب برقم "${orderParam}"` : `No order found for reference "${orderParam}"`}
