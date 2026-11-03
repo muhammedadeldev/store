@@ -71,6 +71,31 @@ export function invalidateAdminCache() {
   adminCache = null;
 }
 
+function refreshAdminSection(section: string) {
+  invalidateAdminCache();
+  const nextHash = `#admin/${section}?updated=${Date.now()}`;
+  window.location.hash = nextHash;
+}
+
+function parseProductColors(raw: string): Array<{ name: string; hex: string }> {
+  return raw.split(/\n|,/).map(item => item.trim()).filter(Boolean).map(item => {
+    const [name, hex] = item.split('|').map(v => v.trim());
+    return { name: name || 'Color', hex: hex || '#111827' };
+  });
+}
+
+function buildProductVariants(sku: string, sizes: string[], colors: Array<{ name: string; hex: string }>, stock: number) {
+  const combinations = sizes.flatMap(size => colors.map(color => ({ size, color: color.name })));
+  const each = combinations.length ? Math.floor(stock / combinations.length) : 0;
+  let remainder = combinations.length ? stock - each * combinations.length : 0;
+  return combinations.map((variant, index) => ({
+    sku: `${sku}-${variant.color.replace(/\s+/g, '-').toUpperCase()}-${variant.size}`,
+    color: variant.color,
+    size: variant.size,
+    stock: each + (index < remainder ? 1 : 0)
+  }));
+}
+
 export async function renderAdminView(currentSection: string = 'overview'): Promise<string> {
   const isAdmin = state.isAdmin();
 
@@ -281,11 +306,6 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
           </a>
         </nav>
 
-        <div style="padding: var(--space-md); border-top: 1px solid #1e293b;">
-          <a href="#home" class="btn btn-secondary btn-full btn-sm" style="color: #ffffff; border-color: #334155; font-size: 12px; font-weight: 600;">
-            العودة إلى المتجر
-          </a>
-        </div>
       </aside>
 
       <!-- Main Admin Content Area -->
@@ -307,17 +327,6 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
             <button id="admin-refresh-data-btn" class="btn btn-sm btn-secondary" style="font-size: 12px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-weight: 600;">
               <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><span>تحديث البيانات</span>
             </button>
-
-            <!-- Admin Profile Badge -->
-            <div class="admin-profile" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155;">
-              <div style="width: 34px; height: 34px; border-radius: 50%; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">
-                م
-              </div>
-              <div style="line-height: 1.2;">
-                <div style="font-weight: 700;">${state.getUser()?.email || 'muhammedadel.dev@gmail.com'}</div>
-                <div style="font-size: 11px; color: #16a34a; font-weight: 600;">سوبر أدمن (مدير عام المتجر)</div>
-              </div>
-            </div>
 
             <!-- Admin Sign Out Button -->
             <button id="admin-logout-btn" class="btn btn-sm btn-ghost" style="color: #b91c1c; border: 1px solid #fecaca; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 9999px;" title="تسجيل الخروج من لوحة الإدارة">
@@ -614,7 +623,7 @@ function renderAdminSection(section: string, data: any): string {
                   <td><span class="status-pill ${o.status}">${getStatusArabic(o.status)}</span></td>
                   <td><code>${o.trackingNumber || 'لم يُحدد'}</code></td>
                   <td>
-                    <button class="open-order-details-btn btn btn-primary btn-sm" data-id="${o.id}" style="font-size: 12px; padding: 4px 12px;">
+                    <button type="button" class="open-order-details-btn btn btn-primary btn-sm" data-id="${o.id}" style="font-size: 12px; padding: 4px 12px;">
                       إدارة الطلب
                     </button>
                   </td>
@@ -717,7 +726,8 @@ function renderAdminSection(section: string, data: any): string {
                   <td>${c.sortOrder || 1}</td>
                   <td><span class="status-pill ${c.isActive ? 'delivered' : 'cancelled'}">${c.isActive ? 'مفعل بالمتجر' : 'مخفي'}</span></td>
                   <td>
-                    <button class="admin-del-cat-btn btn btn-ghost btn-sm" data-id="${c.id}" style="color: #b91c1c; font-size: 12px; font-weight: 600;">حذف</button>
+                    <button type="button" class="admin-edit-cat-btn btn btn-ghost btn-sm" data-id="${c.id}" style="color: #2563eb; font-size: 12px; font-weight: 600;">تعديل</button>
+                    <button type="button" class="admin-del-cat-btn btn btn-ghost btn-sm" data-id="${c.id}" style="color: #b91c1c; font-size: 12px; font-weight: 600;">حذف</button>
                   </td>
                 </tr>
               `).join('')}
@@ -803,6 +813,7 @@ function renderAdminSection(section: string, data: any): string {
                     <button class="admin-toggle-coupon-btn btn btn-ghost btn-sm" data-id="${cp.id}" data-active="${cp.isActive}" style="font-size: 12px; font-weight: 600;">
                       ${cp.isActive ? 'تعطيل الكوبون' : 'تفعيل الكوبون'}
                     </button>
+                    <button type="button" class="admin-del-coupon-btn btn btn-ghost btn-sm" data-id="${cp.id}" style="color:#b91c1c;font-size:12px;">حذف</button>
                   </td>
                 </tr>
               `).join('')}
@@ -867,6 +878,19 @@ function renderAdminSection(section: string, data: any): string {
               </div>
             </div>
 
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">وصف البانر (عربي)</label><textarea id="set-hero-subtitle-ar" class="form-textarea" rows="3">${settings.heroSubtitleAr || ''}</textarea></div>
+              <div class="form-group"><label class="form-label">وصف البانر (إنجليزي)</label><textarea id="set-hero-subtitle-en" class="form-textarea" rows="3">${settings.heroSubtitle || ''}</textarea></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">زر البانر (عربي)</label><input type="text" id="set-hero-cta-ar" class="form-input" value="${settings.heroCtaTextAr || ''}" /></div>
+              <div class="form-group"><label class="form-label">زر البانر (إنجليزي)</label><input type="text" id="set-hero-cta-en" class="form-input" value="${settings.heroCtaText || ''}" /></div>
+            </div>
+            <div class="form-group"><label class="form-label"><input type="checkbox" id="set-ann-active" ${settings.announcementBarActive !== false ? 'checked' : ''} /> تفعيل شريط الإعلانات</label></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email" id="set-email" class="form-input" value="${settings.contactEmail || ''}" /></div>
+              <div class="form-group"><label class="form-label">رقم الهاتف</label><input type="text" id="set-phone" class="form-input" value="${settings.contactPhone || ''}" /></div>
+            </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md);">
               <div class="form-group">
                 <label class="form-label">حد الشحن المجاني (ج.م)</label>
@@ -1303,7 +1327,7 @@ export function setupAdminEvents(section: string) {
     refreshBtn.onclick = () => {
       invalidateAdminCache();
       showToast('جاري تحديث البيانات من السيرفر...', 'info');
-      window.location.reload();
+      refreshAdminSection(section);
     };
   }
 
@@ -1354,7 +1378,7 @@ export function setupAdminEvents(section: string) {
             await updateDoc(doc(db, 'shippingZones', id), { isActive: !active });
             invalidateAdminCache();
             showToast('تم تحديث حالة منطقة الشحن', 'success');
-            window.location.reload();
+            refreshAdminSection(section);
           } catch (err: any) {
             showToast(err.message, 'error');
           }
@@ -1413,7 +1437,7 @@ export function setupAdminEvents(section: string) {
             closeModal();
             invalidateAdminCache();
             showToast('تمت إضافة منطقة الشحن بنجاح!', 'success');
-            window.location.reload();
+            refreshAdminSection(section);
           };
         }
       };
@@ -1431,7 +1455,7 @@ export function setupAdminEvents(section: string) {
             await updateDoc(doc(db, 'reviews', id), { isApproved: !approved });
             invalidateAdminCache();
             showToast('تم تحديث حالة نشر التقييم', 'success');
-            window.location.reload();
+            refreshAdminSection(section);
           } catch (err: any) {
             showToast(err.message, 'error');
           }
@@ -1447,7 +1471,7 @@ export function setupAdminEvents(section: string) {
             await deleteDoc(doc(db, 'reviews', id));
             invalidateAdminCache();
             showToast('تم حذف التقييم بنجاح', 'info');
-            window.location.reload();
+            refreshAdminSection(section);
           } catch (err: any) {
             showToast(err.message, 'error');
           }
@@ -1501,7 +1525,7 @@ export function setupAdminEvents(section: string) {
           await uploadImageFile(files[i]);
         }
         showToast('تم رفع جميع الصور بنجاح وحفظها محلياً في السيرفر!', 'success');
-        window.location.hash = 'admin/media?reload=' + Date.now();
+        refreshAdminSection(section);
       } catch (err: any) {
         showToast(err.message, 'error');
       }
@@ -1528,7 +1552,7 @@ export function setupAdminEvents(section: string) {
             const data = await res.json();
             if (data.success) {
               showToast('تم حذف الصورة بنجاح', 'info');
-              window.location.hash = 'admin/media?reload=' + Date.now();
+              refreshAdminSection(section);
             } else {
               showToast(data.message, 'error');
             }
@@ -1582,10 +1606,12 @@ export function setupAdminEvents(section: string) {
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">إجمالي المخزون المتاح للقطعة *</label>
-            <input type="number" id="np-stock" required class="form-input" value="25" />
-          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);"><div class="form-group"><label class="form-label">التصنيف</label><input type="text" id="np-category" class="form-input" placeholder="هوديز، تيشيرتات، جاكيتات" /></div><div class="form-group"><label class="form-label">سعر التخفيض</label><input type="number" id="np-saleprice" class="form-input" value="0" /></div></div>
+          <div class="form-group"><label class="form-label">المقاسات (افصل بينها بفاصلة) *</label><input type="text" id="np-sizes" required class="form-input" value="S, M, L, XL" /></div>
+          <div class="form-group"><label class="form-label">الألوان (الاسم | كود اللون، كل لون في سطر) *</label><textarea id="np-colors" required class="form-textarea" rows="3">أسود | #111827</textarea></div>
+          <div class="form-group"><label class="form-label">إجمالي المخزون المتاح للقطعة *</label><input type="number" id="np-stock" required class="form-input" value="25" min="0" /></div>
+          <div class="form-group"><label class="form-label">الوصف بالعربية</label><textarea id="np-description-ar" class="form-textarea" rows="3"></textarea></div>
+          <div class="form-group"><label class="form-label">الخامة والعناية</label><input type="text" id="np-fabric" class="form-input" placeholder="قطن مصري 100%" /><input type="text" id="np-care" class="form-input" style="margin-top:8px" placeholder="إرشادات العناية" /></div>
           <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">حفظ ونشر القطعة بالمتجر</button>
         </form>
       `);
@@ -1622,31 +1648,24 @@ export function setupAdminEvents(section: string) {
           const sku = (document.getElementById('np-sku') as HTMLInputElement).value;
           const price = parseFloat((document.getElementById('np-price') as HTMLInputElement).value);
           const img = (document.getElementById('np-img') as HTMLInputElement).value;
-          const stock = parseInt((document.getElementById('np-stock') as HTMLInputElement).value);
-
+          const stock = parseInt((document.getElementById('np-stock') as HTMLInputElement).value) || 0;
+          const categoryName = (document.getElementById('np-category') as HTMLInputElement).value.trim();
+          const salePrice = parseFloat((document.getElementById('np-saleprice') as HTMLInputElement).value) || 0;
+          const sizes = (document.getElementById('np-sizes') as HTMLInputElement).value.split(',').map(v => v.trim()).filter(Boolean);
+          const colors = parseProductColors((document.getElementById('np-colors') as HTMLTextAreaElement).value);
+          const descriptionAr = (document.getElementById('np-description-ar') as HTMLTextAreaElement).value.trim();
+          const fabric = (document.getElementById('np-fabric') as HTMLInputElement).value.trim();
+          const careInstructions = (document.getElementById('np-care') as HTMLInputElement).value.trim();
+          if (!sizes.length || !colors.length) { showToast('أضف مقاسًا ولونًا واحدًا على الأقل', 'warning'); return; }
           try {
             await addDoc(collection(db, 'products'), {
-              name,
-              nameAr,
-              slug: sku.toLowerCase(),
-              sku,
-              price,
-              images: [img],
-              totalStock: stock,
-              isPublished: true,
-              isFeatured: true,
-              sizes: ["S", "M", "L"],
-              colors: [{ name: "Noir Black", hex: "#111827" }],
-              variants: [
-                { sku: `${sku}-S`, color: "Noir Black", size: "S", stock: Math.floor(stock / 3) },
-                { sku: `${sku}-M`, color: "Noir Black", size: "M", stock: Math.floor(stock / 3) },
-                { sku: `${sku}-L`, color: "Noir Black", size: "L", stock: stock - 2 * Math.floor(stock / 3) }
-              ],
-              createdAt: new Date().toISOString()
+              name, nameAr, slug: sku.toLowerCase(), sku, price, salePrice, categoryName, images: [img], totalStock: stock,
+              descriptionAr, fabric, careInstructions, isPublished: true, isFeatured: true, isNewArrival: true, sizes, colors,
+              variants: buildProductVariants(sku, sizes, colors, stock), createdAt: new Date().toISOString()
             });
             closeModal();
             showToast('تمت إضافة وحفظ القطعة بنجاح في قاعدة البيانات!', 'success');
-            window.location.hash = 'admin/products?reload=' + Date.now();
+            refreshAdminSection(section);
           } catch (err: any) {
             showToast(err.message, 'error');
           }
@@ -1658,6 +1677,8 @@ export function setupAdminEvents(section: string) {
   // Edit Product Modal with Free File Upload
   document.querySelectorAll('.admin-edit-prod-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
       if (!id) return;
       try {
@@ -1686,10 +1707,13 @@ export function setupAdminEvents(section: string) {
                 <input type="number" id="ep-saleprice" class="form-input" value="${p.salePrice || 0}" />
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">المخزون الكلي *</label>
-              <input type="number" id="ep-stock" required class="form-input" value="${p.totalStock ?? 10}" />
-            </div>
+            <div class="form-group"><label class="form-label">التصنيف</label><input type="text" id="ep-category" class="form-input" value="${p.categoryName || ''}" /></div>
+            <div class="form-group"><label class="form-label">سعر التخفيض</label><input type="number" id="ep-saleprice" class="form-input" value="${p.salePrice || 0}" /></div>
+            <div class="form-group"><label class="form-label">المخزون الكلي *</label><input type="number" id="ep-stock" required class="form-input" value="${p.totalStock ?? 10}" min="0" /></div>
+            <div class="form-group"><label class="form-label">المقاسات *</label><input type="text" id="ep-sizes" required class="form-input" value="${(p.sizes || []).join(', ')}" /></div>
+            <div class="form-group"><label class="form-label">الألوان (الاسم | كود اللون) *</label><textarea id="ep-colors" required class="form-textarea" rows="3">${(p.colors || []).map((c: any) => `${c.name} | ${c.hex}`).join('\n')}</textarea></div>
+            <div class="form-group"><label class="form-label">الوصف بالعربية</label><textarea id="ep-description-ar" class="form-textarea" rows="3">${p.descriptionAr || ''}</textarea></div>
+            <div class="form-group"><label class="form-label">الخامة والعناية</label><input type="text" id="ep-fabric" class="form-input" value="${p.fabric || ''}" /><input type="text" id="ep-care" class="form-input" style="margin-top:8px" value="${p.careInstructions || ''}" /></div>
 
             <!-- Free File Upload or URL -->
             <div class="form-group">
@@ -1743,25 +1767,26 @@ export function setupAdminEvents(section: string) {
             const name = (document.getElementById('ep-name-en') as HTMLInputElement).value;
             const nameAr = (document.getElementById('ep-name-ar') as HTMLInputElement).value;
             const price = parseFloat((document.getElementById('ep-price') as HTMLInputElement).value);
-            const salePrice = parseFloat((document.getElementById('ep-saleprice') as HTMLInputElement).value);
-            const stock = parseInt((document.getElementById('ep-stock') as HTMLInputElement).value);
+            const salePrice = parseFloat((document.getElementById('ep-saleprice') as HTMLInputElement).value) || 0;
+            const stock = parseInt((document.getElementById('ep-stock') as HTMLInputElement).value) || 0;
             const img = (document.getElementById('ep-img') as HTMLInputElement).value;
+            const categoryName = (document.getElementById('ep-category') as HTMLInputElement).value.trim();
+            const sizes = (document.getElementById('ep-sizes') as HTMLInputElement).value.split(',').map(v => v.trim()).filter(Boolean);
+            const colors = parseProductColors((document.getElementById('ep-colors') as HTMLTextAreaElement).value);
+            const descriptionAr = (document.getElementById('ep-description-ar') as HTMLTextAreaElement).value.trim();
+            const fabric = (document.getElementById('ep-fabric') as HTMLInputElement).value.trim();
+            const careInstructions = (document.getElementById('ep-care') as HTMLInputElement).value.trim();
             const isPub = (document.getElementById('ep-published') as HTMLSelectElement).value === 'true';
-
+            if (!sizes.length || !colors.length) { showToast('أضف مقاسًا ولونًا واحدًا على الأقل', 'warning'); return; }
             try {
               await updateDoc(doc(db, 'products', id), {
-                name,
-                nameAr,
-                price,
-                salePrice,
-                totalStock: stock,
-                images: [img],
-                isPublished: isPub,
-                updatedAt: new Date().toISOString()
+                name, nameAr, price, salePrice, categoryName, totalStock: stock, images: [img], sizes, colors,
+                variants: buildProductVariants((p.sku || id), sizes, colors, stock), descriptionAr, fabric, careInstructions,
+                isPublished: isPub, updatedAt: new Date().toISOString()
               });
               closeModal();
               showToast('تم تحديث القطعة وحفظها بنجاح!', 'success');
-              window.location.hash = 'admin/products?reload=' + Date.now();
+              refreshAdminSection(section);
             } catch (err: any) {
               showToast(err.message, 'error');
             }
@@ -1781,7 +1806,7 @@ export function setupAdminEvents(section: string) {
         try {
           await deleteDoc(doc(db, 'products', id));
           showToast('تم حذف القطعة من الكتالوج', 'info');
-          window.location.hash = 'admin/products?reload=' + Date.now();
+          refreshAdminSection(section);
         } catch (err: any) {
           showToast(err.message, 'error');
         }
@@ -1872,7 +1897,7 @@ export function setupAdminEvents(section: string) {
             });
             closeModal();
             showToast('تم إنشاء القسم بنجاح!', 'success');
-            window.location.hash = 'admin/categories?reload=' + Date.now();
+            refreshAdminSection(section);
           } catch (err: any) {
             showToast(err.message, 'error');
           }
@@ -1881,6 +1906,44 @@ export function setupAdminEvents(section: string) {
     };
   }
 
+  // Edit category
+  document.querySelectorAll('.admin-edit-cat-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (!id) return;
+      const snap = await getDoc(doc(db, 'categories', id));
+      if (!snap.exists()) return;
+      const cat: any = snap.data();
+      openModal(`
+        <h3 style="font-size:20px;font-weight:700;margin-bottom:16px;">تعديل القسم</h3>
+        <form id="edit-cat-form" style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <input id="ec-name-ar" class="form-input" required value="${cat.nameAr || ''}" placeholder="اسم القسم بالعربية" />
+          <input id="ec-name-en" class="form-input" required value="${cat.name || ''}" placeholder="اسم القسم بالإنجليزية" />
+          <input id="ec-slug" class="form-input" required value="${cat.slug || ''}" placeholder="Slug" />
+          <input id="ec-img" class="form-input" required value="${cat.imageUrl || ''}" placeholder="رابط صورة القسم" />
+          <input id="ec-sort" type="number" class="form-input" value="${cat.sortOrder || 1}" placeholder="ترتيب العرض" />
+          <label class="form-label"><input id="ec-active" type="checkbox" ${cat.isActive !== false ? 'checked' : ''} /> ظاهر في المتجر</label>
+          <button type="submit" class="btn btn-primary btn-full">حفظ التعديلات</button>
+        </form>`);
+      const form = document.getElementById('edit-cat-form');
+      if (form) form.onsubmit = async (ev) => {
+        ev.preventDefault();
+        await updateDoc(doc(db, 'categories', id), {
+          nameAr: (document.getElementById('ec-name-ar') as HTMLInputElement).value.trim(),
+          name: (document.getElementById('ec-name-en') as HTMLInputElement).value.trim(),
+          slug: (document.getElementById('ec-slug') as HTMLInputElement).value.trim(),
+          imageUrl: (document.getElementById('ec-img') as HTMLInputElement).value.trim(),
+          sortOrder: Number((document.getElementById('ec-sort') as HTMLInputElement).value) || 1,
+          isActive: (document.getElementById('ec-active') as HTMLInputElement).checked,
+          updatedAt: new Date().toISOString()
+        });
+        closeModal();
+        showToast('تم تعديل القسم بنجاح', 'success');
+        refreshAdminSection(section);
+      };
+    });
+  });
   // Delete category
   document.querySelectorAll('.admin-del-cat-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
@@ -1889,7 +1952,7 @@ export function setupAdminEvents(section: string) {
         try {
           await deleteDoc(doc(db, 'categories', id));
           showToast('تم حذف القسم', 'info');
-          window.location.hash = 'admin/categories?reload=' + Date.now();
+          refreshAdminSection(section);
         } catch (err: any) {
           showToast(err.message, 'error');
         }
@@ -1900,6 +1963,8 @@ export function setupAdminEvents(section: string) {
   // Manage Order Drawer
   document.querySelectorAll('.open-order-details-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
       if (!id) return;
 
@@ -1973,7 +2038,7 @@ export function setupAdminEvents(section: string) {
                 invalidateAdminCache();
                 closeModal();
                 showToast('تم تحديث حالة الطلب بنجاح ومزامنة المخزون!', 'success');
-                window.location.hash = 'admin/orders?reload=' + Date.now();
+                refreshAdminSection(section);
               } else {
                 showToast(resData.message, 'error');
               }
@@ -2016,6 +2081,13 @@ export function setupAdminEvents(section: string) {
       const heroEn = (document.getElementById('set-hero-title-en') as HTMLInputElement).value;
       const heroAr = (document.getElementById('set-hero-title-ar') as HTMLInputElement).value;
       const heroImg = (document.getElementById('set-hero-img') as HTMLInputElement).value;
+      const heroSubtitleEn = (document.getElementById('set-hero-subtitle-en') as HTMLTextAreaElement).value;
+      const heroSubtitleAr = (document.getElementById('set-hero-subtitle-ar') as HTMLTextAreaElement).value;
+      const heroCtaEn = (document.getElementById('set-hero-cta-en') as HTMLInputElement).value;
+      const heroCtaAr = (document.getElementById('set-hero-cta-ar') as HTMLInputElement).value;
+      const annActive = (document.getElementById('set-ann-active') as HTMLInputElement).checked;
+      const contactEmail = (document.getElementById('set-email') as HTMLInputElement).value;
+      const contactPhone = (document.getElementById('set-phone') as HTMLInputElement).value;
       const annEn = (document.getElementById('set-ann-en') as HTMLInputElement).value;
       const annAr = (document.getElementById('set-ann-ar') as HTMLInputElement).value;
       const freeShip = parseFloat((document.getElementById('set-free-ship') as HTMLInputElement).value);
@@ -2029,6 +2101,13 @@ export function setupAdminEvents(section: string) {
           heroTitle: heroEn,
           heroTitleAr: heroAr,
           heroImageUrl: heroImg,
+          heroSubtitle: heroSubtitleEn,
+          heroSubtitleAr: heroSubtitleAr,
+          heroCtaText: heroCtaEn,
+          heroCtaTextAr: heroCtaAr,
+          announcementBarActive: annActive,
+          contactEmail,
+          contactPhone,
           announcementBarText: annEn,
           announcementBarTextAr: annAr,
           freeShippingThreshold: freeShip,
@@ -2098,7 +2177,7 @@ export function setupAdminEvents(section: string) {
             });
             closeModal();
             showToast('تم إنشاء الكوبون بنجاح!', 'success');
-            window.location.hash = 'admin/coupons?reload=' + Date.now();
+            refreshAdminSection(section);
           } catch (err: any) {
             showToast(err.message, 'error');
           }
@@ -2116,13 +2195,24 @@ export function setupAdminEvents(section: string) {
       try {
         await updateDoc(doc(db, 'coupons', id), { isActive: !isActive });
         showToast(isActive ? 'تم تعطيل الكوبون' : 'تم تفعيل الكوبون', 'info');
-        window.location.hash = 'admin/coupons?reload=' + Date.now();
+        refreshAdminSection(section);
       } catch (err: any) {
         showToast(err.message, 'error');
       }
     });
   });
 
+  document.querySelectorAll('.admin-del-coupon-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (id && confirm('هل تريد حذف هذا الكوبون نهائيًا؟')) {
+        await deleteDoc(doc(db, 'coupons', id));
+        showToast('تم حذف الكوبون', 'info');
+        refreshAdminSection(section);
+      }
+    });
+  });
   // Process Return Modal
   document.querySelectorAll('.admin-process-return-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
@@ -2170,7 +2260,7 @@ export function setupAdminEvents(section: string) {
               });
               closeModal();
               showToast('تم تحديث حالة طلب الإرجاع!', 'success');
-              window.location.hash = 'admin/returns?reload=' + Date.now();
+              refreshAdminSection(section);
             } catch (err: any) {
               showToast(err.message, 'error');
             }
@@ -2230,7 +2320,7 @@ export function setupAdminEvents(section: string) {
             });
             closeModal();
             showToast(`تم تسجيل حركة المخزون (${delta > 0 ? '+' : ''}${delta}) في فايربيز!`, 'success');
-            window.location.hash = 'admin/inventory?reload=' + Date.now();
+            refreshAdminSection(section);
           } catch (err: any) {
             showToast(err.message, 'error');
           }
