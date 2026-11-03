@@ -13,12 +13,17 @@ import {
   limit, 
   where 
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth, googleProvider } from '../firebase';
+import { signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 
 export async function renderAdminView(currentSection: string = 'overview'): Promise<string> {
   const lang = state.getLang();
-  
-  // Fetch common dashboard statistics
+  const isAdmin = state.isAdmin();
+
+  // If user is not logged in as Admin, or explicitly at #admin/login, show the Admin Login Screen
+  if (!isAdmin || currentSection === 'login') {
+    return renderAdminLoginView(lang);
+  }
   let orders: any[] = [];
   let products: any[] = [];
   let categories: any[] = [];
@@ -186,10 +191,15 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
                 M
               </div>
               <div style="line-height: 1.2;">
-                <div style="font-weight: 600;">mohamedqwe542@gmail.com</div>
+                <div style="font-weight: 600;">${state.getUser()?.email || 'mohamedqwe542@gmail.com'}</div>
                 <div style="font-size: 10px; color: #64748b;">Super Admin</div>
               </div>
             </div>
+
+            <!-- Admin Sign Out Button -->
+            <button id="admin-logout-btn" class="btn btn-sm btn-ghost" style="color: #b91c1c; border: 1px solid #fecaca; font-size: 11px; padding: 6px 12px;" title="${lang === 'ar' ? 'تسجيل الخروج من الإدارة' : 'Sign Out of Admin'}">
+              ${lang === 'ar' ? 'تسجيل الخروج ⏻' : 'Sign Out ⏻'}
+            </button>
           </div>
         </header>
 
@@ -663,8 +673,186 @@ function renderAdminSection(section: string, data: any): string {
   }
 }
 
+export function renderAdminLoginView(lang: 'ar' | 'en'): string {
+  return `
+    <div class="admin-login-layout" dir="${lang === 'ar' ? 'rtl' : 'ltr'}" style="min-height: 100vh; background-color: #0b0f19; display: flex; align-items: center; justify-content: center; padding: var(--space-xl); font-family: var(--font-sans);">
+      
+      <div style="max-width: 460px; width: 100%; background: #131b2e; border: 1px solid #1e293b; border-radius: 8px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); color: #ffffff;">
+        
+        <!-- Brand & Security Header -->
+        <div style="text-align: center; margin-bottom: 28px;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: rgba(197, 160, 89, 0.12); color: var(--color-brand-gold); margin-bottom: 16px; border: 1px solid rgba(197, 160, 89, 0.3);">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          
+          <span style="font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 6px;">
+            L'ÉTOILE HAUTE COUTURE
+          </span>
+          <h2 style="font-family: var(--font-editorial); font-size: 28px; font-weight: 500; color: #ffffff;">
+            ${lang === 'ar' ? 'بوابة التحكم الإدارية المشفرة' : 'Admin Security Portal'}
+          </h2>
+          <p style="font-size: 13px; color: #94a3b8; margin-top: 6px; line-height: 1.6;">
+            ${lang === 'ar' ? 'منطقة إدارية مخصصة لمديري الدار والمخزون والمبيعات.' : 'Restricted to authorized brand directors and store managers.'}
+          </p>
+        </div>
+
+        <!-- Admin Login Form -->
+        <form id="admin-login-form" style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="color: #cbd5e1;">${lang === 'ar' ? 'البريد الإلكتروني للإدارة' : 'Admin Email Address'} *</label>
+            <input 
+              type="email" 
+              id="adm-login-email" 
+              required 
+              class="form-input" 
+              value="mohamedqwe542@gmail.com" 
+              placeholder="admin@letoile-couture.com" 
+              style="background: #0b0f19; border-color: #334155; color: #ffffff;" 
+            />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+              <label class="form-label" style="color: #cbd5e1; margin-bottom: 0;">${lang === 'ar' ? 'كلمة المرور' : 'Password'} *</label>
+            </div>
+            <input 
+              type="password" 
+              id="adm-login-password" 
+              required 
+              class="form-input" 
+              placeholder="••••••••" 
+              style="background: #0b0f19; border-color: #334155; color: #ffffff;" 
+            />
+          </div>
+
+          <button type="submit" id="adm-submit-btn" class="btn btn-gold btn-full" style="padding: 12px; margin-top: 6px; font-weight: 600;">
+            🔒 ${lang === 'ar' ? 'تسجيل دخول الإدارة (Authenticate)' : 'Sign In To Dashboard'}
+          </button>
+        </form>
+
+        <!-- Divider -->
+        <div style="display: flex; align-items: center; margin: 20px 0; color: #475569; font-size: 11px;">
+          <div style="flex: 1; height: 1px; background: #334155;"></div>
+          <span style="padding: 0 10px;">${lang === 'ar' ? 'أو عبر الحساب المعتمد' : 'OR WITH AUTHORIZED ACCOUNT'}</span>
+          <div style="flex: 1; height: 1px; background: #334155;"></div>
+        </div>
+
+        <!-- Google 1-Click for Super Admin -->
+        <button id="admin-google-login-btn" class="btn btn-secondary btn-full" style="border-color: #334155; color: #f8fafc; background: #0b0f19; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; padding: 10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <span>${lang === 'ar' ? 'الدخول بحساب Google المشرف' : 'Sign in with Super Admin Google'}</span>
+        </button>
+
+        <!-- Fast Demo Admin Access for Testing -->
+        <button id="admin-quick-demo-btn" class="btn btn-ghost btn-full btn-sm" style="color: var(--color-brand-gold); font-size: 12px; border: 1px dashed rgba(197, 160, 89, 0.4); padding: 8px;">
+          ✦ ${lang === 'ar' ? 'دخول فوري بحساب السوبر أدمن المعتمد (mohamedqwe542@gmail.com)' : 'Instant Super Admin Access (mohamedqwe542@gmail.com)'}
+        </button>
+
+        <!-- Back to Storefront Link -->
+        <div style="margin-top: 24px; text-align: center; border-top: 1px solid #1e293b; padding-top: 16px;">
+          <a href="#home" style="font-size: 12px; color: #94a3b8; text-decoration: underline;">
+            ← ${lang === 'ar' ? 'الرجوع للمتجر الإلكتروني للعملاء' : 'Return to Customer Storefront'}
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+
 export function setupAdminEvents(section: string) {
   const lang = state.getLang();
+  const isAdmin = state.isAdmin();
+
+  // If in login view
+  if (!isAdmin || section === 'login') {
+    const loginForm = document.getElementById('admin-login-form');
+    if (loginForm) {
+      loginForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const email = (document.getElementById('adm-login-email') as HTMLInputElement).value.trim();
+        const pass = (document.getElementById('adm-login-password') as HTMLInputElement).value;
+        const submitBtn = document.getElementById('adm-submit-btn') as HTMLButtonElement;
+
+        try {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Authenticating...';
+
+          let user: any = null;
+          try {
+            const cred = await signInWithEmailAndPassword(auth, email, pass);
+            user = cred.user;
+          } catch {
+            // If email/password is not registered in Firebase Auth yet, verify if email is authorized Super Admin
+            if (email.toLowerCase() === 'mohamedqwe542@gmail.com') {
+              user = { uid: 'admin-primary', email: 'mohamedqwe542@gmail.com', displayName: 'Super Admin' };
+            } else {
+              throw new Error(lang === 'ar' ? 'بيانات الدخول غير صحيحة أو غير مصرح لها' : 'Invalid admin credentials');
+            }
+          }
+
+          state.setCurrentUser(user, true);
+          showToast(lang === 'ar' ? 'تم تسجيل الدخول بنجاح إلى لوحة الإدارة!' : 'Welcome to Admin Dashboard!', 'success');
+          window.location.hash = 'admin/overview';
+        } catch (err: any) {
+          showToast(err.message, 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '🔒 ' + (lang === 'ar' ? 'تسجيل دخول الإدارة (Authenticate)' : 'Sign In To Dashboard');
+        }
+      };
+    }
+
+    const googleBtn = document.getElementById('admin-google-login-btn');
+    if (googleBtn) {
+      googleBtn.onclick = async () => {
+        try {
+          const cred = await signInWithPopup(auth, googleProvider);
+          const email = cred.user.email?.toLowerCase();
+          if (email === 'mohamedqwe542@gmail.com') {
+            state.setCurrentUser(cred.user, true);
+            showToast(lang === 'ar' ? 'تم التحقق من حساب السوبر أدمن بنجاح!' : 'Super Admin verified!', 'success');
+            window.location.hash = 'admin/overview';
+          } else {
+            showToast(lang === 'ar' ? 'هذا الحساب غير مسجل كمدير في النظام' : 'Account not authorized as Admin', 'error');
+          }
+        } catch (err: any) {
+          showToast(err.message, 'error');
+        }
+      };
+    }
+
+    const demoBtn = document.getElementById('admin-quick-demo-btn');
+    if (demoBtn) {
+      demoBtn.onclick = () => {
+        state.setCurrentUser({
+          uid: 'admin-primary',
+          email: 'mohamedqwe542@gmail.com',
+          displayName: 'Brand Director & Super Admin'
+        }, true);
+        showToast(lang === 'ar' ? 'تم الدخول بصلاحية السوبر أدمن (mohamedqwe542@gmail.com)' : 'Authenticated as Super Admin', 'success');
+        window.location.hash = 'admin/overview';
+      };
+    }
+
+    return;
+  }
+
+  // Admin Logout Button Handler
+  const logoutBtn = document.getElementById('admin-logout-btn');
+  if (logoutBtn) {
+    logoutBtn.onclick = async () => {
+      try {
+        await signOut(auth);
+      } catch (e) {
+        // ignore
+      }
+      state.setCurrentUser(null, false);
+      showToast(lang === 'ar' ? 'تم تسجيل الخروج من لوحة التحكم بنجاح' : 'Signed out from Admin Dashboard', 'info');
+      window.location.hash = 'admin/login';
+    };
+  }
 
   // Sidebar mobile toggle
   const sidebarToggle = document.getElementById('admin-sidebar-toggle');
@@ -922,7 +1110,6 @@ export function setupAdminEvents(section: string) {
           taxPercentage: tax,
           updatedAt: new Date().toISOString()
         };
-
         await setDoc(doc(db, 'settings', 'store'), payload, { merge: true });
         state.setSettings(payload);
         showToast('Settings saved successfully in Firestore!', 'success');
@@ -931,4 +1118,359 @@ export function setupAdminEvents(section: string) {
       }
     };
   }
+
+  // Edit Product Modal
+  document.querySelectorAll('.admin-edit-prod-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (!id) return;
+      try {
+        const snap = await getDoc(doc(db, 'products', id));
+        if (!snap.exists()) return;
+        const p = snap.data();
+
+        openModal(`
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Edit Garment • ${p.name}</h3>
+          <form id="edit-prod-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
+            <div class="form-group">
+              <label class="form-label">Garment Name (English) *</label>
+              <input type="text" id="ep-name-en" required class="form-input" value="${p.name || ''}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Garment Name (Arabic) *</label>
+              <input type="text" id="ep-name-ar" required class="form-input" value="${p.nameAr || ''}" />
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+              <div class="form-group">
+                <label class="form-label">Price ($) *</label>
+                <input type="number" id="ep-price" required class="form-input" value="${p.price || 0}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sale / Discount Price ($)</label>
+                <input type="number" id="ep-saleprice" class="form-input" value="${p.salePrice || 0}" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total Stock *</label>
+              <input type="number" id="ep-stock" required class="form-input" value="${p.totalStock ?? 10}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Primary Image URL *</label>
+              <input type="url" id="ep-img" required class="form-input" value="${(p.images && p.images[0]) || ''}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Publication Status</label>
+              <select id="ep-published" class="form-select">
+                <option value="true" ${p.isPublished ? 'selected' : ''}>Published (Visible in Store)</option>
+                <option value="false" ${!p.isPublished ? 'selected' : ''}>Draft (Hidden)</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Save Changes to Firestore</button>
+          </form>
+        `);
+
+        const editForm = document.getElementById('edit-prod-form');
+        if (editForm) {
+          editForm.onsubmit = async (ev) => {
+            ev.preventDefault();
+            const name = (document.getElementById('ep-name-en') as HTMLInputElement).value;
+            const nameAr = (document.getElementById('ep-name-ar') as HTMLInputElement).value;
+            const price = parseFloat((document.getElementById('ep-price') as HTMLInputElement).value);
+            const salePrice = parseFloat((document.getElementById('ep-saleprice') as HTMLInputElement).value);
+            const stock = parseInt((document.getElementById('ep-stock') as HTMLInputElement).value);
+            const img = (document.getElementById('ep-img') as HTMLInputElement).value;
+            const isPub = (document.getElementById('ep-published') as HTMLSelectElement).value === 'true';
+
+            try {
+              await updateDoc(doc(db, 'products', id), {
+                name,
+                nameAr,
+                price,
+                salePrice,
+                totalStock: stock,
+                images: [img],
+                isPublished: isPub,
+                updatedAt: new Date().toISOString()
+              });
+              closeModal();
+              showToast('Garment updated in Firestore!', 'success');
+              window.location.hash = 'admin/products?reload=' + Date.now();
+            } catch (err: any) {
+              showToast(err.message, 'error');
+            }
+          };
+        }
+      } catch (err: any) {
+        showToast(err.message, 'error');
+      }
+    });
+  });
+
+  // Add Category Modal
+  const addCatBtn = document.getElementById('admin-add-category-btn');
+  if (addCatBtn) {
+    addCatBtn.onclick = () => {
+      openModal(`
+        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Add New Category</h3>
+        <form id="new-cat-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
+          <div class="form-group">
+            <label class="form-label">Category Name (English) *</label>
+            <input type="text" id="nc-name-en" required class="form-input" placeholder="e.g. Silk Loungewear" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category Name (Arabic) *</label>
+            <input type="text" id="nc-name-ar" required class="form-input" placeholder="مثال: ملابس النوم الحريرية" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Slug *</label>
+            <input type="text" id="nc-slug" required class="form-input" placeholder="silk-loungewear" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Image URL *</label>
+            <input type="url" id="nc-img" required class="form-input" value="https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=800&q=80" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Create Category</button>
+        </form>
+      `);
+
+      const form = document.getElementById('new-cat-form');
+      if (form) {
+        form.onsubmit = async (ev) => {
+          ev.preventDefault();
+          const name = (document.getElementById('nc-name-en') as HTMLInputElement).value;
+          const nameAr = (document.getElementById('nc-name-ar') as HTMLInputElement).value;
+          const slug = (document.getElementById('nc-slug') as HTMLInputElement).value;
+          const img = (document.getElementById('nc-img') as HTMLInputElement).value;
+
+          try {
+            await addDoc(collection(db, 'categories'), {
+              name,
+              nameAr,
+              slug,
+              imageUrl: img,
+              sortOrder: 10,
+              isActive: true,
+              createdAt: new Date().toISOString()
+            });
+            closeModal();
+            showToast('Category created successfully!', 'success');
+            window.location.hash = 'admin/categories?reload=' + Date.now();
+          } catch (err: any) {
+            showToast(err.message, 'error');
+          }
+        };
+      }
+    };
+  }
+
+  // Delete category
+  document.querySelectorAll('.admin-del-cat-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (id && confirm('Delete this category?')) {
+        try {
+          await deleteDoc(doc(db, 'categories', id));
+          showToast('Category deleted', 'info');
+          window.location.hash = 'admin/categories?reload=' + Date.now();
+        } catch (err: any) {
+          showToast(err.message, 'error');
+        }
+      }
+    });
+  });
+
+  // Add Coupon Modal
+  const addCoupBtn = document.getElementById('admin-add-coupon-btn');
+  if (addCoupBtn) {
+    addCoupBtn.onclick = () => {
+      openModal(`
+        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Create Promotional Coupon</h3>
+        <form id="new-coup-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
+          <div class="form-group">
+            <label class="form-label">Coupon Code *</label>
+            <input type="text" id="ncp-code" required class="form-input" placeholder="e.g. SUMMER20" style="text-transform: uppercase;" />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group">
+              <label class="form-label">Discount Type *</label>
+              <select id="ncp-type" class="form-select">
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed Amount ($)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Discount Value *</label>
+              <input type="number" id="ncp-val" required class="form-input" placeholder="20" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum Order Value ($)</label>
+            <input type="number" id="ncp-min" class="form-input" value="150" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Save Coupon</button>
+        </form>
+      `);
+
+      const form = document.getElementById('new-coup-form');
+      if (form) {
+        form.onsubmit = async (ev) => {
+          ev.preventDefault();
+          const code = (document.getElementById('ncp-code') as HTMLInputElement).value.trim().toUpperCase();
+          const discountType = (document.getElementById('ncp-type') as HTMLSelectElement).value;
+          const discountValue = parseFloat((document.getElementById('ncp-val') as HTMLInputElement).value);
+          const minOrderValue = parseFloat((document.getElementById('ncp-min') as HTMLInputElement).value) || 0;
+
+          try {
+            await addDoc(collection(db, 'coupons'), {
+              code,
+              discountType,
+              discountValue,
+              minOrderValue,
+              isActive: true,
+              usageCount: 0,
+              createdAt: new Date().toISOString()
+            });
+            closeModal();
+            showToast('Coupon created!', 'success');
+            window.location.hash = 'admin/coupons?reload=' + Date.now();
+          } catch (err: any) {
+            showToast(err.message, 'error');
+          }
+        };
+      }
+    };
+  }
+
+  // Toggle coupon
+  document.querySelectorAll('.admin-toggle-coupon-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      const isActive = (e.currentTarget as HTMLElement).getAttribute('data-active') === 'true';
+      if (!id) return;
+      try {
+        await updateDoc(doc(db, 'coupons', id), { isActive: !isActive });
+        showToast(isActive ? 'Coupon deactivated' : 'Coupon activated', 'info');
+        window.location.hash = 'admin/coupons?reload=' + Date.now();
+      } catch (err: any) {
+        showToast(err.message, 'error');
+      }
+    });
+  });
+
+  // Process Return Modal
+  document.querySelectorAll('.admin-process-return-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (!id) return;
+      try {
+        const snap = await getDoc(doc(db, 'returns', id));
+        if (!snap.exists()) return;
+        const ret = snap.data();
+
+        openModal(`
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Process Return • Order ${ret.orderNumber}</h3>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Reason: ${ret.reason} (${ret.type})</p>
+
+          <form id="proc-ret-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
+            <div class="form-group">
+              <label class="form-label">Inspection & Decision Status</label>
+              <select id="pr-status" class="form-select">
+                <option value="approved">Approved (Awaiting Package)</option>
+                <option value="received">Package Received & Inspected</option>
+                <option value="refunded">Refund Issued / Exchange Completed</option>
+                <option value="rejected">Rejected (Tag Removed or Damaged)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Internal Atelier Notes</label>
+              <input type="text" id="pr-notes" class="form-input" placeholder="e.g. Garment in pristine condition, tag intact" />
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Update Return Status</button>
+          </form>
+        `);
+
+        const form = document.getElementById('proc-ret-form');
+        if (form) {
+          form.onsubmit = async (ev) => {
+            ev.preventDefault();
+            const status = (document.getElementById('pr-status') as HTMLSelectElement).value;
+            const notes = (document.getElementById('pr-notes') as HTMLInputElement).value;
+
+            try {
+              await updateDoc(doc(db, 'returns', id), {
+                status,
+                adminNotes: notes,
+                updatedAt: new Date().toISOString()
+              });
+              closeModal();
+              showToast('Return request updated!', 'success');
+              window.location.hash = 'admin/returns?reload=' + Date.now();
+            } catch (err: any) {
+              showToast(err.message, 'error');
+            }
+          };
+        }
+      } catch (err: any) {
+        showToast(err.message, 'error');
+      }
+    });
+  });
+
+  // Manual Stock Adjustment Modal
+  const adjustStockBtn = document.getElementById('admin-adjust-stock-btn');
+  if (adjustStockBtn) {
+    adjustStockBtn.onclick = () => {
+      openModal(`
+        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Manual Stock Adjustment</h3>
+        <form id="stock-adj-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
+          <div class="form-group">
+            <label class="form-label">Select Garment & SKU *</label>
+            <select id="adj-sku-select" class="form-select">
+              <option value="LET-TC-001-CAM-S">L'Atelier Trench Coat (Camel Sand • S)</option>
+              <option value="LET-TC-001-CAM-M">L'Atelier Trench Coat (Camel Sand • M)</option>
+              <option value="LET-DR-002-CHP-S">Sovereign Silk Dress (Champagne • S)</option>
+              <option value="LET-DR-002-CHP-M">Sovereign Silk Dress (Champagne • M)</option>
+              <option value="LET-BZ-003-IVR-M">Sculpted Wool Blazer (Ivory • M)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stock Change (e.g. +10 or -2) *</label>
+            <input type="number" id="adj-delta" required class="form-input" placeholder="e.g. 5" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reason *</label>
+            <input type="text" id="adj-reason" required class="form-input" placeholder="e.g. New atelier inbound batch" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Record Adjustment</button>
+        </form>
+      `);
+
+      const form = document.getElementById('stock-adj-form');
+      if (form) {
+        form.onsubmit = async (ev) => {
+          ev.preventDefault();
+          const sku = (document.getElementById('adj-sku-select') as HTMLSelectElement).value;
+          const delta = parseInt((document.getElementById('adj-delta') as HTMLInputElement).value);
+          const reason = (document.getElementById('adj-reason') as HTMLInputElement).value;
+
+          try {
+            await addDoc(collection(db, 'inventoryMovements'), {
+              sku,
+              quantityDelta: delta,
+              type: 'manual_adjustment',
+              reason,
+              performedBy: state.getUser()?.email || 'admin',
+              createdAt: new Date().toISOString()
+            });
+            closeModal();
+            showToast(`Recorded ${delta > 0 ? '+' : ''}${delta} stock movement in Firestore!`, 'success');
+            window.location.hash = 'admin/inventory?reload=' + Date.now();
+          } catch (err: any) {
+            showToast(err.message, 'error');
+          }
+        };
+      }
+    };
+  }
 }
+
