@@ -616,7 +616,7 @@ app.get('/api/admin/data', async (_req: Request, res: Response) => {
       // Local persistent JSON storage and memory cache are the primary source for backend orders
     }
 
-    const [productsSnap, categoriesSnap, returnsSnap, couponsSnap, reviewsSnap, shippingZonesSnap, movementsSnap, mediaSnap, settingsSnap] = await Promise.all([
+    const [productsSnap, categoriesSnap, returnsSnap, couponsSnap, reviewsSnap, shippingZonesSnap, movementsSnap, mediaSnap, pagesSnap, settingsSnap] = await Promise.all([
       getDocs(collection(db, 'products')).catch(() => ({ docs: [] })),
       getDocs(collection(db, 'categories')).catch(() => ({ docs: [] })),
       getDocs(collection(db, 'returns')).catch(() => ({ docs: [] })),
@@ -625,6 +625,7 @@ app.get('/api/admin/data', async (_req: Request, res: Response) => {
       getDocs(collection(db, 'shippingZones')).catch(() => ({ docs: [] })),
       getDocs(query(collection(db, 'inventoryMovements'), limit(50))).catch(() => ({ docs: [] })),
       getDocs(collection(db, 'media')).catch(() => ({ docs: [] })),
+      getDocs(collection(db, 'pages')).catch(() => ({ docs: [] })),
       getDoc(doc(db, 'settings', 'store')).catch(() => null)
     ]);
 
@@ -638,6 +639,7 @@ app.get('/api/admin/data', async (_req: Request, res: Response) => {
       shippingZones: shippingZonesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() })),
       inventoryMovements: movementsSnap.docs.map((d: any) => ({ id: d.id, ...d.data() })),
       mediaItems: mediaSnap.docs.map((d: any) => ({ id: d.id, ...d.data() })),
+      pages: pagesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() })),
       settings: (settingsSnap && (settingsSnap as any).exists && (settingsSnap as any).exists()) ? (settingsSnap as any).data() : null
     };
 
@@ -645,6 +647,23 @@ app.get('/api/admin/data', async (_req: Request, res: Response) => {
   } catch (err: any) {
     console.error('Error fetching admin data in server:', err);
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin Authentication API (Strict Credentials)
+app.get('/api/admin/orders/:orderId', async (req: Request, res: Response) => {
+  try {
+    const orderId = decodeURIComponent(req.params.orderId);
+    const orderSnap = await getDoc(doc(db, 'orders', orderId)).catch(() => null);
+    if (orderSnap?.exists()) {
+      return res.json({ success: true, order: { id: orderSnap.id, ...orderSnap.data() } });
+    }
+    const storedOrder = loadStoredOrders().find((order: any) => order.id === orderId || order.orderNumber === orderId);
+    if (!storedOrder) return res.status(404).json({ success: false, message: 'لم يتم العثور على الطلب' });
+    return res.json({ success: true, order: storedOrder });
+  } catch (err: any) {
+    console.error('Admin order details lookup failed', err);
+    return res.status(500).json({ success: false, message: err.message || 'تعذر تحميل تفاصيل الطلب' });
   }
 });
 
@@ -679,19 +698,21 @@ app.post('/api/auth/admin-login', async (req: Request, res: Response) => {
 // Admin Update Order Status with auto cancellation restock
 app.post('/api/orders/update-status', async (req: Request, res: Response) => {
   try {
-    const { orderId, newStatus, note = '', trackingNumber = '', adminEmail = 'admin' } = req.body;
+    const { orderId, newStatus, note = '', trackingNumber = '', adminEmail = 'admin', customerName, customerPhone, customerEmail, shippingAddress } = req.body;
     if (!orderId || !newStatus) {
       return res.status(400).json({ success: false, message: 'Missing orderId or newStatus' });
     }
 
     const orderRef = doc(db, 'orders', orderId);
-    const orderSnap = await getDoc(orderRef);
+    const orderSnap = await getDoc(orderRef).catch(() => null);
+    const isFirestoreOrder = !!orderSnap?.exists();
+    const storedOrders = loadStoredOrders();
+    const storedIndex = storedOrders.findIndex((item: any) => item.id === orderId || item.orderNumber === orderId);
+    const order = isFirestoreOrder ? orderSnap!.data() : storedIndex >= 0 ? storedOrders[storedIndex] : null;
 
-    if (!orderSnap.exists()) {
+    if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
-
-    const order = orderSnap.data();
     const oldStatus = order.status;
 
     // If changing to cancelled from an active state, restock items
@@ -744,22 +765,24 @@ app.post('/api/orders/update-status', async (req: Request, res: Response) => {
       updatedAt: new Date().toISOString()
     };
 
-    if (trackingNumber) {
-      updatePayload.trackingNumber = trackingNumber;
-    }
+    updatePayload.trackingNumber = trackingNumber;
+    if (customerName !== undefined) updatePayload.customerName = customerName;
+    if (customerPhone !== undefined) updatePayload.customerPhone = customerPhone;
+    if (customerEmail !== undefined) updatePayload.customerEmail = customerEmail;
+    if (shippingAddress !== undefined) updatePayload.shippingAddress = shippingAddress;
 
-    await updateDoc(orderRef, updatePayload);
+    if (isFirestoreOrder) await updateDoc(orderRef, updatePayload);
 
     // Sync persistent stored orders and cache
     try {
-      const stored = loadStoredOrders();
-      const idx = stored.findIndex((o: any) => o.id === orderId || o.orderNumber === order.orderNumber);
-      if (idx !== -1) {
-        stored[idx] = { ...stored[idx], ...updatePayload };
-        saveStoredOrders(stored);
-        if (stored[idx].orderNumber) {
-          recentOrdersCache.set(stored[idx].orderNumber.toString().trim().toUpperCase(), stored[idx]);
+      if (storedIndex !== -1) {
+        storedOrders[storedIndex] = { ...storedOrders[storedIndex], ...updatePayload };
+        saveStoredOrders(storedOrders);
+        if (storedOrders[storedIndex].orderNumber) {
+          recentOrdersCache.set(storedOrders[storedIndex].orderNumber.toString().trim().toUpperCase(), storedOrders[storedIndex]);
         }
+      } else if (!isFirestoreOrder) {
+        return res.status(404).json({ success: false, message: 'Order not found in persistent storage' });
       }
     } catch (storageErr) {
       console.error('Error syncing order update to storage', storageErr);

@@ -43,6 +43,21 @@ export interface StoreSettings {
   heroCtaText: string;
   heroCtaTextAr: string;
   heroCtaLink: string;
+  headerLogoUrl?: string;
+  footerLogoUrl?: string;
+  heroImageMobileUrl?: string;
+  heroCtaSecondaryText?: string;
+  heroCtaSecondaryTextAr?: string;
+  heroCtaSecondaryLink?: string;
+  heroTagline?: string;
+  heroTaglineAr?: string;
+  heroTaglineActive?: boolean;
+  heroTitleActive?: boolean;
+  heroSubtitleActive?: boolean;
+  heroCtaPrimaryActive?: boolean;
+  heroCtaSecondaryActive?: boolean;
+  heroOverlayActive?: boolean;
+  siteContent?: Record<string, string>;
   socialInstagram: string;
   socialFacebook: string;
   socialTiktok: string;
@@ -62,7 +77,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   announcementBarText: "Complimentary shipping across Egypt on orders over 1,500 EGP — Use Code: EIGHTY10",
   announcementBarTextAr: "شحن مجاني لجميع محافظات مصر للطلبات فوق 1,500 ج.م — كود الخصم: EIGHTY10",
   announcementBarActive: true,
-  announcementBarBgColor: "#000000",
+  announcementBarBgColor: "#15803d",
   taxPercentage: 0,
   enableTax: false,
   freeShippingThreshold: 1500,
@@ -75,6 +90,19 @@ const DEFAULT_SETTINGS: StoreSettings = {
   heroCtaText: "Shop Collection",
   heroCtaTextAr: "استكشف الكولكشن الآن",
   heroCtaLink: "#shop",
+  heroImageMobileUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=900&h=1200&q=85",
+  heroCtaSecondaryText: "Explore Streetwear",
+  heroCtaSecondaryTextAr: "اكتشف المجموعة",
+  heroCtaSecondaryLink: "#shop",
+  heroTagline: "Atelier Runway Edition • Autumn/Winter",
+  heroTaglineAr: "المجموعة الحصرية • خريف وشتاء",
+  heroTaglineActive: true,
+  heroTitleActive: true,
+  heroSubtitleActive: true,
+  heroCtaPrimaryActive: true,
+  heroCtaSecondaryActive: true,
+  heroOverlayActive: true,
+  siteContent: {},
   socialInstagram: "https://instagram.com/eightyeight_eg",
   socialFacebook: "https://facebook.com/eightyeight.eg",
   socialTiktok: "https://tiktok.com/@eightyeight.eg"
@@ -236,6 +264,7 @@ export const translations = {
 
 class StateManager {
   private lang: 'ar' | 'en' = 'ar';
+  private theme: 'light' | 'dark' = 'light';
   private cart: CartItem[] = [];
   private wishlist: string[] = []; // product IDs
   private settings: StoreSettings = DEFAULT_SETTINGS;
@@ -254,6 +283,8 @@ class StateManager {
       if (savedLang === 'en' || savedLang === 'ar') {
         this.lang = savedLang;
       }
+      const savedTheme = localStorage.getItem('letoile_theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') this.theme = savedTheme;
       this.updateHtmlDir();
 
       const savedCart = localStorage.getItem('letoile_cart');
@@ -283,6 +314,7 @@ class StateManager {
   private updateHtmlDir() {
     document.documentElement.lang = this.lang;
     document.documentElement.dir = this.lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dataset.theme = this.theme;
   }
 
   public subscribe(listener: () => void) {
@@ -310,6 +342,17 @@ class StateManager {
     this.notify();
   }
 
+  public getTheme(): 'light' | 'dark' {
+    return this.theme;
+  }
+
+  public setTheme(newTheme: 'light' | 'dark') {
+    this.theme = newTheme;
+    localStorage.setItem('letoile_theme', newTheme);
+    this.updateHtmlDir();
+    this.notify();
+  }
+
   public t(key: keyof typeof translations.ar): string {
     return translations[this.lang][key] || key;
   }
@@ -320,8 +363,16 @@ class StateManager {
   }
 
   public setSettings(newSettings: Partial<StoreSettings>) {
-    this.settings = { ...this.settings, ...newSettings };
+    this.settings = {
+      ...this.settings,
+      ...newSettings,
+      siteContent: { ...(this.settings.siteContent || {}), ...(newSettings.siteContent || {}) }
+    };
     this.notify();
+  }
+
+  public getSiteText(key: string, fallback: string): string {
+    return this.settings.siteContent?.[key] ?? fallback;
   }
 
   // Price & Currency Formatter (Egyptian Pound EGP)

@@ -47,7 +47,7 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
       
       <!-- Material 3 Header Section -->
       <div style="text-align: center; margin-bottom: 32px;">
-        <div style="display: inline-flex; align-items: center; gap: 8px; background: #e0e7ff; color: #3730a3; padding: 6px 16px; border-radius: 9999px; font-size: 13px; font-weight: 700; margin-bottom: 12px;">
+        <div style="display: inline-flex; align-items: center; gap: 8px; background: #dcfce7; color: #166534; padding: 6px 16px; border-radius: 9999px; font-size: 13px; font-weight: 700; margin-bottom: 12px;">
           <span><i class="fa-solid fa-box" aria-hidden="true"></i></span>
           <span>${lang === 'ar' ? 'خدمة المتابعة والشحن المباشر' : 'Live Order Tracking'}</span>
         </div>

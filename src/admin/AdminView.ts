@@ -63,6 +63,7 @@ interface AdminCache {
   shippingZones: any[];
   inventoryMovements: any[];
   mediaItems: any[];
+  pages: any[];
   settings: any;
 }
 let adminCache: AdminCache | null = null;
@@ -96,6 +97,162 @@ function buildProductVariants(sku: string, sizes: string[], colors: Array<{ name
   }));
 }
 
+const CMS_CONTENT_GROUPS: Array<{ title: string; fields: Array<{ key: string; label: string; fallback: string; multiline?: boolean }> }> = [
+  { title: 'الهيدر والتنقل', fields: [
+    { key: 'header.tagline.ar', label: 'وصف البراند في القائمة (عربي)', fallback: 'ستريت وير مصري معاصر' },
+    { key: 'header.tagline.en', label: 'وصف البراند في القائمة (إنجليزي)', fallback: 'Contemporary Egyptian streetwear' },
+    ...(['home', 'shop', 'new', 'best', 'track', 'about'] as const).flatMap((name, i) => {
+      const labels = [
+        ['الرئيسية', 'Home'], ['المتجر والمنتجات', 'Shop'], ['وصل حديثاً', 'New Arrivals'],
+        ['الأكثر مبيعاً', 'Best Sellers'], ['تتبع شحنتك', 'Track Order'], ['عن البراند', 'About']
+      ][i];
+      return [
+        { key: `header.nav.${name}.ar`, label: `اسم رابط الهيدر ${labels[0]} (عربي)`, fallback: labels[0] },
+        { key: `header.nav.${name}.en`, label: `اسم رابط الهيدر ${labels[1]} (إنجليزي)`, fallback: labels[1] },
+        { key: `header.nav.${name}.href`, label: `رابط الهيدر ${labels[0]}`, fallback: ['#home', '#shop', '#shop?filter=new', '#shop?filter=bestseller', '#track', '#page/about'][i] }
+      ];
+    }),
+    { key: 'header.mobile.navigation.ar', label: 'عنوان قائمة الموبايل (عربي)', fallback: 'التنقل الرئيسي' },
+    { key: 'header.mobile.navigation.en', label: 'عنوان قائمة الموبايل (إنجليزي)', fallback: 'Navigation' },
+    { key: 'header.mobile.collections.ar', label: 'عنوان تصنيفات الموبايل (عربي)', fallback: 'أقسام الكولكشن' },
+    { key: 'header.mobile.collections.en', label: 'عنوان تصنيفات الموبايل (إنجليزي)', fallback: 'Collections' },
+    { key: 'header.mobile.customerCare.ar', label: 'عنوان خدمة العملاء (عربي)', fallback: 'خدمة العملاء وحسابي' },
+    { key: 'header.mobile.customerCare.en', label: 'عنوان خدمة العملاء (إنجليزي)', fallback: 'Customer Care' },
+    ...(['all', 'one', 'two', 'three', 'four'] as const).flatMap((name, i) => {
+      const labels = [['الكل', 'All'], ['هوديز وسويت شيرت', 'Hoodies & Sweatshirts'], ['تيشيرتات وبولو', 'T-Shirts & Polos'], ['بنطلونات وكارجو', 'Pants & Cargo'], ['كابات وإكسسوارات', 'Caps & Accessories']][i];
+      return [
+        { key: `header.category.${name}.ar`, label: `تصنيف الهيدر ${i + 1} (عربي)`, fallback: labels[0] },
+        { key: `header.category.${name}.en`, label: `تصنيف الهيدر ${i + 1} (إنجليزي)`, fallback: labels[1] },
+        { key: `header.category.${name}.href`, label: `رابط تصنيف الهيدر ${i + 1}`, fallback: '#shop' }
+      ];
+    }),
+    ...([
+      ['account', 'حسابي', 'Account', '#account'], ['wishlist', 'المفضلة', 'Wishlist', '#account?tab=wishlist'],
+      ['size', 'دليل المقاسات', 'Size Guide', '#page/size-guide'], ['shipping', 'الشحن والتوصيل للمحافظات', 'Shipping Policy', '#page/shipping-policy'],
+      ['returns', 'الاسترجاع والاستبدال (14 يوم)', 'Returns & Exchange', '#page/returns-policy'], ['about', 'عن البراند', 'About', '#page/about']
+    ] as const).flatMap(([name, ar, en, href]) => [
+      { key: `header.mobile.${name}.ar`, label: `رابط الموبايل: ${ar} (عربي)`, fallback: ar },
+      { key: `header.mobile.${name}.en`, label: `رابط الموبايل: ${ar} (إنجليزي)`, fallback: en },
+      { key: `header.mobile.${name}.href`, label: `رابط الموبايل: ${ar}`, fallback: href }
+    ]),
+    ...([
+      ['home', 'الرئيسية', 'Home', '#home'], ['shop', 'المتجر', 'Shop', '#shop'],
+      ['track', 'تتبع الشحنة', 'Track', '#track'], ['account', 'حسابي', 'Account', '#account'], ['cart', 'السلة', 'Cart', '#cart']
+    ] as const).flatMap(([name, ar, en, href]) => [
+      { key: `header.bottom.${name}.ar`, label: `شريط الموبايل السفلي ${ar} (عربي)`, fallback: ar },
+      { key: `header.bottom.${name}.en`, label: `شريط الموبايل السفلي ${ar} (إنجليزي)`, fallback: en },
+      { key: `header.bottom.${name}.href`, label: `رابط شريط الموبايل السفلي ${ar}`, fallback: href }
+    ]),
+    { key: 'header.whatsapp.ar', label: 'زر واتساب (عربي)', fallback: 'تواصل معنا واتساب مباشر' },
+    { key: 'header.whatsapp.en', label: 'زر واتساب (إنجليزي)', fallback: 'Chat with us on WhatsApp' }
+  ] },
+  { title: 'نصوص الصفحة الرئيسية والمزايا', fields: [
+    ...([1, 2, 3, 4] as const).flatMap((n) => [
+      { key: `home.pillar${n}.title.ar`, label: `الميزة ${n} — العنوان (عربي)`, fallback: ['خامات طبيعية نقية 100%', 'حرفية آتيليه يدوية', 'شحن سريع لجميع المحافظات', 'إرجاع واستبدال مجاني'][n - 1] },
+      { key: `home.pillar${n}.title.en`, label: `الميزة ${n} — العنوان (إنجليزي)`, fallback: ['Noble Fibers', 'Atelier Craft', 'Fast Express Across Egypt', '14-Day Returns'][n - 1] },
+      { key: `home.pillar${n}.description.ar`, label: `الميزة ${n} — الوصف (عربي)`, fallback: ['كشمير منغولي وحرير التوت الإيطالي', 'حياكة دقيقة وقصات باريسية متقنة', 'توصيل مجاني للطلبات فوق 1,500 ج.م', 'استبدال واسترجاع سلس بدون عناء'][n - 1] },
+      { key: `home.pillar${n}.description.en`, label: `الميزة ${n} — الوصف (إنجليزي)`, fallback: ['Mongolian cashmere & Mulberry silk', 'Parisian cuts & artisanal finishing', 'Free express on orders over 1,500 EGP', 'Effortless courier pick-up'][n - 1] }
+    ]),
+    ...([
+      ['collections.eyebrow', 'عنوان المجموعات الصغير', 'المجموعات والتصنيفات', 'The Curations'],
+      ['collections.title', 'عنوان المجموعات', 'المجموعات والتصنيفات الفاخرة', 'Signature Collections'],
+      ['collections.link', 'رابط جميع المجموعات', 'عرض كل التصنيفات ←', 'View All Collections →'],
+      ['collections.discover', 'رابط اكتشاف التصنيف', 'اكتشف القطع ←', 'Discover Pieces →'],
+      ['arrivals.eyebrow', 'عنوان المنتجات الجديدة الصغير', 'إبداعات الموسم', 'Runway Highlights'],
+      ['arrivals.description', 'وصف المنتجات الجديدة', 'قطع حصرية محدودة الإصدار تم قصها وتفصيلها بأعلى معايير الهوت كوتور.', 'Limited atelier pieces cut and hand-finished with timeless contemporary proportions.'],
+      ['arrivals.link', 'زر المنتجات الجديدة', 'استعراض كامل التشكيلة', 'View Full Ready-to-Wear'],
+      ['story.eyebrow', 'عنوان قصة البراند الصغير', 'فلسفة المتجر والإنتاج', 'The Brand Craft'],
+      ['story.title', 'عنوان قصة البراند', 'خياطة معمارية دقيقة لا تعترف بمرور الزمن', 'Sculptural Tailoring Built For A Lifetime'],
+      ['story.link', 'رابط قصة البراند', 'قراءة قصة المتجر الكاملة', 'Read Store Story'],
+      ['bestsellers.eyebrow', 'عنوان الأكثر مبيعاً الصغير', 'القطع الأيقونية', 'The Icons'],
+      ['bestsellers.link', 'رابط الأكثر مبيعاً', 'عرض الأكثر طلباً ←', 'View All Best Sellers'],
+      ['social.title', 'عنوان معرض الصور', 'إطلالات الكوتور في العالم', 'Worn Across The Globe'],
+      ['arrivals.title', 'عنوان قسم المنتجات الجديدة', 'وصل حديثاً', 'New Arrivals'],
+      ['bestsellers.title', 'عنوان قسم الأكثر مبيعاً', 'الأكثر مبيعاً', 'Best Sellers']
+    ] as const).flatMap(([name, label, ar, en]) => [
+      { key: `home.${name}.ar`, label: `${label} (عربي)`, fallback: ar },
+      { key: `home.${name}.en`, label: `${label} (إنجليزي)`, fallback: en }
+    ]),
+    { key: 'home.story.body1.ar', label: 'قصة البراند — الفقرة الأولى (عربي)', fallback: 'في براند EIGHTY-EIGHT، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على القطن المصري 100% الثقيل والمعالج لضمان الراحة التامة والمتانة الاستثنائية.', multiline: true },
+    { key: 'home.story.body1.en', label: 'قصة البراند — الفقرة الأولى (إنجليزي)', fallback: 'At EIGHTY-EIGHT, true streetwear luxury resides in the purity of proportion and the integrity of 100% premium Egyptian heavy cotton.', multiline: true },
+    { key: 'home.story.body2.ar', label: 'قصة البراند — الفقرة الثانية (عربي)', fallback: 'كل تصميم يخضع لعشرات الساعات من التعديل اليدوي للتأكد من انسيابيته مع حركة الجسد.', multiline: true },
+    { key: 'home.story.body2.en', label: 'قصة البراند — الفقرة الثانية (إنجليزي)', fallback: 'Every piece undergoes rigorous hand draping and tailoring to guarantee an effortless fluid drape.', multiline: true },
+    { key: 'home.story.imageAlt.ar', label: 'وصف صورة قصة البراند (عربي)', fallback: 'قصة وحرفية البراند' },
+    { key: 'home.story.imageAlt.en', label: 'وصف صورة قصة البراند (إنجليزي)', fallback: 'Atelier Craft' },
+    { key: 'home.social.handle', label: 'اسم حساب التواصل في معرض الصور', fallback: '@letoile_official' },
+    { key: 'home.story.image', label: 'رابط صورة قصة البراند', fallback: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=85' },
+    { key: 'home.collections.link.href', label: 'رابط جميع التصنيفات في الرئيسية', fallback: '#shop' },
+    { key: 'home.arrivals.link.href', label: 'رابط زر التشكيلة الجديدة', fallback: '#shop' },
+    { key: 'home.story.link.href', label: 'رابط قصة البراند في الرئيسية', fallback: '#page/about' },
+    { key: 'home.bestsellers.link.href', label: 'رابط الأكثر مبيعاً في الرئيسية', fallback: '#shop?filter=bestseller' },
+    ...([1, 2, 3, 4, 5] as const).map((i) => ({ key: `home.social.image.${i}`, label: `رابط صورة معرض التواصل ${i}`, fallback: [
+      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1548624149-f9b1859aa9d0?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=600&q=80'
+    ][i - 1] }))
+  ] },
+  { title: 'صفحات الموقع الثابتة', fields: [
+    { key: 'page.about.title.ar', label: 'عنوان صفحة عن البراند (عربي)', fallback: 'قصة المتجر والحرفية' },
+    { key: 'page.about.title.en', label: 'عنوان صفحة عن البراند (إنجليزي)', fallback: 'The EIGHTY-EIGHT Story' },
+    { key: 'page.about.content.ar', label: 'محتوى صفحة عن البراند (عربي)', fallback: 'تأسس متجر EIGHTY-EIGHT انطلاقاً من شغف استثنائي بنقاء خامات القطن المصري 100% ودقة الخطوط التصميمية لتصل بالستريت وير المصري إلى أعلى معايير الجودة العالمية. بنصمم كل قطعة بعناية فائقة لتجمع بين الفخامة والراحة والأناقة اليومية مع تقفيل دقيق يدوم طويلاً.', multiline: true },
+    { key: 'page.about.content.en', label: 'محتوى صفحة عن البراند (إنجليزي)', fallback: 'Founded with an uncompromising devotion to fabric integrity and architectural silhouettes, EIGHTY-EIGHT represents modern Egyptian streetwear elevated to luxury standards. Every garment is crafted from 100% combed heavy Egyptian cotton, engineered for lasting comfort and durability.', multiline: true },
+    { key: 'page.heading.ar', label: 'عنوان قسم صفحات المتجر (عربي)', fallback: 'صفحات ومعلومات المتجر' },
+    { key: 'page.heading.en', label: 'عنوان قسم صفحات المتجر (إنجليزي)', fallback: 'Store Documentation' },
+    { key: 'page.shopButton.ar', label: 'زر العودة للمتجر (عربي)', fallback: 'استعراض تشكيلة المتجر' },
+    { key: 'page.shopButton.en', label: 'زر العودة للمتجر (إنجليزي)', fallback: 'Explore Current Collection' },
+    { key: 'page.shopButton.href', label: 'رابط زر العودة للمتجر', fallback: '#shop' },
+    { key: 'page.whatsappButton.ar', label: 'زر واتساب بالصفحات (عربي)', fallback: 'محادثة خدمة عملاء المتجر (واتساب)' },
+    { key: 'page.whatsappButton.en', label: 'زر واتساب بالصفحات (إنجليزي)', fallback: 'Chat with Store Support (WhatsApp)' },
+    { key: 'page.whatsappButton.href', label: 'رابط زر واتساب بالصفحات', fallback: 'whatsapp' },
+    { key: 'page.notFound.ar', label: 'رسالة الصفحة غير الموجودة (عربي)', fallback: 'الصفحة غير موجودة' },
+    { key: 'page.notFound.en', label: 'رسالة الصفحة غير الموجودة (إنجليزي)', fallback: 'Page Not Found' }
+  ] },
+  { title: 'الفوتر والتواصل', fields: [
+    { key: 'footer.brandDescription.ar', label: 'وصف البراند في الفوتر (عربي)', fallback: 'براند أزياء مصري عصري بخامات قطن مصري 100% وتصميمات عصرية راقية تجمع بين الراحة والفخامة اليومية.', multiline: true },
+    { key: 'footer.brandDescription.en', label: 'وصف البراند في الفوتر (إنجليزي)', fallback: 'Contemporary Egyptian streetwear & fashion crafted from noble 100% Egyptian cotton fibers.', multiline: true },
+    ...([
+      ['collections.title', 'عنوان قسم التصنيفات', 'أقسام الكولكشن', 'Collections'],
+      ['care.title', 'عنوان خدمة العملاء', 'خدمة العملاء والسياسات', 'Client Care'],
+      ['newsletter.title', 'عنوان النشرة البريدية', 'انضم لنادي EIGHTY-EIGHT', 'Join EIGHTY-EIGHT'],
+      ['newsletter.description', 'وصف النشرة البريدية', 'اشترك لتصلك أحدث القطع قبل نزولها وكوبونات خصم حصرية للأعضاء.', 'Subscribe for exclusive runway drops, VIP discounts, and early access.'],
+      ['newsletter.placeholder', 'حقل البريد الإلكتروني', 'اكتب بريدك الإلكتروني...', 'Your email address...'],
+      ['newsletter.button', 'زر الاشتراك', 'اشتراك', 'Join']
+    ] as const).flatMap(([name, label, ar, en]) => [
+      { key: `footer.${name}.ar`, label: `${label} (عربي)`, fallback: ar },
+      { key: `footer.${name}.en`, label: `${label} (إنجليزي)`, fallback: en }
+    ]),
+    ...([
+      ['collections.all', 'جميع المنتجات', 'All Products', '#shop'],
+      ['collections.new', 'وصل حديثاً', 'New Arrivals', '#shop?filter=new'],
+      ['collections.best', 'الأكثر مبيعاً', 'Best Sellers', '#shop?filter=bestseller'],
+      ['collections.one', 'هوديز وسويت شيرت', 'Hoodies & Sweatshirts', '#shop'],
+      ['collections.two', 'تيشيرتات وبولو', 'T-Shirts & Polos', '#shop'],
+      ['collections.three', 'بنطلونات وكارجو', 'Pants & Cargo', '#shop'],
+      ['care.track', 'تتبع شحنتك', 'Track Order', '#track'],
+      ['care.size', 'دليل المقاسات', 'Size Guide', '#page/size-guide'],
+      ['care.shipping', 'الشحن والتوصيل لجميع المحافظات', 'Shipping in Egypt', '#page/shipping-policy'],
+      ['care.returns', 'الاستبدال والاسترجاع (14 يوم)', 'Returns & Exchange', '#page/returns-policy'],
+      ['care.about', 'عن البراند', 'About', '#page/about']
+    ] as const).flatMap(([key, ar, en, href]) => [
+      { key: `footer.${key}.ar`, label: `${ar} (عربي)`, fallback: ar },
+      { key: `footer.${key}.en`, label: `${ar} (إنجليزي)`, fallback: en },
+      { key: `footer.${key}.href`, label: `رابط: ${ar}`, fallback: href }
+    ]),
+    { key: 'footer.copyright.ar', label: 'حقوق النشر (عربي)', fallback: 'جميع الحقوق محفوظة. براند أزياء مصري عصري مسجل.' },
+    { key: 'footer.copyright.en', label: 'حقوق النشر (إنجليزي)', fallback: 'All rights reserved. Contemporary Egyptian Fashion Brand.' },
+    { key: 'footer.payment.cash.ar', label: 'طريقة الدفع نقداً (عربي)', fallback: 'الدفع عند الاستلام كاش' },
+    { key: 'footer.payment.cards.ar', label: 'طريقة الدفع بطاقات (عربي)', fallback: 'فيزا وماستركارد' },
+    { key: 'footer.payment.wallets.ar', label: 'المحافظ الإلكترونية (عربي)', fallback: 'فودافون كاش وإنستاباي InstaPay' },
+    { key: 'footer.payment.shipping.ar', label: 'عبارة الشحن (عربي)', fallback: 'شحن لجميع محافظات مصر' },
+    { key: 'footer.payment.cash.en', label: 'طريقة الدفع نقداً (إنجليزي)', fallback: 'Cash on delivery' },
+    { key: 'footer.payment.cards.en', label: 'طريقة الدفع بطاقات (إنجليزي)', fallback: 'Visa & Mastercard' },
+    { key: 'footer.payment.wallets.en', label: 'المحافظ الإلكترونية (إنجليزي)', fallback: 'Mobile wallets' },
+    { key: 'footer.payment.shipping.en', label: 'عبارة الشحن (إنجليزي)', fallback: 'Shipping across Egypt' }
+  ] }
+];
+
 export async function renderAdminView(currentSection: string = 'overview'): Promise<string> {
   const isAdmin = state.isAdmin();
 
@@ -113,6 +270,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
   let shippingZones: any[] = [];
   let inventoryMovements: any[] = [];
   let mediaItems: any[] = [];
+  let pages: any[] = [];
   let settings: any = state.getSettings();
 
   if (adminCache) {
@@ -125,6 +283,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
     shippingZones = adminCache.shippingZones;
     inventoryMovements = adminCache.inventoryMovements;
     mediaItems = adminCache.mediaItems;
+    pages = adminCache.pages;
     settings = adminCache.settings;
   } else {
     try {
@@ -141,12 +300,13 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
         shippingZones = data.shippingZones || [];
         inventoryMovements = data.inventoryMovements || [];
         mediaItems = data.mediaItems || [];
+        pages = data.pages || [];
         if (data.settings) settings = { ...settings, ...data.settings };
       }
     } catch (e) {
       console.warn('API admin data fetch error, attempting direct Firestore fallback', e);
       try {
-        const [oSnap, pSnap, cSnap, rSnap, coupSnap, revSnap, zSnap, mSnap, medSnap, setSnap] = await Promise.all([
+        const [oSnap, pSnap, cSnap, rSnap, coupSnap, revSnap, zSnap, mSnap, medSnap, pagesSnap, setSnap] = await Promise.all([
           getDocs(collection(db, 'orders')).catch(() => ({ docs: [] })),
           getDocs(collection(db, 'products')).catch(() => ({ docs: [] })),
           getDocs(collection(db, 'categories')).catch(() => ({ docs: [] })),
@@ -156,6 +316,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
           getDocs(collection(db, 'shippingZones')).catch(() => ({ docs: [] })),
           getDocs(query(collection(db, 'inventoryMovements'), limit(20))).catch(() => ({ docs: [] })),
           getDocs(collection(db, 'media')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'pages')).catch(() => ({ docs: [] })),
           getDoc(doc(db, 'settings', 'store')).catch(() => null)
         ]);
 
@@ -168,6 +329,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
         shippingZones = (zSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
         inventoryMovements = (mSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
         mediaItems = (medSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        pages = (pagesSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
         if (setSnap && (setSnap as any).exists && (setSnap as any).exists()) {
           settings = { ...settings, ...(setSnap as any).data() };
         }
@@ -190,6 +352,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
       shippingZones,
       inventoryMovements,
       mediaItems,
+      pages,
       settings
     };
   }
@@ -212,6 +375,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
     customers: 'قاعدة بيانات العملاء',
     coupons: 'الكوبونات والخصومات',
     cms: 'إدارة المحتوى والواجهة (CMS)',
+    pages: 'صفحات الموقع الثابتة',
     shipping: 'إعدادات الشحن والمناطق',
     reviews: 'مراجعة وتقييمات العملاء',
     reports: 'التقارير المالية والأرباح'
@@ -265,7 +429,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
           <a href="#admin/orders" class="admin-nav-item ${currentSection === 'orders' ? 'active' : ''}">
             <i class="fa-solid fa-cart-shopping" aria-hidden="true" style="font-size: 18px;"></i>
             <span>إدارة الطلبات</span>
-            ${newOrdersCount > 0 ? `<span style="margin-right: auto; font-size: 11px; background: #2563eb; color: #fff; padding: 2px 6px; border-radius: 4px;">${newOrdersCount} جديد</span>` : ''}
+            ${newOrdersCount > 0 ? `<span style="margin-right: auto; font-size: 11px; background: #15803d; color: #fff; padding: 2px 6px; border-radius: 4px;">${newOrdersCount} جديد</span>` : ''}
           </a>
 
           <a href="#admin/returns" class="admin-nav-item ${currentSection === 'returns' ? 'active' : ''}">
@@ -293,6 +457,12 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
           <a href="#admin/shipping" class="admin-nav-item ${currentSection === 'shipping' ? 'active' : ''}">
             <i class="fa-solid fa-truck" aria-hidden="true" style="font-size: 18px;"></i>
             <span>إعدادات الشحن والمناطق</span>
+          </a>
+
+          <a href="#admin/pages" class="admin-nav-item ${currentSection === 'pages' ? 'active' : ''}">
+            <i class="fa-regular fa-file-lines" aria-hidden="true" style="font-size:18px;"></i>
+            <span>صفحات الموقع الثابتة</span>
+            <span style="margin-right:auto;font-size:11px;background:#1e293b;padding:2px 6px;border-radius:4px;">${pages.length}</span>
           </a>
 
           <a href="#admin/reviews" class="admin-nav-item ${currentSection === 'reviews' ? 'active' : ''}">
@@ -347,6 +517,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
             shippingZones,
             inventoryMovements,
             mediaItems,
+            pages,
             settings,
             totalRevenue,
             activeOrdersCount,
@@ -363,7 +534,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
 
 // Arabic Section Renderer
 function renderAdminSection(section: string, data: any): string {
-  const { orders, products, categories, returns, coupons, reviews = [], shippingZones, inventoryMovements, mediaItems, totalRevenue, activeOrdersCount, newOrdersCount, lowStockProducts, avgOrderValue, settings } = data;
+  const { orders, products, categories, returns, coupons, reviews = [], shippingZones, inventoryMovements, mediaItems, pages = [], totalRevenue, activeOrdersCount, newOrdersCount, lowStockProducts, avgOrderValue, settings } = data;
 
   switch (section) {
     case 'overview':
@@ -379,7 +550,7 @@ function renderAdminSection(section: string, data: any): string {
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
             <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">إجمالي الطلبات المسجلة</span>
             <div style="font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 4px; font-family: 'Cairo', sans-serif;">${orders.length}</div>
-            <div style="font-size: 12px; color: #2563eb; margin-top: 4px;">${newOrdersCount} طلب بانتظار المراجعة والاعتماد</div>
+            <div style="font-size: 12px; color: #15803d; margin-top: 4px;">${newOrdersCount} طلب بانتظار المراجعة والاعتماد</div>
           </div>
 
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
@@ -431,7 +602,7 @@ function renderAdminSection(section: string, data: any): string {
                   <td>${o.paymentMethod === 'cod' ? 'الدفع عند الاستلام' : (o.paymentMethod?.toUpperCase() || 'دفع إلكتروني')}</td>
                   <td><span class="status-pill ${o.status}">${getStatusArabic(o.status)}</span></td>
                   <td>
-                    <button class="open-order-details-btn btn btn-ghost btn-sm" data-id="${o.id}" style="font-size: 12px; text-decoration: underline; color: #2563eb;">
+                    <button class="open-order-details-btn btn btn-ghost btn-sm" data-id="${o.id}" style="font-size: 12px; text-decoration: underline; color: #15803d;">
                       فحص وإدارة
                     </button>
                   </td>
@@ -493,7 +664,7 @@ function renderAdminSection(section: string, data: any): string {
                   </td>
                   <td>
                     <div style="display: flex; gap: 6px;">
-                      <button class="admin-edit-prod-btn btn btn-ghost btn-sm" data-id="${p.id}" style="color: #2563eb; font-size: 12px; font-weight: 600;">تعديل</button>
+                      <button class="admin-edit-prod-btn btn btn-ghost btn-sm" data-id="${p.id}" style="color: #15803d; font-size: 12px; font-weight: 600;">تعديل</button>
                       <button class="admin-del-prod-btn btn btn-ghost btn-sm" data-id="${p.id}" style="color: #b91c1c; font-size: 12px; font-weight: 600;">حذف</button>
                     </div>
                   </td>
@@ -726,7 +897,7 @@ function renderAdminSection(section: string, data: any): string {
                   <td>${c.sortOrder || 1}</td>
                   <td><span class="status-pill ${c.isActive ? 'delivered' : 'cancelled'}">${c.isActive ? 'مفعل بالمتجر' : 'مخفي'}</span></td>
                   <td>
-                    <button type="button" class="admin-edit-cat-btn btn btn-ghost btn-sm" data-id="${c.id}" style="color: #2563eb; font-size: 12px; font-weight: 600;">تعديل</button>
+                    <button type="button" class="admin-edit-cat-btn btn btn-ghost btn-sm" data-id="${c.id}" style="color: #15803d; font-size: 12px; font-weight: 600;">تعديل</button>
                     <button type="button" class="admin-del-cat-btn btn btn-ghost btn-sm" data-id="${c.id}" style="color: #b91c1c; font-size: 12px; font-weight: 600;">حذف</button>
                   </td>
                 </tr>
@@ -813,10 +984,34 @@ function renderAdminSection(section: string, data: any): string {
                     <button class="admin-toggle-coupon-btn btn btn-ghost btn-sm" data-id="${cp.id}" data-active="${cp.isActive}" style="font-size: 12px; font-weight: 600;">
                       ${cp.isActive ? 'تعطيل الكوبون' : 'تفعيل الكوبون'}
                     </button>
+                    <button type="button" class="admin-edit-coupon-btn btn btn-secondary btn-sm" data-id="${cp.id}" style="font-size:12px;">تعديل البيانات</button>
                     <button type="button" class="admin-del-coupon-btn btn btn-ghost btn-sm" data-id="${cp.id}" style="color:#b91c1c;font-size:12px;">حذف</button>
                   </td>
                 </tr>
               `).join('')}
+            </tbody>
+          </table></div>
+        </div>
+      `;
+
+    case 'pages':
+      return `
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div><h3 style="font-size:17px;font-weight:700;">صفحات الموقع الثابتة (${pages.length})</h3><p style="font-size:12px;color:#64748b;">إدارة صفحات عن المتجر والشحن والاستبدال ودليل المقاسات وأي صفحة محتوى إضافية.</p></div>
+            <button id="admin-add-page-btn" class="btn btn-primary btn-sm">+ إضافة صفحة</button>
+          </div>
+          <div class="admin-table-scroll"><table class="admin-table">
+            <thead><tr><th>عنوان الصفحة</th><th>الرابط</th><th>الحالة</th><th>الإجراءات</th></tr></thead>
+            <tbody>
+              ${pages.length ? pages.map((page: any) => `
+                <tr>
+                  <td><strong>${page.titleAr || page.title || page.slug}</strong><div style="font-size:11px;color:#64748b;">${page.title || ''}</div></td>
+                  <td><code>/page/${page.slug}</code></td>
+                  <td><span class="status-pill ${page.isPublished === false ? 'cancelled' : 'delivered'}">${page.isPublished === false ? 'مسودة' : 'منشورة'}</span></td>
+                  <td><button class="admin-edit-page-btn btn btn-secondary btn-sm" data-id="${page.id}">تعديل</button> <button class="admin-delete-page-btn btn btn-ghost btn-sm" data-id="${page.id}" style="color:#b91c1c;">حذف</button></td>
+                </tr>
+              `).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;">لا توجد صفحات محفوظة.</td></tr>'}
             </tbody>
           </table></div>
         </div>
@@ -841,6 +1036,15 @@ function renderAdminSection(section: string, data: any): string {
               </div>
             </div>
 
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">رابط شعار الهيدر</label><input type="url" id="set-header-logo" class="form-input" value="${settings.headerLogoUrl || '/assets/logo-icon.png'}" /></div>
+              <div class="form-group"><label class="form-label">رابط شعار الفوتر</label><input type="url" id="set-footer-logo" class="form-input" value="${settings.footerLogoUrl || '/assets/logo-icon-white.png'}" /></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">وصف المتجر (عربي)</label><input id="set-tagline-ar" class="form-input" value="${settings.taglineAr || ''}" /></div>
+              <div class="form-group"><label class="form-label">وصف المتجر (إنجليزي)</label><input id="set-tagline-en" class="form-input" value="${settings.tagline || ''}" /></div>
+            </div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
               <div class="form-group">
                 <label class="form-label">عنوان البانر الرئيسي Hero (بالعربية)</label>
@@ -854,7 +1058,7 @@ function renderAdminSection(section: string, data: any): string {
 
             <!-- Free upload for hero image -->
             <div class="form-group">
-              <label class="form-label">صورة البانر الرئيسي Hero (رفع مجاني من جهازك أو رابط) *</label>
+              <label class="form-label">صورة الهيرو للديسكتوب (رفع من الجهاز أو رابط)</label>
               <div style="display: flex; gap: 8px;">
                 <input type="url" id="set-hero-img" class="form-input" style="flex: 1;" value="${settings.heroImageUrl || ''}" />
                 <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
@@ -865,6 +1069,16 @@ function renderAdminSection(section: string, data: any): string {
               <div id="set-hero-preview-box" style="margin-top: 8px;">
                 <img id="set-hero-preview-img" src="${settings.heroImageUrl || ''}" style="height: 100px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
               </div>
+              <small style="color:var(--color-text-muted);">لأفضل عرض استخدم صورة عريضة للديسكتوب (16:9 تقريباً) وصورة رأسية للهاتف (4:5 أو 9:16). تُقص الصورة تلقائياً لتناسب الشاشة.</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">صورة الهيرو للموبايل (عمودية ومناسبة لشاشة الهاتف)</label>
+              <div style="display:flex;gap:8px;">
+                <input type="url" id="set-hero-mobile-img" class="form-input" style="flex:1;" value="${settings.heroImageMobileUrl || ''}" />
+                <label class="btn btn-secondary btn-sm" style="cursor:pointer;white-space:nowrap;">رفع صورة هاتف<input type="file" id="set-hero-mobile-file-upload" accept="image/*" style="display:none;" /></label>
+              </div>
+              <img id="set-hero-mobile-preview-img" src="${settings.heroImageMobileUrl || ''}" alt="معاينة صورة الهاتف" style="height:120px;margin-top:8px;border-radius:4px;object-fit:cover;" />
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
@@ -886,11 +1100,36 @@ function renderAdminSection(section: string, data: any): string {
               <div class="form-group"><label class="form-label">زر البانر (عربي)</label><input type="text" id="set-hero-cta-ar" class="form-input" value="${settings.heroCtaTextAr || ''}" /></div>
               <div class="form-group"><label class="form-label">زر البانر (إنجليزي)</label><input type="text" id="set-hero-cta-en" class="form-input" value="${settings.heroCtaText || ''}" /></div>
             </div>
-            <div class="form-group"><label class="form-label"><input type="checkbox" id="set-ann-active" ${settings.announcementBarActive !== false ? 'checked' : ''} /> تفعيل شريط الإعلانات</label></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label"><input type="checkbox" id="set-ann-active" ${settings.announcementBarActive !== false ? 'checked' : ''} /> إظهار شريط الإعلانات العلوي</label></div>
+              <div class="form-group"><label class="form-label">لون شريط الإعلانات</label><input type="color" id="set-ann-color" class="form-input" value="${settings.announcementBarBgColor || '#15803d'}" /></div>
+            </div>
+            <div class="admin-card" style="padding:var(--space-md);">
+              <strong>إظهار وإخفاء عناصر الهيرو</strong>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;">
+                <label><input type="checkbox" id="set-hero-tagline-active" ${settings.heroTaglineActive !== false ? 'checked' : ''} /> عنوان المجموعة أعلى الهيرو</label>
+                <label><input type="checkbox" id="set-hero-title-active" ${settings.heroTitleActive !== false ? 'checked' : ''} /> العنوان</label>
+                <label><input type="checkbox" id="set-hero-subtitle-active" ${settings.heroSubtitleActive !== false ? 'checked' : ''} /> الوصف</label>
+                <label><input type="checkbox" id="set-hero-cta-primary-active" ${settings.heroCtaPrimaryActive !== false ? 'checked' : ''} /> الزر الأول</label>
+                <label><input type="checkbox" id="set-hero-cta-secondary-active" ${settings.heroCtaSecondaryActive !== false ? 'checked' : ''} /> الزر الثاني</label>
+                <label><input type="checkbox" id="set-hero-overlay-active" ${settings.heroOverlayActive !== false ? 'checked' : ''} /> طبقة تحسين وضوح الصورة</label>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">عنوان الشريط فوق الهيرو (عربي)</label><input id="set-hero-tagline-ar" class="form-input" value="${settings.heroTaglineAr || ''}" /></div>
+              <div class="form-group"><label class="form-label">عنوان الشريط فوق الهيرو (إنجليزي)</label><input id="set-hero-tagline-en" class="form-input" value="${settings.heroTagline || ''}" /></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">نص الزر الثاني (عربي)</label><input id="set-hero-cta2-ar" class="form-input" value="${settings.heroCtaSecondaryTextAr || ''}" /></div>
+              <div class="form-group"><label class="form-label">نص الزر الثاني (إنجليزي)</label><input id="set-hero-cta2-en" class="form-input" value="${settings.heroCtaSecondaryText || ''}" /></div>
+              <div class="form-group"><label class="form-label">رابط الزر الأول</label><input id="set-hero-cta-link" class="form-input" value="${settings.heroCtaLink || '#shop'}" /></div>
+              <div class="form-group"><label class="form-label">رابط الزر الثاني</label><input id="set-hero-cta2-link" class="form-input" value="${settings.heroCtaSecondaryLink || '#shop'}" /></div>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
               <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input type="email" id="set-email" class="form-input" value="${settings.contactEmail || ''}" /></div>
               <div class="form-group"><label class="form-label">رقم الهاتف</label><input type="text" id="set-phone" class="form-input" value="${settings.contactPhone || ''}" /></div>
             </div>
+            <div class="form-group"><label class="form-label">عنوان المتجر</label><input type="text" id="set-address" class="form-input" value="${settings.address || ''}" /></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md);">
               <div class="form-group">
                 <label class="form-label">حد الشحن المجاني (ج.م)</label>
@@ -905,6 +1144,38 @@ function renderAdminSection(section: string, data: any): string {
                 <input type="number" id="set-tax" class="form-input" value="${settings.taxPercentage || 5}" />
               </div>
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">تكلفة الشحن الافتراضية (ج.م)</label><input type="number" id="set-default-shipping" class="form-input" value="${settings.defaultShippingCost ?? 65}" /></div>
+              <div class="form-group"><label class="form-label">رمز العملة للإنجليزية</label><input type="text" id="set-currency" class="form-input" value="${settings.currency || 'EGP'}" /></div>
+              <div class="form-group"><label class="form-label">رمز العملة للعربية</label><input type="text" id="set-currency-ar" class="form-input" value="${settings.currencyAr || 'ج.م'}" /></div>
+            </div>
+            <div class="form-group"><label class="form-label"><input type="checkbox" id="set-tax-active" ${settings.enableTax ? 'checked' : ''} /> تفعيل إضافة الضريبة إلى الطلبات</label></div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">رابط Instagram</label><input type="url" id="set-social-instagram" class="form-input" value="${settings.socialInstagram || ''}" /></div>
+              <div class="form-group"><label class="form-label">رابط Facebook</label><input type="url" id="set-social-facebook" class="form-input" value="${settings.socialFacebook || ''}" /></div>
+              <div class="form-group"><label class="form-label">رابط TikTok</label><input type="url" id="set-social-tiktok" class="form-input" value="${settings.socialTiktok || ''}" /></div>
+            </div>
+
+            <details class="admin-card" style="padding:var(--space-lg);">
+              <summary style="cursor:pointer;font-weight:700;font-size:16px;">تحرير كل النصوص الثابتة للهيدر والفوتر والصفحة الرئيسية</summary>
+              <p style="margin:8px 0 16px;color:var(--color-text-muted);font-size:12px;">تُحفظ النصوص مستقلة بالعربية والإنجليزية، وتشمل الروابط وأقسام الصفحة الرئيسية.</p>
+              ${CMS_CONTENT_GROUPS.map(group => `
+                <details style="padding:12px 0;border-top:1px solid var(--color-border);">
+                  <summary style="cursor:pointer;font-weight:700;">${group.title} (${group.fields.length})</summary>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px;">
+                    ${group.fields.map(field => `
+                      <div class="form-group">
+                        <label class="form-label">${field.label}</label>
+                        ${field.multiline
+                          ? `<textarea class="form-textarea" rows="3" data-cms-key="${field.key}">${settings.siteContent?.[field.key] ?? field.fallback}</textarea>`
+                          : `<input class="form-input" data-cms-key="${field.key}" value="${settings.siteContent?.[field.key] ?? field.fallback}" />`}
+                      </div>
+                    `).join('')}
+                  </div>
+                </details>
+              `).join('')}
+            </details>
 
             <button type="submit" class="btn btn-primary" style="align-self: flex-start; padding: 12px 28px; font-weight: 700;">
               حفظ وتطبيق إعدادات المتجر في فايربيز
@@ -1021,6 +1292,7 @@ function renderAdminSection(section: string, data: any): string {
                     <button class="admin-toggle-zone-btn btn btn-ghost btn-sm" data-id="${z.id}" data-active="${z.isActive !== false}" style="font-size: 12px; font-weight: 600;">
                       ${z.isActive !== false ? 'تعطيل' : 'تفعيل'}
                     </button>
+                    <button type="button" class="admin-edit-zone-btn btn btn-secondary btn-sm" data-id="${z.id}" style="font-size:12px;">تعديل</button>
                   </td>
                 </tr>
               `).join('')}
@@ -1059,7 +1331,7 @@ function renderAdminSection(section: string, data: any): string {
                     <div style="font-size: 11px; color: #64748b;">${rv.customerEmail || ''}</div>
                   </td>
                   <td>
-                    <span style="color: #eab308; font-size: 14px;">${'★'.repeat(rv.rating || 5)}</span>
+                    <span style="color: #22c55e; font-size: 14px;">${'★'.repeat(rv.rating || 5)}</span>
                   </td>
                   <td style="max-width: 320px; font-size: 13px;">
                     <div style="font-weight: 600; color: #0f172a;">${rv.title || ''}</div>
@@ -1069,9 +1341,10 @@ function renderAdminSection(section: string, data: any): string {
                   <td><span class="status-pill ${rv.isApproved ? 'delivered' : 'new'}">${rv.isApproved ? 'معتمد ومنشور' : 'بانتظار المراجعة'}</span></td>
                   <td>
                     <div style="display: flex; gap: 6px;">
-                      <button class="admin-toggle-review-btn btn btn-ghost btn-sm" data-id="${rv.id}" data-approved="${rv.isApproved}" style="color: #2563eb; font-size: 12px; font-weight: 600;">
+                      <button class="admin-toggle-review-btn btn btn-ghost btn-sm" data-id="${rv.id}" data-approved="${rv.isApproved}" style="color: #15803d; font-size: 12px; font-weight: 600;">
                         ${rv.isApproved ? 'إلغاء النشر' : 'اعتماد ونشر'}
                       </button>
+                      <button class="admin-edit-review-btn btn btn-secondary btn-sm" data-id="${rv.id}" style="font-size:11px;">تعديل</button>
                       <button class="admin-del-review-btn btn btn-ghost btn-sm" data-id="${rv.id}" style="color: #b91c1c; font-size: 12px; font-weight: 600;">حذف</button>
                     </div>
                   </td>
@@ -1099,7 +1372,7 @@ function renderAdminSection(section: string, data: any): string {
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
             <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">إجمالي القطع المباعة</span>
             <div style="font-size: 26px; font-weight: 700; color: #0f172a; margin-top: 4px;">${totalUnitsSold} قطعة</div>
-            <div style="font-size: 12px; color: #2563eb; margin-top: 4px;">عبر واجهة المتجر الإلكتروني</div>
+            <div style="font-size: 12px; color: #15803d; margin-top: 4px;">عبر واجهة المتجر الإلكتروني</div>
           </div>
 
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
@@ -1369,6 +1642,51 @@ export function setupAdminEvents(section: string) {
 
   // Shipping section events
   if (section === 'shipping') {
+    document.querySelectorAll('.admin-edit-zone-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (!id) return;
+        try {
+          const snap = await getDoc(doc(db, 'shippingZones', id));
+          if (!snap.exists()) throw new Error('لم يتم العثور على منطقة الشحن');
+          const zone = snap.data();
+          openModal(`
+            <h3 style="font-size:20px;font-weight:700;margin-bottom:16px;">تعديل منطقة الشحن</h3>
+            <form id="edit-zone-form" style="display:flex;flex-direction:column;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">اسم المنطقة بالعربية</label><input id="ez-name-ar" class="form-input" value="${zone.nameAr || ''}" required /></div>
+              <div class="form-group"><label class="form-label">اسم المنطقة بالإنجليزية</label><input id="ez-name-en" class="form-input" value="${zone.name || ''}" required /></div>
+              <div class="form-group"><label class="form-label">تكلفة الشحن (ج.م)</label><input id="ez-cost" class="form-input" type="number" min="0" value="${zone.cost || 0}" required /></div>
+              <div class="form-group"><label class="form-label">مدة التوصيل بالعربية</label><input id="ez-days-ar" class="form-input" value="${zone.estimatedDaysAr || zone.estimatedDays || ''}" /></div>
+              <div class="form-group"><label class="form-label">مدة التوصيل بالإنجليزية</label><input id="ez-days-en" class="form-input" value="${zone.estimatedDays || ''}" /></div>
+              <div class="form-group"><label class="form-label">المحافظات المشمولة (مفصولة بفواصل)</label><input id="ez-governorates" class="form-input" value="${(zone.governorates || []).join(', ')}" /></div>
+              <label><input id="ez-active" type="checkbox" ${zone.isActive !== false ? 'checked' : ''} /> المنطقة مفعلة</label>
+              <button type="submit" class="btn btn-primary btn-full">حفظ التعديلات</button>
+            </form>
+          `);
+          const form = document.getElementById('edit-zone-form');
+          if (form) form.onsubmit = async (submitEvent) => {
+            submitEvent.preventDefault();
+            try {
+              await updateDoc(doc(db, 'shippingZones', id), {
+                nameAr: (document.getElementById('ez-name-ar') as HTMLInputElement).value.trim(),
+                name: (document.getElementById('ez-name-en') as HTMLInputElement).value.trim(),
+                cost: Number((document.getElementById('ez-cost') as HTMLInputElement).value) || 0,
+                estimatedDaysAr: (document.getElementById('ez-days-ar') as HTMLInputElement).value.trim(),
+                estimatedDays: (document.getElementById('ez-days-en') as HTMLInputElement).value.trim(),
+                governorates: (document.getElementById('ez-governorates') as HTMLInputElement).value.split(',').map(v => v.trim()).filter(Boolean),
+                isActive: (document.getElementById('ez-active') as HTMLInputElement).checked,
+                updatedAt: new Date().toISOString()
+              });
+              invalidateAdminCache();
+              closeModal();
+              showToast('تم تعديل منطقة الشحن بنجاح', 'success');
+              refreshAdminSection(section);
+            } catch (error: any) { showToast(error.message, 'error'); }
+          };
+        } catch (error: any) { showToast(error.message, 'error'); }
+      });
+    });
+
     document.querySelectorAll('.admin-toggle-zone-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
@@ -1446,6 +1764,49 @@ export function setupAdminEvents(section: string) {
 
   // Reviews section events
   if (section === 'reviews') {
+    document.querySelectorAll('.admin-edit-review-btn').forEach(button => {
+      button.addEventListener('click', async (event) => {
+        const id = (event.currentTarget as HTMLElement).getAttribute('data-id');
+        if (!id) return;
+        try {
+          const snap = await getDoc(doc(db, 'reviews', id));
+          if (!snap.exists()) throw new Error('لم يتم العثور على التقييم');
+          const review = snap.data();
+          openModal(`
+            <h3 style="font-size:20px;font-weight:700;margin-bottom:16px;">تعديل تقييم العميل</h3>
+            <form id="edit-review-form" style="display:flex;flex-direction:column;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">اسم العميل</label><input id="erv-name" class="form-input" value="${review.customerName || ''}" /></div>
+              <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input id="erv-email" type="email" class="form-input" value="${review.customerEmail || ''}" /></div>
+              <div class="form-group"><label class="form-label">عنوان التقييم</label><input id="erv-title" class="form-input" value="${review.title || ''}" /></div>
+              <div class="form-group"><label class="form-label">نص التقييم</label><textarea id="erv-comment" class="form-textarea" rows="5" required>${review.comment || ''}</textarea></div>
+              <div class="form-group"><label class="form-label">التقييم من 1 إلى 5</label><input id="erv-rating" type="number" min="1" max="5" class="form-input" value="${review.rating || 5}" /></div>
+              <label><input id="erv-approved" type="checkbox" ${review.isApproved ? 'checked' : ''} /> التقييم معتمد ومنشور</label>
+              <button class="btn btn-primary btn-full" type="submit">حفظ التعديلات</button>
+            </form>
+          `);
+          const form = document.getElementById('edit-review-form');
+          if (form) form.onsubmit = async (submitEvent) => {
+            submitEvent.preventDefault();
+            try {
+              await updateDoc(doc(db, 'reviews', id), {
+                customerName: (document.getElementById('erv-name') as HTMLInputElement).value.trim(),
+                customerEmail: (document.getElementById('erv-email') as HTMLInputElement).value.trim(),
+                title: (document.getElementById('erv-title') as HTMLInputElement).value.trim(),
+                comment: (document.getElementById('erv-comment') as HTMLTextAreaElement).value.trim(),
+                rating: Math.min(5, Math.max(1, Number((document.getElementById('erv-rating') as HTMLInputElement).value) || 5)),
+                isApproved: (document.getElementById('erv-approved') as HTMLInputElement).checked,
+                updatedAt: new Date().toISOString()
+              });
+              invalidateAdminCache();
+              closeModal();
+              showToast('تم تحديث التقييم بنجاح', 'success');
+              refreshAdminSection(section);
+            } catch (error: any) { showToast(error.message, 'error'); }
+          };
+        } catch (error: any) { showToast(error.message, 'error'); }
+      });
+    });
+
     document.querySelectorAll('.admin-toggle-review-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
@@ -1697,6 +2058,10 @@ export function setupAdminEvents(section: string) {
               <label class="form-label">اسم القطعة (بالإنجليزية) *</label>
               <input type="text" id="ep-name-en" required class="form-input" value="${p.name || ''}" />
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div class="form-group"><label class="form-label">SKU</label><input type="text" id="ep-sku" class="form-input" value="${p.sku || id}" /></div>
+              <div class="form-group"><label class="form-label">رابط المنتج (slug)</label><input type="text" id="ep-slug" class="form-input" value="${p.slug || p.sku || id}" /></div>
+            </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
               <div class="form-group">
                 <label class="form-label">السعر الأساسي (ج.م) *</label>
@@ -1708,11 +2073,11 @@ export function setupAdminEvents(section: string) {
               </div>
             </div>
             <div class="form-group"><label class="form-label">التصنيف</label><input type="text" id="ep-category" class="form-input" value="${p.categoryName || ''}" /></div>
-            <div class="form-group"><label class="form-label">سعر التخفيض</label><input type="number" id="ep-saleprice" class="form-input" value="${p.salePrice || 0}" /></div>
             <div class="form-group"><label class="form-label">المخزون الكلي *</label><input type="number" id="ep-stock" required class="form-input" value="${p.totalStock ?? 10}" min="0" /></div>
             <div class="form-group"><label class="form-label">المقاسات *</label><input type="text" id="ep-sizes" required class="form-input" value="${(p.sizes || []).join(', ')}" /></div>
             <div class="form-group"><label class="form-label">الألوان (الاسم | كود اللون) *</label><textarea id="ep-colors" required class="form-textarea" rows="3">${(p.colors || []).map((c: any) => `${c.name} | ${c.hex}`).join('\n')}</textarea></div>
             <div class="form-group"><label class="form-label">الوصف بالعربية</label><textarea id="ep-description-ar" class="form-textarea" rows="3">${p.descriptionAr || ''}</textarea></div>
+            <div class="form-group"><label class="form-label">الوصف بالإنجليزية</label><textarea id="ep-description-en" class="form-textarea" rows="3">${p.description || ''}</textarea></div>
             <div class="form-group"><label class="form-label">الخامة والعناية</label><input type="text" id="ep-fabric" class="form-input" value="${p.fabric || ''}" /><input type="text" id="ep-care" class="form-input" style="margin-top:8px" value="${p.careInstructions || ''}" /></div>
 
             <!-- Free File Upload or URL -->
@@ -1728,6 +2093,13 @@ export function setupAdminEvents(section: string) {
               <div id="ep-preview-box" style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
                 <img id="ep-preview-img" src="${(p.images && p.images[0]) || ''}" style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1;" />
               </div>
+              <div class="form-group" style="margin-top:10px;"><label class="form-label">روابط صور إضافية (رابط في كل سطر)</label><textarea id="ep-extra-images" class="form-textarea" rows="3">${(p.images || []).slice(1).join('\n')}</textarea></div>
+            </div>
+
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+              <label><input type="checkbox" id="ep-featured" ${p.isFeatured ? 'checked' : ''} /> منتج مميز</label>
+              <label><input type="checkbox" id="ep-newarrival" ${p.isNewArrival ? 'checked' : ''} /> وصل حديثاً</label>
+              <label><input type="checkbox" id="ep-bestseller" ${p.isBestSeller ? 'checked' : ''} /> الأكثر مبيعاً</label>
             </div>
 
             <div class="form-group">
@@ -1770,18 +2142,25 @@ export function setupAdminEvents(section: string) {
             const salePrice = parseFloat((document.getElementById('ep-saleprice') as HTMLInputElement).value) || 0;
             const stock = parseInt((document.getElementById('ep-stock') as HTMLInputElement).value) || 0;
             const img = (document.getElementById('ep-img') as HTMLInputElement).value;
+            const sku = (document.getElementById('ep-sku') as HTMLInputElement).value.trim();
+            const slug = (document.getElementById('ep-slug') as HTMLInputElement).value.trim();
+            const extraImages = (document.getElementById('ep-extra-images') as HTMLTextAreaElement).value.split('\n').map(v => v.trim()).filter(Boolean);
             const categoryName = (document.getElementById('ep-category') as HTMLInputElement).value.trim();
             const sizes = (document.getElementById('ep-sizes') as HTMLInputElement).value.split(',').map(v => v.trim()).filter(Boolean);
             const colors = parseProductColors((document.getElementById('ep-colors') as HTMLTextAreaElement).value);
             const descriptionAr = (document.getElementById('ep-description-ar') as HTMLTextAreaElement).value.trim();
+            const description = (document.getElementById('ep-description-en') as HTMLTextAreaElement).value.trim();
             const fabric = (document.getElementById('ep-fabric') as HTMLInputElement).value.trim();
             const careInstructions = (document.getElementById('ep-care') as HTMLInputElement).value.trim();
             const isPub = (document.getElementById('ep-published') as HTMLSelectElement).value === 'true';
             if (!sizes.length || !colors.length) { showToast('أضف مقاسًا ولونًا واحدًا على الأقل', 'warning'); return; }
             try {
               await updateDoc(doc(db, 'products', id), {
-                name, nameAr, price, salePrice, categoryName, totalStock: stock, images: [img], sizes, colors,
-                variants: buildProductVariants((p.sku || id), sizes, colors, stock), descriptionAr, fabric, careInstructions,
+                name, nameAr, sku, slug, price, salePrice, categoryName, totalStock: stock, images: [img, ...extraImages], sizes, colors,
+                variants: buildProductVariants((sku || id), sizes, colors, stock), description, descriptionAr, fabric, careInstructions,
+                isFeatured: (document.getElementById('ep-featured') as HTMLInputElement).checked,
+                isNewArrival: (document.getElementById('ep-newarrival') as HTMLInputElement).checked,
+                isBestSeller: (document.getElementById('ep-bestseller') as HTMLInputElement).checked,
                 isPublished: isPub, updatedAt: new Date().toISOString()
               });
               closeModal();
@@ -1969,9 +2348,12 @@ export function setupAdminEvents(section: string) {
       if (!id) return;
 
       try {
-        const oSnap = await getDoc(doc(db, 'orders', id));
-        if (!oSnap.exists()) return;
-        const ord = oSnap.data();
+        const orderResponse = await fetch(`/api/admin/orders/${encodeURIComponent(id)}`);
+        const orderResult = await orderResponse.json();
+        if (!orderResponse.ok || !orderResult.success || !orderResult.order) {
+          throw new Error(orderResult.message || 'تعذر تحميل تفاصيل الطلب');
+        }
+        const ord = orderResult.order;
 
         openModal(`
           <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">تفاصيل الطلب • ${ord.orderNumber}</h3>
@@ -1982,6 +2364,19 @@ export function setupAdminEvents(section: string) {
             <div><strong>طريقة الدفع:</strong> ${ord.paymentMethod === 'cod' ? 'الدفع عند الاستلام' : (ord.paymentMethod === 'vodafone_cash' ? 'فودافون كاش' : (ord.paymentMethod?.toUpperCase() || 'إلكتروني'))} (${ord.paymentStatus})</div>
             <div><strong>الإجمالي:</strong> ${state.formatPrice(ord.total)}</div>
           </div>
+
+          <details style="margin-bottom:14px;">
+            <summary style="cursor:pointer;font-weight:700;">تعديل بيانات العميل وعنوان التوصيل</summary>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+              <div class="form-group"><label class="form-label">اسم العميل</label><input id="adm-customer-name" class="form-input" value="${ord.customerName || ''}" /></div>
+              <div class="form-group"><label class="form-label">رقم الهاتف</label><input id="adm-customer-phone" class="form-input" value="${ord.customerPhone || ''}" /></div>
+              <div class="form-group"><label class="form-label">البريد الإلكتروني</label><input id="adm-customer-email" type="email" class="form-input" value="${ord.customerEmail || ''}" /></div>
+              <div class="form-group"><label class="form-label">المحافظة</label><input id="adm-customer-governorate" class="form-input" value="${ord.shippingAddress?.governorate || ''}" /></div>
+              <div class="form-group"><label class="form-label">المدينة / المنطقة</label><input id="adm-customer-city" class="form-input" value="${ord.shippingAddress?.city || ''}" /></div>
+              <div class="form-group"><label class="form-label">العنوان بالتفصيل</label><input id="adm-customer-address" class="form-input" value="${ord.shippingAddress?.address || ''}" /></div>
+              <div class="form-group"><label class="form-label">رقم المبنى / علامة مميزة</label><input id="adm-customer-building" class="form-input" value="${ord.shippingAddress?.building || ord.shippingAddress?.buildingDetails || ''}" /></div>
+            </div>
+          </details>
 
           <form id="update-order-status-form" style="display: flex; flex-direction: column; gap: 12px;">
             <div class="form-group">
@@ -2030,6 +2425,16 @@ export function setupAdminEvents(section: string) {
                   newStatus,
                   trackingNumber: tracking,
                   note,
+                  customerName: (document.getElementById('adm-customer-name') as HTMLInputElement).value,
+                  customerPhone: (document.getElementById('adm-customer-phone') as HTMLInputElement).value,
+                  customerEmail: (document.getElementById('adm-customer-email') as HTMLInputElement).value,
+                  shippingAddress: {
+                    ...(ord.shippingAddress || {}),
+                    governorate: (document.getElementById('adm-customer-governorate') as HTMLInputElement).value,
+                    city: (document.getElementById('adm-customer-city') as HTMLInputElement).value,
+                    address: (document.getElementById('adm-customer-address') as HTMLInputElement).value,
+                    building: (document.getElementById('adm-customer-building') as HTMLInputElement).value
+                  },
                   adminEmail: state.getUser()?.email || 'admin'
                 })
               });
@@ -2053,6 +2458,69 @@ export function setupAdminEvents(section: string) {
     });
   });
 
+  if (section === 'pages') {
+    const addPageButton = document.getElementById('admin-add-page-btn');
+    const openPageEditor = (page: any = {}) => {
+      openModal(`
+        <h3 style="font-size:20px;font-weight:700;margin-bottom:16px;">${page.id ? 'تعديل صفحة' : 'إضافة صفحة جديدة'}</h3>
+        <form id="admin-page-form" style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <div class="form-group"><label class="form-label">الرابط المختصر (slug)</label><input id="ap-slug" class="form-input" required value="${page.slug || ''}" placeholder="shipping-policy" /></div>
+          <div class="form-group"><label class="form-label">العنوان بالعربية</label><input id="ap-title-ar" class="form-input" required value="${page.titleAr || ''}" /></div>
+          <div class="form-group"><label class="form-label">العنوان بالإنجليزية</label><input id="ap-title-en" class="form-input" required value="${page.title || ''}" /></div>
+          <div class="form-group"><label class="form-label">المحتوى بالعربية</label><textarea id="ap-content-ar" class="form-textarea" rows="6">${page.contentAr || ''}</textarea></div>
+          <div class="form-group"><label class="form-label">المحتوى بالإنجليزية</label><textarea id="ap-content-en" class="form-textarea" rows="6">${page.content || ''}</textarea></div>
+          <label><input type="checkbox" id="ap-published" ${page.isPublished !== false ? 'checked' : ''} /> نشر الصفحة</label>
+          <button type="submit" class="btn btn-primary btn-full">حفظ الصفحة</button>
+        </form>
+      `);
+      const form = document.getElementById('admin-page-form');
+      if (form) form.onsubmit = async (event) => {
+        event.preventDefault();
+        const payload = {
+          slug: (document.getElementById('ap-slug') as HTMLInputElement).value.trim().toLowerCase().replace(/\s+/g, '-'),
+          titleAr: (document.getElementById('ap-title-ar') as HTMLInputElement).value.trim(),
+          title: (document.getElementById('ap-title-en') as HTMLInputElement).value.trim(),
+          contentAr: (document.getElementById('ap-content-ar') as HTMLTextAreaElement).value.trim(),
+          content: (document.getElementById('ap-content-en') as HTMLTextAreaElement).value.trim(),
+          isPublished: (document.getElementById('ap-published') as HTMLInputElement).checked,
+          updatedAt: new Date().toISOString()
+        };
+        try {
+          if (page.id) await updateDoc(doc(db, 'pages', page.id), payload);
+          else await addDoc(collection(db, 'pages'), { ...payload, createdAt: new Date().toISOString() });
+          invalidateAdminCache();
+          closeModal();
+          showToast('تم حفظ الصفحة بنجاح', 'success');
+          refreshAdminSection(section);
+        } catch (error: any) { showToast(error.message, 'error'); }
+      };
+    };
+    if (addPageButton) addPageButton.onclick = () => openPageEditor();
+    document.querySelectorAll('.admin-edit-page-btn').forEach(button => {
+      button.addEventListener('click', async (event) => {
+        const id = (event.currentTarget as HTMLElement).getAttribute('data-id');
+        if (!id) return;
+        try {
+          const snap = await getDoc(doc(db, 'pages', id));
+          if (!snap.exists()) throw new Error('لم يتم العثور على الصفحة');
+          openPageEditor({ id, ...snap.data() });
+        } catch (error: any) { showToast(error.message, 'error'); }
+      });
+    });
+    document.querySelectorAll('.admin-delete-page-btn').forEach(button => {
+      button.addEventListener('click', async (event) => {
+        const id = (event.currentTarget as HTMLElement).getAttribute('data-id');
+        if (!id || !confirm('هل تريد حذف هذه الصفحة نهائياً؟')) return;
+        try {
+          await deleteDoc(doc(db, 'pages', id));
+          invalidateAdminCache();
+          showToast('تم حذف الصفحة', 'success');
+          refreshAdminSection(section);
+        } catch (error: any) { showToast(error.message, 'error'); }
+      });
+    });
+  }
+
   // Settings form submission with Free Hero image upload
   const settingsForm = document.getElementById('admin-settings-form');
   if (settingsForm) {
@@ -2074,6 +2542,24 @@ export function setupAdminEvents(section: string) {
       };
     }
 
+    const heroMobileUpload = document.getElementById('set-hero-mobile-file-upload') as HTMLInputElement;
+    if (heroMobileUpload) {
+      heroMobileUpload.onchange = async () => {
+        const file = heroMobileUpload.files?.[0];
+        if (!file) return;
+        try {
+          showToast('جاري رفع صورة الهاتف...', 'info');
+          const res = await uploadImageFile(file);
+          (document.getElementById('set-hero-mobile-img') as HTMLInputElement).value = res.url;
+          const preview = document.getElementById('set-hero-mobile-preview-img') as HTMLImageElement;
+          if (preview) preview.src = res.url;
+          showToast('تم رفع صورة الهاتف بنجاح', 'success');
+        } catch (err: any) {
+          showToast(err.message, 'error');
+        }
+      };
+    }
+
     settingsForm.onsubmit = async (e) => {
       e.preventDefault();
       const brandEn = (document.getElementById('set-brand-en') as HTMLInputElement).value;
@@ -2081,6 +2567,7 @@ export function setupAdminEvents(section: string) {
       const heroEn = (document.getElementById('set-hero-title-en') as HTMLInputElement).value;
       const heroAr = (document.getElementById('set-hero-title-ar') as HTMLInputElement).value;
       const heroImg = (document.getElementById('set-hero-img') as HTMLInputElement).value;
+      const heroMobileImg = (document.getElementById('set-hero-mobile-img') as HTMLInputElement).value;
       const heroSubtitleEn = (document.getElementById('set-hero-subtitle-en') as HTMLTextAreaElement).value;
       const heroSubtitleAr = (document.getElementById('set-hero-subtitle-ar') as HTMLTextAreaElement).value;
       const heroCtaEn = (document.getElementById('set-hero-cta-en') as HTMLInputElement).value;
@@ -2088,34 +2575,68 @@ export function setupAdminEvents(section: string) {
       const annActive = (document.getElementById('set-ann-active') as HTMLInputElement).checked;
       const contactEmail = (document.getElementById('set-email') as HTMLInputElement).value;
       const contactPhone = (document.getElementById('set-phone') as HTMLInputElement).value;
+      const address = (document.getElementById('set-address') as HTMLInputElement).value;
       const annEn = (document.getElementById('set-ann-en') as HTMLInputElement).value;
       const annAr = (document.getElementById('set-ann-ar') as HTMLInputElement).value;
       const freeShip = parseFloat((document.getElementById('set-free-ship') as HTMLInputElement).value);
       const whatsapp = (document.getElementById('set-whatsapp') as HTMLInputElement).value;
       const tax = parseFloat((document.getElementById('set-tax') as HTMLInputElement).value);
+      const siteContent: Record<string, string> = {};
+      Array.from(document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-cms-key]')).forEach((field) => {
+        const key = field.dataset.cmsKey;
+        if (key) siteContent[key] = field.value;
+      });
 
       try {
         const payload = {
           brandName: brandEn,
           brandNameAr: brandAr,
+          tagline: (document.getElementById('set-tagline-en') as HTMLInputElement).value.trim(),
+          taglineAr: (document.getElementById('set-tagline-ar') as HTMLInputElement).value.trim(),
           heroTitle: heroEn,
           heroTitleAr: heroAr,
           heroImageUrl: heroImg,
+          heroImageMobileUrl: heroMobileImg,
           heroSubtitle: heroSubtitleEn,
           heroSubtitleAr: heroSubtitleAr,
           heroCtaText: heroCtaEn,
           heroCtaTextAr: heroCtaAr,
+          heroCtaLink: (document.getElementById('set-hero-cta-link') as HTMLInputElement).value,
+          heroCtaSecondaryText: (document.getElementById('set-hero-cta2-en') as HTMLInputElement).value,
+          heroCtaSecondaryTextAr: (document.getElementById('set-hero-cta2-ar') as HTMLInputElement).value,
+          heroCtaSecondaryLink: (document.getElementById('set-hero-cta2-link') as HTMLInputElement).value,
+          heroTagline: (document.getElementById('set-hero-tagline-en') as HTMLInputElement).value,
+          heroTaglineAr: (document.getElementById('set-hero-tagline-ar') as HTMLInputElement).value,
+          heroTaglineActive: (document.getElementById('set-hero-tagline-active') as HTMLInputElement).checked,
+          heroTitleActive: (document.getElementById('set-hero-title-active') as HTMLInputElement).checked,
+          heroSubtitleActive: (document.getElementById('set-hero-subtitle-active') as HTMLInputElement).checked,
+          heroCtaPrimaryActive: (document.getElementById('set-hero-cta-primary-active') as HTMLInputElement).checked,
+          heroCtaSecondaryActive: (document.getElementById('set-hero-cta-secondary-active') as HTMLInputElement).checked,
+          heroOverlayActive: (document.getElementById('set-hero-overlay-active') as HTMLInputElement).checked,
+          announcementBarBgColor: (document.getElementById('set-ann-color') as HTMLInputElement).value,
+          headerLogoUrl: (document.getElementById('set-header-logo') as HTMLInputElement).value,
+          footerLogoUrl: (document.getElementById('set-footer-logo') as HTMLInputElement).value,
           announcementBarActive: annActive,
           contactEmail,
           contactPhone,
+          address,
           announcementBarText: annEn,
           announcementBarTextAr: annAr,
           freeShippingThreshold: freeShip,
           whatsappNumber: whatsapp,
           taxPercentage: tax,
+          enableTax: (document.getElementById('set-tax-active') as HTMLInputElement).checked,
+          defaultShippingCost: Number((document.getElementById('set-default-shipping') as HTMLInputElement).value) || 0,
+          currency: (document.getElementById('set-currency') as HTMLInputElement).value.trim() || 'EGP',
+          currencyAr: (document.getElementById('set-currency-ar') as HTMLInputElement).value.trim() || 'ج.م',
+          socialInstagram: (document.getElementById('set-social-instagram') as HTMLInputElement).value,
+          socialFacebook: (document.getElementById('set-social-facebook') as HTMLInputElement).value,
+          socialTiktok: (document.getElementById('set-social-tiktok') as HTMLInputElement).value,
+          siteContent,
           updatedAt: new Date().toISOString()
         };
         await setDoc(doc(db, 'settings', 'store'), payload, { merge: true });
+        invalidateAdminCache();
         state.setSettings(payload);
         showToast('تم حفظ وتحديث إعدادات المتجر في فايربيز بنجاح!', 'success');
       } catch (err: any) {
@@ -2185,6 +2706,51 @@ export function setupAdminEvents(section: string) {
       }
     };
   }
+
+  // Toggle coupon
+  document.querySelectorAll('.admin-edit-coupon-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (!id) return;
+      try {
+        const snap = await getDoc(doc(db, 'coupons', id));
+        if (!snap.exists()) throw new Error('لم يتم العثور على الكوبون');
+        const coupon = snap.data();
+        openModal(`
+          <h3 style="font-size:20px;font-weight:700;margin-bottom:16px;">تعديل الكوبون ${coupon.code}</h3>
+          <form id="edit-coupon-form" style="display:flex;flex-direction:column;gap:var(--space-md);">
+            <div class="form-group"><label class="form-label">رمز الكوبون</label><input id="ecp-code" class="form-input" value="${coupon.code || ''}" required /></div>
+            <div class="form-group"><label class="form-label">نوع الخصم</label><select id="ecp-type" class="form-select"><option value="percentage" ${coupon.discountType === 'percentage' ? 'selected' : ''}>نسبة مئوية</option><option value="fixed" ${coupon.discountType === 'fixed' ? 'selected' : ''}>مبلغ ثابت</option></select></div>
+            <div class="form-group"><label class="form-label">قيمة الخصم</label><input type="number" id="ecp-value" class="form-input" value="${coupon.discountValue || 0}" min="0" required /></div>
+            <div class="form-group"><label class="form-label">الحد الأدنى للطلب (ج.م)</label><input type="number" id="ecp-min" class="form-input" value="${coupon.minOrderValue || 0}" min="0" /></div>
+            <div class="form-group"><label class="form-label">حد مرات الاستخدام</label><input type="number" id="ecp-limit" class="form-input" value="${coupon.usageLimit || ''}" min="0" placeholder="اتركه فارغاً بلا حد" /></div>
+            <label><input type="checkbox" id="ecp-active" ${coupon.isActive ? 'checked' : ''} /> الكوبون مفعل</label>
+            <button type="submit" class="btn btn-primary btn-full">حفظ التعديلات</button>
+          </form>
+        `);
+        const form = document.getElementById('edit-coupon-form');
+        if (form) form.onsubmit = async (submitEvent) => {
+          submitEvent.preventDefault();
+          try {
+            const usageLimitValue = (document.getElementById('ecp-limit') as HTMLInputElement).value;
+            await updateDoc(doc(db, 'coupons', id), {
+              code: (document.getElementById('ecp-code') as HTMLInputElement).value.trim().toUpperCase(),
+              discountType: (document.getElementById('ecp-type') as HTMLSelectElement).value,
+              discountValue: Number((document.getElementById('ecp-value') as HTMLInputElement).value),
+              minOrderValue: Number((document.getElementById('ecp-min') as HTMLInputElement).value) || 0,
+              usageLimit: usageLimitValue ? Number(usageLimitValue) : null,
+              isActive: (document.getElementById('ecp-active') as HTMLInputElement).checked,
+              updatedAt: new Date().toISOString()
+            });
+            invalidateAdminCache();
+            closeModal();
+            showToast('تم تحديث بيانات الكوبون بنجاح', 'success');
+            refreshAdminSection(section);
+          } catch (error: any) { showToast(error.message, 'error'); }
+        };
+      } catch (error: any) { showToast(error.message, 'error'); }
+    });
+  });
 
   // Toggle coupon
   document.querySelectorAll('.admin-toggle-coupon-btn').forEach(btn => {

@@ -3,6 +3,7 @@ import { state } from '../state';
 export function renderHeader(): string {
   const lang = state.getLang();
   const settings = state.getSettings();
+  const copy = (key: string, fallback: string) => state.getSiteText(key, fallback);
   const cartCount = state.getCartCount();
   const wishlistCount = state.getWishlist().length;
   const brandName = lang === 'ar' ? settings.brandNameAr || settings.brandName : settings.brandName;
@@ -11,7 +12,7 @@ export function renderHeader(): string {
 
   return `
     ${settings.announcementBarActive ? `
-      <div class="announcement-bar" style="background-color: ${settings.announcementBarBgColor || '#0f172a'};">
+      <div class="announcement-bar" style="background-color: ${settings.announcementBarBgColor || '#15803d'};">
         <span><i class="fa-solid fa-star" aria-hidden="true"></i></span>
         <span>${announcement}</span>
         <span><i class="fa-solid fa-star" aria-hidden="true"></i></span>
@@ -27,22 +28,25 @@ export function renderHeader(): string {
 
         <!-- Brand Logo -->
         <a href="#home" class="header-logo" style="text-decoration: none;">
-          <img src="/assets/logo-icon.png" alt="EIGHTY-EIGHT" class="header-logo-img" />
-          <span class="header-brand-title">EIGHTY-EIGHT</span>
+          <img src="${settings.headerLogoUrl || '/assets/logo-icon.png'}" alt="${brandName}" class="header-logo-img" />
+          <span class="header-brand-title">${brandName}</span>
         </a>
 
         <!-- Main Desktop Navigation -->
         <nav class="header-nav">
-          <a href="#home" class="nav-link ${currentHash === 'home' || currentHash === '' ? 'active' : ''}">${state.t('home')}</a>
-          <a href="#shop" class="nav-link ${currentHash === 'shop' ? 'active' : ''}">${state.t('shop')}</a>
-          <a href="#shop?filter=new" class="nav-link">${state.t('newArrivals')}</a>
-          <a href="#shop?filter=bestseller" class="nav-link">${state.t('bestSellers')}</a>
-          <a href="#track" class="nav-link ${currentHash.startsWith('track') ? 'active' : ''}"><i class="fa-solid fa-box" aria-hidden="true"></i> ${state.t('trackOrder')}</a>
-          <a href="#page/about" class="nav-link">${state.t('about')}</a>
+          <a href="${copy('header.nav.home.href', '#home')}" class="nav-link ${currentHash === 'home' || currentHash === '' ? 'active' : ''}">${copy(`header.nav.home.${lang}`, state.t('home'))}</a>
+          <a href="${copy('header.nav.shop.href', '#shop')}" class="nav-link ${currentHash === 'shop' ? 'active' : ''}">${copy(`header.nav.shop.${lang}`, state.t('shop'))}</a>
+          <a href="${copy('header.nav.new.href', '#shop?filter=new')}" class="nav-link">${copy(`header.nav.new.${lang}`, state.t('newArrivals'))}</a>
+          <a href="${copy('header.nav.best.href', '#shop?filter=bestseller')}" class="nav-link">${copy(`header.nav.best.${lang}`, state.t('bestSellers'))}</a>
+          <a href="${copy('header.nav.track.href', '#track')}" class="nav-link ${currentHash.startsWith('track') ? 'active' : ''}"><i class="fa-solid fa-box" aria-hidden="true"></i> ${copy(`header.nav.track.${lang}`, state.t('trackOrder'))}</a>
+          <a href="${copy('header.nav.about.href', '#page/about')}" class="nav-link">${copy(`header.nav.about.${lang}`, state.t('about'))}</a>
         </nav>
 
         <!-- Header Actions -->
         <div class="header-actions">
+          <button id="theme-toggle-btn" class="icon-btn theme-toggle-btn" type="button" aria-label="${lang === 'ar' ? 'تبديل الوضع الداكن' : 'Toggle dark mode'}" title="${lang === 'ar' ? 'تبديل الوضع الداكن' : 'Toggle dark mode'}">
+            <i class="fa-solid ${state.getTheme() === 'dark' ? 'fa-sun' : 'fa-moon'}" aria-hidden="true" style="font-size: 18px;"></i>
+          </button>
           <!-- Language Switcher (Desktop) -->
           <button id="lang-switch-btn" class="btn btn-sm btn-ghost desktop-only-action" title="تغيير اللغة / Switch Language" style="font-weight: 700; font-size: 11px; letter-spacing: 0.05em; padding: 6px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-full);">
             ${lang === 'ar' ? 'English' : 'العربية'}
@@ -78,10 +82,10 @@ export function renderHeader(): string {
     <aside id="mobile-nav-drawer" class="mobile-nav-drawer" aria-label="Mobile Navigation">
       <div class="mobile-nav-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <img src="/assets/logo-icon.png" alt="EIGHTY-EIGHT" style="height: 30px; width: auto;" />
+          <img src="${settings.headerLogoUrl || '/assets/logo-icon.png'}" alt="${brandName}" style="height: 30px; width: auto;" />
           <div>
-            <div style="font-weight: 800; font-size: 16px; color: #0f172a; letter-spacing: 0.05em;">EIGHTY-EIGHT</div>
-            <div style="font-size: 11px; color: #64748b; font-weight: 600;">ستريت وير مصري معاصر</div>
+            <div style="font-weight: 800; font-size: 16px; color: var(--color-text-main); letter-spacing: 0.05em;">${brandName}</div>
+            <div style="font-size: 11px; color: var(--color-text-muted); font-weight: 600;">${copy(`header.tagline.${lang}`, lang === 'ar' ? 'ستريت وير مصري معاصر' : 'Contemporary Egyptian streetwear')}</div>
           </div>
         </div>
         <button id="mobile-nav-close-btn" class="icon-btn" aria-label="Close Navigation">
@@ -92,70 +96,70 @@ export function renderHeader(): string {
       <div class="mobile-nav-content">
         <!-- Main Route Links -->
         <div class="mobile-nav-section">
-          <span class="mobile-nav-section-title">${lang === 'ar' ? 'التنقل الرئيسي' : 'Navigation'}</span>
+            <span class="mobile-nav-section-title">${copy(`header.mobile.navigation.${lang}`, lang === 'ar' ? 'التنقل الرئيسي' : 'Navigation')}</span>
           <nav class="mobile-nav-links">
-            <a href="#home" class="mobile-nav-link ${currentHash === 'home' || currentHash === '' ? 'active' : ''}">
+              <a href="${copy('header.nav.home.href', '#home')}" class="mobile-nav-link ${currentHash === 'home' || currentHash === '' ? 'active' : ''}">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-house" aria-hidden="true"></i></span>
-              <span>${state.t('home')}</span>
+                <span>${copy(`header.nav.home.${lang}`, state.t('home'))}</span>
             </a>
-            <a href="#shop" class="mobile-nav-link ${currentHash === 'shop' ? 'active' : ''}">
+              <a href="${copy('header.nav.shop.href', '#shop')}" class="mobile-nav-link ${currentHash === 'shop' ? 'active' : ''}">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></span>
-              <span>${state.t('shop')} (كافة القطع)</span>
+                <span>${copy(`header.nav.shop.${lang}`, state.t('shop'))}</span>
             </a>
-            <a href="#shop?filter=new" class="mobile-nav-link">
+            <a href="${copy('header.nav.new.href', '#shop?filter=new')}" class="mobile-nav-link">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i></span>
-              <span>${state.t('newArrivals')}</span>
+                <span>${copy(`header.nav.new.${lang}`, state.t('newArrivals'))}</span>
             </a>
-            <a href="#shop?filter=bestseller" class="mobile-nav-link">
+            <a href="${copy('header.nav.best.href', '#shop?filter=bestseller')}" class="mobile-nav-link">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-fire" aria-hidden="true"></i></span>
-              <span>${state.t('bestSellers')}</span>
+                <span>${copy(`header.nav.best.${lang}`, state.t('bestSellers'))}</span>
             </a>
-            <a href="#track" class="mobile-nav-link ${currentHash.startsWith('track') ? 'active' : ''}">
+            <a href="${copy('header.nav.track.href', '#track')}" class="mobile-nav-link ${currentHash.startsWith('track') ? 'active' : ''}">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-box" aria-hidden="true"></i></span>
-              <span>${state.t('trackOrder')}</span>
+                <span>${copy(`header.nav.track.${lang}`, state.t('trackOrder'))}</span>
             </a>
           </nav>
         </div>
 
         <!-- Quick Categories -->
         <div class="mobile-nav-section">
-          <span class="mobile-nav-section-title">${lang === 'ar' ? 'أقسام الكولكشن' : 'Collections'}</span>
+          <span class="mobile-nav-section-title">${copy(`header.mobile.collections.${lang}`, lang === 'ar' ? 'أقسام الكولكشن' : 'Collections')}</span>
           <div class="mobile-category-tags">
-            <a href="#shop" class="mobile-cat-pill">الكل</a>
-            <a href="#shop" class="mobile-cat-pill">هوديز وسويت شيرت</a>
-            <a href="#shop" class="mobile-cat-pill">تيشيرتات وبولو</a>
-            <a href="#shop" class="mobile-cat-pill">بنطلونات وكارجو</a>
-            <a href="#shop" class="mobile-cat-pill">كابات وإكسسوارات</a>
+            <a href="${copy('header.category.all.href', '#shop')}" class="mobile-cat-pill">${copy(`header.category.all.${lang}`, lang === 'ar' ? 'الكل' : 'All')}</a>
+            <a href="${copy('header.category.one.href', '#shop')}" class="mobile-cat-pill">${copy(`header.category.one.${lang}`, lang === 'ar' ? 'هوديز وسويت شيرت' : 'Hoodies & Sweatshirts')}</a>
+            <a href="${copy('header.category.two.href', '#shop')}" class="mobile-cat-pill">${copy(`header.category.two.${lang}`, lang === 'ar' ? 'تيشيرتات وبولو' : 'T-Shirts & Polos')}</a>
+            <a href="${copy('header.category.three.href', '#shop')}" class="mobile-cat-pill">${copy(`header.category.three.${lang}`, lang === 'ar' ? 'بنطلونات وكارجو' : 'Pants & Cargo')}</a>
+            <a href="${copy('header.category.four.href', '#shop')}" class="mobile-cat-pill">${copy(`header.category.four.${lang}`, lang === 'ar' ? 'كابات وإكسسوارات' : 'Caps & Accessories')}</a>
           </div>
         </div>
 
         <!-- Customer Care & Policies -->
         <div class="mobile-nav-section">
-          <span class="mobile-nav-section-title">${lang === 'ar' ? 'خدمة العملاء وحسابي' : 'Customer Care'}</span>
+          <span class="mobile-nav-section-title">${copy(`header.mobile.customerCare.${lang}`, lang === 'ar' ? 'خدمة العملاء وحسابي' : 'Customer Care')}</span>
           <nav class="mobile-nav-links">
-            <a href="#account" class="mobile-nav-link">
+            <a href="${copy('header.mobile.account.href', '#account')}" class="mobile-nav-link">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
-              <span>${state.t('account')}</span>
+              <span>${copy(`header.mobile.account.${lang}`, state.t('account'))}</span>
             </a>
-            <a href="#account?tab=wishlist" class="mobile-nav-link">
+            <a href="${copy('header.mobile.wishlist.href', '#account?tab=wishlist')}" class="mobile-nav-link">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-heart" aria-hidden="true"></i></span>
-              <span>${state.t('wishlist')} ${wishlistCount > 0 ? `(${wishlistCount})` : ''}</span>
+              <span>${copy(`header.mobile.wishlist.${lang}`, state.t('wishlist'))} ${wishlistCount > 0 ? `(${wishlistCount})` : ''}</span>
             </a>
-            <a href="#page/size-guide" class="mobile-nav-link">
+            <a href="${copy('header.mobile.size.href', '#page/size-guide')}" class="mobile-nav-link">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-ruler-combined" aria-hidden="true"></i></span>
-              <span>${state.t('sizeGuide')}</span>
+              <span>${copy(`header.mobile.size.${lang}`, state.t('sizeGuide'))}</span>
             </a>
-            <a href="#page/shipping-policy" class="mobile-nav-link">
+            <a href="${copy('header.mobile.shipping.href', '#page/shipping-policy')}" class="mobile-nav-link">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-truck" aria-hidden="true"></i></span>
-              <span>${lang === 'ar' ? 'الشحن والتوصيل للمحافظات' : 'Shipping Policy'}</span>
+              <span>${copy(`header.mobile.shipping.${lang}`, lang === 'ar' ? 'الشحن والتوصيل للمحافظات' : 'Shipping Policy')}</span>
             </a>
-            <a href="#page/returns-policy" class="mobile-nav-link">
+            <a href="${copy('header.mobile.returns.href', '#page/returns-policy')}" class="mobile-nav-link">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></span>
-              <span>${lang === 'ar' ? 'الاسترجاع والاستبدال (14 يوم)' : 'Returns & Exchange'}</span>
+              <span>${copy(`header.mobile.returns.${lang}`, lang === 'ar' ? 'الاسترجاع والاستبدال (14 يوم)' : 'Returns & Exchange')}</span>
             </a>
-            <a href="#page/about" class="mobile-nav-link">
+            <a href="${copy('header.mobile.about.href', '#page/about')}" class="mobile-nav-link">
               <span class="mobile-nav-link-icon"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
-              <span>${state.t('about')}</span>
+              <span>${copy(`header.mobile.about.${lang}`, state.t('about'))}</span>
             </a>
           </nav>
         </div>
@@ -168,7 +172,7 @@ export function renderHeader(): string {
 
           <a href="https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, '')}" target="_blank" rel="noopener" class="btn btn-gold btn-full" style="justify-content: center; font-size: 13px; font-weight: 700; background: #25d366; color: #ffffff;">
             <span><i class="fa-solid fa-comment" aria-hidden="true"></i></span>
-            <span>تواصل معنا واتساب مباشر</span>
+            <span>${copy(`header.whatsapp.${lang}`, lang === 'ar' ? 'تواصل معنا واتساب مباشر' : 'Chat with us on WhatsApp')}</span>
           </a>
         </div>
       </div>
@@ -176,24 +180,24 @@ export function renderHeader(): string {
 
     <!-- Mobile Bottom Navigation Bar (Thumb-friendly mobile app UX) -->
     <nav class="mobile-bottom-nav" aria-label="Mobile Quick Bar">
-      <a href="#home" class="mobile-bottom-item ${currentHash === 'home' || currentHash === '' ? 'active' : ''}">
+      <a href="${copy('header.bottom.home.href', '#home')}" class="mobile-bottom-item ${currentHash === 'home' || currentHash === '' ? 'active' : ''}">
         <i class="fa-solid fa-house" aria-hidden="true" style="font-size: 20px;"></i>
-        <span>الرئيسية</span>
+        <span>${copy(`header.bottom.home.${lang}`, lang === 'ar' ? 'الرئيسية' : 'Home')}</span>
       </a>
 
-      <a href="#shop" class="mobile-bottom-item ${currentHash === 'shop' ? 'active' : ''}">
+      <a href="${copy('header.bottom.shop.href', '#shop')}" class="mobile-bottom-item ${currentHash === 'shop' ? 'active' : ''}">
         <i class="fa-solid fa-table-cells-large" aria-hidden="true" style="font-size: 20px;"></i>
-        <span>المتجر</span>
+        <span>${copy(`header.bottom.shop.${lang}`, lang === 'ar' ? 'المتجر' : 'Shop')}</span>
       </a>
 
-      <a href="#track" class="mobile-bottom-item ${currentHash.startsWith('track') ? 'active' : ''}">
+      <a href="${copy('header.bottom.track.href', '#track')}" class="mobile-bottom-item ${currentHash.startsWith('track') ? 'active' : ''}">
         <i class="fa-solid fa-boxes-stacked" aria-hidden="true" style="font-size: 20px;"></i>
-        <span>تتبع الشحنة</span>
+        <span>${copy(`header.bottom.track.${lang}`, lang === 'ar' ? 'تتبع الشحنة' : 'Track')}</span>
       </a>
 
-      <a href="#account" class="mobile-bottom-item ${currentHash.startsWith('account') ? 'active' : ''}">
+      <a href="${copy('header.bottom.account.href', '#account')}" class="mobile-bottom-item ${currentHash.startsWith('account') ? 'active' : ''}">
         <i class="fa-solid fa-user" aria-hidden="true" style="font-size: 20px;"></i>
-        <span>حسابي</span>
+        <span>${copy(`header.bottom.account.${lang}`, lang === 'ar' ? 'حسابي' : 'Account')}</span>
       </a>
 
       <button id="mobile-bottom-cart-btn" class="mobile-bottom-item" style="background: none; border: none; cursor: pointer; position: relative;">
@@ -206,6 +210,9 @@ export function renderHeader(): string {
 }
 
 export function setupHeaderEvents() {
+  const themeBtn = document.getElementById('theme-toggle-btn');
+  if (themeBtn) themeBtn.onclick = () => state.setTheme(state.getTheme() === 'dark' ? 'light' : 'dark');
+
   // Desktop language switcher
   const langBtn = document.getElementById('lang-switch-btn');
   if (langBtn) {

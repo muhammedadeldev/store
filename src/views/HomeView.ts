@@ -5,6 +5,7 @@ import { db } from '../firebase';
 export async function renderHomeView(): Promise<string> {
   const lang = state.getLang();
   const settings = state.getSettings();
+  const copy = (key: string, fallback: string) => state.getSiteText(key, fallback);
 
   // Fetch Categories & Featured Products from Firestore
   let categories: any[] = [];
@@ -28,26 +29,31 @@ export async function renderHomeView(): Promise<string> {
   const heroTitle = lang === 'ar' ? settings.heroTitleAr : settings.heroTitle;
   const heroSubtitle = lang === 'ar' ? settings.heroSubtitleAr : settings.heroSubtitle;
   const heroCtaText = lang === 'ar' ? settings.heroCtaTextAr : settings.heroCtaText;
+  const heroSecondaryText = lang === 'ar' ? settings.heroCtaSecondaryTextAr : settings.heroCtaSecondaryText;
 
   return `
     <div class="home-page animate-fade-in">
       <!-- Hero Section -->
-      <section class="hero-section" style="background-image: url('${settings.heroImageUrl}');">
-        <div class="hero-overlay"></div>
+      <section class="hero-section">
+        <picture class="hero-background" aria-hidden="true">
+          ${settings.heroImageMobileUrl ? `<source media="(max-width: 767px)" srcset="${settings.heroImageMobileUrl}" />` : ''}
+          <img src="${settings.heroImageUrl}" alt="" />
+        </picture>
+        ${settings.heroOverlayActive !== false ? '<div class="hero-overlay"></div>' : ''}
         <div class="container">
           <div class="hero-content">
-            <span class="hero-tagline">${lang === 'ar' ? 'المجموعة الحصرية • خريف وشتاء' : 'Atelier Runway Edition • Autumn/Winter'}</span>
-            <h1 class="hero-title">${heroTitle}</h1>
-            <p class="hero-description">${heroSubtitle}</p>
-            <div style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center; margin-top: 8px;">
-              <a href="${settings.heroCtaLink || '#shop'}" class="btn btn-lg hero-btn-primary">
+            ${settings.heroTaglineActive !== false ? `<span class="hero-tagline">${lang === 'ar' ? settings.heroTaglineAr : settings.heroTagline}</span>` : ''}
+            ${settings.heroTitleActive !== false ? `<h1 class="hero-title">${heroTitle}</h1>` : ''}
+            ${settings.heroSubtitleActive !== false ? `<p class="hero-description">${heroSubtitle}</p>` : ''}
+            <div class="hero-actions">
+              ${settings.heroCtaPrimaryActive !== false ? `<a href="${settings.heroCtaLink || '#shop'}" class="btn btn-lg hero-btn-primary">
                 <span><i class="fa-solid fa-star" aria-hidden="true"></i></span>
                 <span>${heroCtaText}</span>
-              </a>
-              <a href="#shop" class="btn btn-lg hero-btn-secondary">
+              </a>` : ''}
+              ${settings.heroCtaSecondaryActive !== false ? `<a href="${settings.heroCtaSecondaryLink || '#shop'}" class="btn btn-lg hero-btn-secondary">
                 <span><i class="fa-solid fa-shirt" aria-hidden="true"></i></span>
-                <span>${lang === 'ar' ? 'الهوديز والتيشيرتات' : 'Explore Streetwear'}</span>
-              </a>
+                <span>${heroSecondaryText}</span>
+              </a>` : ''}
             </div>
           </div>
         </div>
@@ -60,29 +66,29 @@ export async function renderHomeView(): Promise<string> {
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
               <span style="font-size: 24px; color: var(--color-brand-gold);"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
               <div>
-                <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'خامات طبيعية نقية 100%' : 'Noble Fibers'}</h4>
-                <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'كشمير منغولي وحرير التوت الإيطالي' : 'Mongolian cashmere & Mulberry silk'}</p>
+                  <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${copy(`home.pillar1.title.${lang}`, lang === 'ar' ? 'خامات طبيعية نقية 100%' : 'Noble Fibers')}</h4>
+                  <p style="font-size: 12px; color: var(--color-text-muted);">${copy(`home.pillar1.description.${lang}`, lang === 'ar' ? 'كشمير منغولي وحرير التوت الإيطالي' : 'Mongolian cashmere & Mulberry silk')}</p>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
               <span style="font-size: 24px; color: var(--color-brand-gold);"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
               <div>
-                <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'حرفية آتيليه يدوية' : 'Atelier Craft'}</h4>
-                <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'حياكة دقيقة وقصات باريسية متقنة' : 'Parisian cuts & artisanal finishing'}</p>
+                  <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${copy(`home.pillar2.title.${lang}`, lang === 'ar' ? 'حرفية آتيليه يدوية' : 'Atelier Craft')}</h4>
+                  <p style="font-size: 12px; color: var(--color-text-muted);">${copy(`home.pillar2.description.${lang}`, lang === 'ar' ? 'حياكة دقيقة وقصات باريسية متقنة' : 'Parisian cuts & artisanal finishing')}</p>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
               <span style="font-size: 24px; color: var(--color-brand-gold);"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
               <div>
-                <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'شحن سريع لجميع المحافظات' : 'Fast Express Across Egypt'}</h4>
-                <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'توصيل مجاني للطلبات فوق 1,500 ج.م' : 'Free express on orders over 1,500 EGP'}</p>
+                  <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${copy(`home.pillar3.title.${lang}`, lang === 'ar' ? 'شحن سريع لجميع المحافظات' : 'Fast Express Across Egypt')}</h4>
+                  <p style="font-size: 12px; color: var(--color-text-muted);">${copy(`home.pillar3.description.${lang}`, lang === 'ar' ? 'توصيل مجاني للطلبات فوق 1,500 ج.م' : 'Free express on orders over 1,500 EGP')}</p>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
               <span style="font-size: 24px; color: var(--color-brand-gold);"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
               <div>
-                <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'إرجاع واستبدال مجاني' : '14-Day Returns'}</h4>
-                <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'استبدال واسترجاع سلس بدون عناء' : 'Effortless courier pick-up'}</p>
+                  <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${copy(`home.pillar4.title.${lang}`, lang === 'ar' ? 'إرجاع واستبدال مجاني' : '14-Day Returns')}</h4>
+                  <p style="font-size: 12px; color: var(--color-text-muted);">${copy(`home.pillar4.description.${lang}`, lang === 'ar' ? 'استبدال واسترجاع سلس بدون عناء' : 'Effortless courier pick-up')}</p>
               </div>
             </div>
           </div>
@@ -94,13 +100,13 @@ export async function renderHomeView(): Promise<string> {
         <div class="container">
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--space-2xl);">
             <div>
-              <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 4px;">${lang === 'ar' ? 'المجموعات والتصنيفات' : 'The Curations'}</span>
+              <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 4px;">${copy(`home.collections.eyebrow.${lang}`, lang === 'ar' ? 'المجموعات والتصنيفات' : 'The Curations')}</span>
               <h2 style="font-family: var(--font-editorial); font-size: clamp(28px, 4vw, 38px); font-weight: 500;">
-                ${lang === 'ar' ? 'المجموعات والتصنيفات الفاخرة' : 'Signature Collections'}
+                ${copy(`home.collections.title.${lang}`, lang === 'ar' ? 'المجموعات والتصنيفات الفاخرة' : 'Signature Collections')}
               </h2>
             </div>
-            <a href="#shop" class="nav-link" style="font-size: 13px; font-weight: 600;">
-              ${lang === 'ar' ? 'عرض كل التصنيفات ←' : 'View All Collections →'}
+            <a href="${copy('home.collections.link.href', '#shop')}" class="nav-link" style="font-size: 13px; font-weight: 600;">
+              ${copy(`home.collections.link.${lang}`, lang === 'ar' ? 'عرض كل التصنيفات ←' : 'View All Collections →')}
             </a>
           </div>
 
@@ -114,7 +120,7 @@ export async function renderHomeView(): Promise<string> {
                     ${lang === 'ar' ? (cat.nameAr || cat.name) : cat.name}
                   </h3>
                   <span style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #e2ded5; font-weight: 500;">
-                    ${lang === 'ar' ? 'اكتشف القطع ←' : 'Discover Pieces →'}
+                    ${copy(`home.collections.discover.${lang}`, lang === 'ar' ? 'اكتشف القطع ←' : 'Discover Pieces →')}
                   </span>
                 </div>
               </a>
@@ -128,13 +134,13 @@ export async function renderHomeView(): Promise<string> {
         <div class="container">
           <div style="text-align: center; max-width: 600px; margin: 0 auto var(--space-3xl) auto;">
             <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 6px;">
-              ${lang === 'ar' ? 'إبداعات الموسم' : 'Runway Highlights'}
+              ${copy(`home.arrivals.eyebrow.${lang}`, lang === 'ar' ? 'إبداعات الموسم' : 'Runway Highlights')}
             </span>
             <h2 style="font-family: var(--font-editorial); font-size: clamp(30px, 4.5vw, 42px); font-weight: 500;">
-              ${state.t('newArrivals')}
+              ${copy(`home.arrivals.title.${lang}`, state.t('newArrivals'))}
             </h2>
             <p style="font-size: 14px; color: var(--color-text-muted); margin-top: var(--space-xs);">
-              ${lang === 'ar' ? 'قطع حصرية محدودة الإصدار تم قصها وتفصيلها بأعلى معايير الهوت كوتور.' : 'Limited atelier pieces cut and hand-finished with timeless contemporary proportions.'}
+              ${copy(`home.arrivals.description.${lang}`, lang === 'ar' ? 'قطع حصرية محدودة الإصدار تم قصها وتفصيلها بأعلى معايير الهوت كوتور.' : 'Limited atelier pieces cut and hand-finished with timeless contemporary proportions.')}
             </p>
           </div>
 
@@ -143,8 +149,8 @@ export async function renderHomeView(): Promise<string> {
           </div>
 
           <div style="text-align: center; margin-top: var(--space-3xl);">
-            <a href="#shop" class="btn btn-secondary btn-lg">
-              ${lang === 'ar' ? 'استعراض كامل التشكيلة' : 'View Full Ready-to-Wear'}
+            <a href="${copy('home.arrivals.link.href', '#shop')}" class="btn btn-secondary btn-lg">
+              ${copy(`home.arrivals.link.${lang}`, lang === 'ar' ? 'استعراض كامل التشكيلة' : 'View Full Ready-to-Wear')}
             </a>
           </div>
         </div>
@@ -156,28 +162,28 @@ export async function renderHomeView(): Promise<string> {
           <div class="story-grid">
             <div>
               <span style="font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: var(--space-sm);">
-                ${lang === 'ar' ? 'فلسفة المتجر والإنتاج' : 'The Brand Craft'}
+                ${copy(`home.story.eyebrow.${lang}`, lang === 'ar' ? 'فلسفة المتجر والإنتاج' : 'The Brand Craft')}
               </span>
               <h2 style="font-family: var(--font-editorial); font-size: clamp(32px, 4.5vw, 48px); line-height: 1.15; font-weight: 400; margin-bottom: var(--space-lg);">
-                ${lang === 'ar' ? 'خياطة معمارية دقيقة لا تعترف بمرور الزمن' : 'Sculptural Tailoring Built For A Lifetime'}
+                ${copy(`home.story.title.${lang}`, lang === 'ar' ? 'خياطة معمارية دقيقة لا تعترف بمرور الزمن' : 'Sculptural Tailoring Built For A Lifetime')}
               </h2>
               <p style="font-size: 15px; line-height: 1.8; color: #b8b5af; margin-bottom: var(--space-md);">
                 ${lang === 'ar' 
-                  ? 'في براند EIGHTY-EIGHT، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على القطن المصري 100% الثقيل والمعالج لضمان الراحة التامة والمتانة الاستثنائية.'
-                  : 'At EIGHTY-EIGHT, true streetwear luxury resides in the purity of proportion and the integrity of 100% premium Egyptian heavy cotton.'}
+                  ? copy('home.story.body1.ar', 'في براند EIGHTY-EIGHT، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على القطن المصري 100% الثقيل والمعالج لضمان الراحة التامة والمتانة الاستثنائية.')
+                  : copy('home.story.body1.en', 'At EIGHTY-EIGHT, true streetwear luxury resides in the purity of proportion and the integrity of 100% premium Egyptian heavy cotton.')}
               </p>
               <p style="font-size: 14px; line-height: 1.8; color: #8c8984; margin-bottom: var(--space-xl);">
                 ${lang === 'ar'
-                  ? 'كل تصميم يخضع لعشرات الساعات من التعديل اليدوي للتأكد من انسيابيته مع حركة الجسد.'
-                  : 'Every piece undergoes rigorous hand draping and tailoring to guarantee an effortless fluid drape.'}
+                  ? copy('home.story.body2.ar', 'كل تصميم يخضع لعشرات الساعات من التعديل اليدوي للتأكد من انسيابيته مع حركة الجسد.')
+                  : copy('home.story.body2.en', 'Every piece undergoes rigorous hand draping and tailoring to guarantee an effortless fluid drape.')}
               </p>
-              <a href="#page/about" class="btn btn-gold btn-sm">
-                ${lang === 'ar' ? 'قراءة قصة المتجر الكاملة' : 'Read Store Story'}
+              <a href="${copy('home.story.link.href', '#page/about')}" class="btn btn-gold btn-sm">
+                ${copy(`home.story.link.${lang}`, lang === 'ar' ? 'قراءة قصة المتجر الكاملة' : 'Read Store Story')}
               </a>
             </div>
 
             <div style="position: relative;">
-              <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=85" alt="Atelier Craft" style="width: 100%; border-radius: var(--radius-xs); box-shadow: var(--shadow-lg);" />
+              <img src="${copy('home.story.image', 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=85')}" alt="${copy(`home.story.imageAlt.${lang}`, lang === 'ar' ? 'قصة وحرفية البراند' : 'Atelier Craft')}" style="width: 100%; border-radius: var(--radius-xs); box-shadow: var(--shadow-lg);" />
             </div>
           </div>
         </div>
@@ -188,13 +194,13 @@ export async function renderHomeView(): Promise<string> {
         <div class="container">
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--space-2xl);">
             <div>
-              <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 4px;">${lang === 'ar' ? 'القطع الأيقونية' : 'The Icons'}</span>
+              <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 4px;">${copy(`home.bestsellers.eyebrow.${lang}`, lang === 'ar' ? 'القطع الأيقونية' : 'The Icons')}</span>
               <h2 style="font-family: var(--font-editorial); font-size: clamp(28px, 4vw, 38px); font-weight: 500;">
-                ${state.t('bestSellers')}
+                ${copy(`home.bestsellers.title.${lang}`, state.t('bestSellers'))}
               </h2>
             </div>
-            <a href="#shop?filter=bestseller" class="nav-link" style="font-size: 13px; font-weight: 600;">
-              ${lang === 'ar' ? 'عرض الأكثر طلباً ←' : 'View All Best Sellers →'}
+            <a href="${copy('home.bestsellers.link.href', '#shop?filter=bestseller')}" class="nav-link" style="font-size: 13px; font-weight: 600;">
+              ${copy(`home.bestsellers.link.${lang}`, lang === 'ar' ? 'عرض الأكثر طلباً ←' : 'View All Best Sellers →')}
             </a>
           </div>
 
@@ -208,16 +214,18 @@ export async function renderHomeView(): Promise<string> {
       <section style="padding: var(--space-3xl) 0; background-color: var(--color-surface); border-top: 1px solid var(--color-border);">
         <div class="container">
           <div style="text-align: center; margin-bottom: var(--space-2xl);">
-            <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block;">@letoile_official</span>
-            <h3 style="font-family: var(--font-editorial); font-size: 28px; font-weight: 500;">${lang === 'ar' ? 'إطلالات الكوتور في العالم' : 'Worn Across The Globe'}</h3>
+            <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block;">${copy('home.social.handle', '@letoile_official')}</span>
+            <h3 style="font-family: var(--font-editorial); font-size: 28px; font-weight: 500;">${copy(`home.social.title.${lang}`, lang === 'ar' ? 'إطلالات الكوتور في العالم' : 'Worn Across The Globe')}</h3>
           </div>
 
           <div class="insta-grid">
-            <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80" alt="Runway Look 1" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-xs);" />
-            <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80" alt="Runway Look 2" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-xs);" />
-            <img src="https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=600&q=80" alt="Runway Look 3" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-xs);" />
-            <img src="https://images.unsplash.com/photo-1548624149-f9b1859aa9d0?auto=format&fit=crop&w=600&q=80" alt="Runway Look 4" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-xs);" />
-            <img src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=600&q=80" alt="Runway Look 5" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-xs);" />
+            ${[1, 2, 3, 4, 5].map(i => `<img src="${copy(`home.social.image.${i}`, [
+              'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+              'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80',
+              'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=600&q=80',
+              'https://images.unsplash.com/photo-1548624149-f9b1859aa9d0?auto=format&fit=crop&w=600&q=80',
+              'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=600&q=80'
+            ][i - 1])}" alt="${copy(`home.story.imageAlt.${lang}`, lang === 'ar' ? `إطلالة ${i}` : `Runway look ${i}`)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--radius-xs);" />`).join('')}
           </div>
         </div>
       </section>
@@ -241,7 +249,7 @@ export function renderProductCard(prod: any, lang: 'ar' | 'en'): string {
           <img src="${primaryImg}" alt="${title}" class="product-image" loading="lazy" />
         </a>
 
-        ${isSale ? `<span class="product-badge sale">${lang === 'ar' ? 'عرض خاص' : 'Sale'}</span>` : ''}
+        ${isSale ? '<span class="product-badge sale">Sale</span>' : ''}
         ${!isSale && prod.isNewArrival ? `<span class="product-badge">${lang === 'ar' ? 'جديد' : 'New'}</span>` : ''}
 
         <div class="quick-action-overlay">
