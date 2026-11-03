@@ -93,7 +93,7 @@ export async function renderCheckoutView(): Promise<string> {
               <select id="cust-zone-select" required class="form-select">
                 ${shippingZones.map((z, idx) => `
                   <option value="${z.id}" data-cost="${z.cost}" ${idx === 0 ? 'selected' : ''}>
-                    ${lang === 'ar' ? (z.nameAr || z.name) : z.name} ($${z.cost} • ${lang === 'ar' ? (z.estimatedDaysAr || z.estimatedDays) : z.estimatedDays})
+                    ${lang === 'ar' ? (z.nameAr || z.name) : z.name} (${state.formatPrice(z.cost)} • ${lang === 'ar' ? (z.estimatedDaysAr || z.estimatedDays) : z.estimatedDays})
                   </option>
                 `).join('')}
               </select>
@@ -191,7 +191,7 @@ export async function renderCheckoutView(): Promise<string> {
                       ${item.color} • ${item.size} • Qty: ${item.quantity}
                     </div>
                   </div>
-                  <span style="font-weight: 600;">$${(item.price * item.quantity).toFixed(2)}</span>
+                  <span style="font-weight: 600;">${state.formatPrice(item.price * item.quantity)}</span>
                 </div>
               `).join('')}
             </div>
@@ -200,33 +200,33 @@ export async function renderCheckoutView(): Promise<string> {
             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; margin-bottom: var(--space-xl);">
               <div style="display: flex; justify-content: space-between; color: var(--color-text-muted);">
                 <span>${state.t('subtotal')}</span>
-                <span>$${subtotal.toFixed(2)}</span>
+                <span>${state.formatPrice(subtotal)}</span>
               </div>
 
               ${discount > 0 ? `
                 <div style="display: flex; justify-content: space-between; color: var(--color-success); font-weight: 500;">
                   <span>${lang === 'ar' ? 'الخصم المطبق' : 'Discount'} (${appliedCoupon?.code})</span>
-                  <span>-$${discount.toFixed(2)}</span>
+                  <span>-${state.formatPrice(discount)}</span>
                 </div>
               ` : ''}
 
               <div style="display: flex; justify-content: space-between; color: var(--color-text-muted);">
                 <span>${state.t('shipping')}</span>
                 <span id="checkout-shipping-val">
-                  ${initialShippingCost === 0 ? `<strong style="color: var(--color-success);">${state.t('freeShipping')}</strong>` : `$${initialShippingCost.toFixed(2)}`}
+                  ${initialShippingCost === 0 ? `<strong style="color: var(--color-success);">${state.t('freeShipping')}</strong>` : state.formatPrice(initialShippingCost)}
                 </span>
               </div>
 
               ${taxAmount > 0 ? `
                 <div style="display: flex; justify-content: space-between; color: var(--color-text-muted);">
                   <span>${state.t('tax')} (${settings.taxPercentage}%)</span>
-                  <span>$${taxAmount.toFixed(2)}</span>
+                  <span>${state.formatPrice(taxAmount)}</span>
                 </div>
               ` : ''}
 
               <div style="border-top: 1px solid var(--color-border); padding-top: 12px; display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; color: var(--color-brand);">
                 <span>${state.t('total')}</span>
-                <span id="checkout-total-val" style="font-family: var(--font-editorial); font-size: 24px;">$${finalTotal.toFixed(2)}</span>
+                <span id="checkout-total-val" style="font-family: var(--font-editorial); font-size: 24px;">${state.formatPrice(finalTotal)}</span>
               </div>
             </div>
 
@@ -271,10 +271,10 @@ export function setupCheckoutEvents() {
     const total = Math.max(0, subtotal - discount + shipping + tax);
 
     if (shippingValEl) {
-      shippingValEl.innerHTML = shipping === 0 ? `<strong style="color: var(--color-success);">${state.t('freeShipping')}</strong>` : `$${shipping.toFixed(2)}`;
+      shippingValEl.innerHTML = shipping === 0 ? `<strong style="color: var(--color-success);">${state.t('freeShipping')}</strong>` : state.formatPrice(shipping);
     }
     if (totalValEl) {
-      totalValEl.textContent = `$${total.toFixed(2)}`;
+      totalValEl.textContent = state.formatPrice(total);
     }
   }
 
@@ -364,13 +364,13 @@ export function setupCheckoutEvents() {
                 </span>
 
                 <h2 style="font-family: var(--font-editorial); font-size: clamp(26px, 4vw, 36px); font-weight: 500; margin-bottom: var(--space-sm);">
-                  ${lang === 'ar' ? 'شكراً لثقتكم بدار لو إتوال' : 'Thank You For Ordering With L\'ÉTOILE'}
+                  ${lang === 'ar' ? 'شكراً لاختيارك براند EIGHTY-EIGHT' : 'Thank You For Choosing EIGHTY-EIGHT'}
                 </h2>
 
                 <p style="font-size: 14px; color: var(--color-text-muted); line-height: 1.7; margin-bottom: var(--space-xl);">
                   ${lang === 'ar' 
-                    ? `تم تسجيل طلبك رقم <strong style="color: var(--color-brand);">${orderNumber}</strong> بإجمالي <strong>$${orderTotal}</strong>. يتم تجهيز القطع وتغليفها يدوياً داخل الآتيليه.`
-                    : `Your order reference <strong style="color: var(--color-brand);">${orderNumber}</strong> for <strong>$${orderTotal}</strong> has been registered and is being hand-prepared at our atelier.`}
+                    ? `تم تسجيل أوردرك بنجاح برقم <strong style="color: var(--color-brand);">${orderNumber}</strong> بإجمالي <strong>${state.formatPrice(orderTotal)}</strong>. بيتم تجهيز القطع وتغليفها بعناية فائقة وبيتواصل معاك مندوب الشحن لتأكيد ميعاد التسليم.`
+                    : `Your order reference <strong style="color: var(--color-brand);">${orderNumber}</strong> for <strong>${state.formatPrice(orderTotal)}</strong> has been confirmed and is being packed. Our courier will contact you soon.`}
                 </p>
 
                 <!-- Order Summary Details -->

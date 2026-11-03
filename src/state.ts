@@ -49,90 +49,90 @@ export interface StoreSettings {
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
-  brandName: "L'ÉTOILE",
-  brandNameAr: "لو إتوال",
-  tagline: "Haute Couture & Contemporary Tailoring",
-  taglineAr: "الأزياء الراقية والخياطة العصرية الفاخرة",
-  currency: "USD",
-  currencyAr: "$",
-  whatsappNumber: "+971501234567",
-  contactEmail: "concierge@letoile-couture.com",
-  contactPhone: "+971 4 800 3864",
-  address: "Design District, Avenue Montaigne Paris & Dubai Mall",
-  announcementBarText: "Complimentary worldwide express shipping on orders over $250 — Autumn/Winter Atelier Edition",
-  announcementBarTextAr: "شحن سريع مجاني لجميع الطلبات التي تتجاوز 250 دولاراً — مجموعة الخريف والشتاء الحصرية",
+  brandName: "EIGHTY-EIGHT",
+  brandNameAr: "EIGHTY-EIGHT",
+  tagline: "Contemporary Egyptian Fashion & Casual Luxury",
+  taglineAr: "براند أزياء مصري عصري بخامات قطنية وفخامة استثنائية",
+  currency: "EGP",
+  currencyAr: "ج.م",
+  whatsappNumber: "+201012345678",
+  contactEmail: "contact@eightyeight-eg.com",
+  contactPhone: "+20 10 1234 5678",
+  address: "التجمع الخامس ومصر الجديدة، القاهرة، مصر",
+  announcementBarText: "Complimentary shipping across Egypt on orders over 1,500 EGP — Use Code: EIGHTY10",
+  announcementBarTextAr: "شحن مجاني لجميع محافظات مصر للطلبات فوق 1,500 ج.م — كود الخصم: EIGHTY10",
   announcementBarActive: true,
-  announcementBarBgColor: "#0f172a",
-  taxPercentage: 5,
-  enableTax: true,
-  freeShippingThreshold: 250,
-  defaultShippingCost: 20,
-  heroTitle: "Elegance In Every Stitch",
-  heroTitleAr: "الأناقة في أدق تفاصيلها",
-  heroSubtitle: "Discover the Autumn/Winter Haute Couture collection crafted from the finest organic Italian silks and Mongolian cashmere.",
-  heroSubtitleAr: "اكتشفي مجموعة الخريف والشتاء الراقية المصنوعة من أرقى الحرير الإيطالي والكشمير المنغولي الفاخر.",
-  heroImageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1800&q=85",
-  heroCtaText: "Explore Collection",
-  heroCtaTextAr: "استكشف المجموعة",
+  announcementBarBgColor: "#000000",
+  taxPercentage: 0,
+  enableTax: false,
+  freeShippingThreshold: 1500,
+  defaultShippingCost: 65,
+  heroTitle: "EIGHTY-EIGHT",
+  heroTitleAr: "EIGHTY-EIGHT • كولكشن الموسم الجديد",
+  heroSubtitle: "Discover the Egyptian streetwear edition crafted from 100% premium Egyptian heavy cotton.",
+  heroSubtitleAr: "كولكشن أزياء مصري عصري بخامات قطن مصري 100% ثقيل ومعالج، وتصميمات تجمع بين البساطة والفخامة اليومية.",
+  heroImageUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1800&q=85",
+  heroCtaText: "Shop Collection",
+  heroCtaTextAr: "استكشف الكولكشن الآن",
   heroCtaLink: "#shop",
-  socialInstagram: "https://instagram.com/letoile_official",
-  socialFacebook: "https://facebook.com/letoile.couture",
-  socialTiktok: "https://tiktok.com/@letoilecouture"
+  socialInstagram: "https://instagram.com/eightyeight_eg",
+  socialFacebook: "https://facebook.com/eightyeight.eg",
+  socialTiktok: "https://tiktok.com/@eightyeight.eg"
 };
 
-// UI Translations Dictionary
+// UI Translations Dictionary - Professional Egyptian Tone
 export const translations = {
   ar: {
     home: "الرئيسية",
-    shop: "المتجر",
-    collections: "المجموعات",
+    shop: "المتجر والمنتجات",
+    collections: "الكولكشن والمجموعات",
     newArrivals: "وصل حديثاً",
-    bestSellers: "الأكثر طلباً",
-    about: "عن الدار",
-    cart: "حقيبة التسوق",
-    checkout: "إتمام الطلب",
+    bestSellers: "الأكثر مبيعاً",
+    about: "عن البراند",
+    cart: "سلة المشتريات",
+    checkout: "إتمام الطلب والدفع",
     account: "حسابي",
-    trackOrder: "تتبع طلبك",
-    adminDashboard: "لوحة التحكم",
-    searchPlaceholder: "ابحث عن معاطف، فساتين، بدلات كوتور...",
-    addToBag: "إضافة إلى الحقيبة",
-    addedToBag: "تمت الإضافة إلى الحقيبة",
+    trackOrder: "تتبع شحنتك",
+    adminDashboard: "لوحة الإدارة",
+    searchPlaceholder: "ابحث عن هوديز، تيشيرتات، كارجو، جواكيت...",
+    addToBag: "أضف إلى السلة",
+    addedToBag: "تمت الإضافة إلى السلة بنجاح",
     outOfStock: "نفد من المخزون",
-    inStock: "متوفر بالمخزون",
-    selectSize: "يرجى اختيار المقاس",
-    selectColor: "يرجى اختيار اللون",
-    sizeGuide: "دليل المقاسات",
-    fabricCare: "الخامات وإرشادات العناية",
-    reviews: "آراء وتقييمات العملاء",
-    writeReview: "أضف تقييمك",
-    emptyCart: "حقيبة التسوق فارغة حالياً",
+    inStock: "متوفر وجاهز للشحن",
+    selectSize: "اختر المقاس المناسب",
+    selectColor: "اختر اللون",
+    sizeGuide: "جدول المقاسات الدقيق",
+    fabricCare: "تفاصيل الخامة وإرشادات الغسيل",
+    reviews: "تقييمات وآراء العملاء",
+    writeReview: "اكتب رأيك في المنتج",
+    emptyCart: "سلة المشتريات فارغة حالياً",
     continueShopping: "متابعة التسوق",
     subtotal: "المجموع الفرعي",
-    shipping: "الشحن",
+    shipping: "مصاريف الشحن",
     freeShipping: "شحن مجاني",
-    tax: "الضريبة المقدرة",
+    tax: "الضريبة",
     total: "الإجمالي النهائي",
-    couponCode: "كود الخصم / الكوبون",
-    applyCoupon: "تطبيق",
-    remove: "حذف",
+    couponCode: "كوبون الخصم",
+    applyCoupon: "تطبيق الكود",
+    remove: "إزالة",
     itemCount: "قطع",
-    orderSummary: "ملخص الطلب",
-    shippingAddress: "عنوان التوصيل والتسليم",
-    fullName: "الاسم الكامل",
-    phone: "رقم الهاتف / الجوال",
+    orderSummary: "ملخص طلبك",
+    shippingAddress: "عنوان التوصيل في مصر",
+    fullName: "الاسم بالكامل",
+    phone: "رقم الموبايل للتواصل والتوصيل",
     email: "البريد الإلكتروني",
-    governorate: "المحافظة / الإمارة",
-    city: "المدينة / المنطقة",
+    governorate: "المحافظة (القاهرة، الجيزة، الإسكندرية...)",
+    city: "المنطقة / الحي (التجمع، الشيخ زايد، المعادي...)",
     streetAddress: "العنوان بالتفصيل واسم الشارع",
-    buildingDetails: "رقم المبنى / الشقة (اختياري)",
+    buildingDetails: "رقم العمارة / الشقة أو علامة مميزة",
     paymentMethod: "طريقة الدفع",
-    cod: "الدفع عند الاستلام (Cash on Delivery)",
-    creditCard: "بطاقة ائتمانية / مدى (Credit Card)",
-    applePay: "Apple Pay / محفظة إلكترونية",
-    placeOrder: "تأكيد الطلب والإنهاء",
-    orderConfirmed: "تم تسجيل وتأكيد طلبك بنجاح!",
-    orderNumber: "رقم الطلب",
-    viewOrders: "عرض طلباتي السابقة",
+    cod: "الدفع عند الاستلام كاش (Cash on Delivery)",
+    creditCard: "بطاقة بنكية / فيزا أو ماستركارد أو ميزة",
+    applePay: "محفظة إلكترونية (فودافون كاش / إنستاباي InstaPay)",
+    placeOrder: "تأكيد الطلب وشحن الأوردر",
+    orderConfirmed: "ألف مبروك! تم تسجيل وتأكيد طلبك بنجاح وجاري تجهيزه.",
+    orderNumber: "رقم الأوردر",
+    viewOrders: "طلباتي السابقة",
     printInvoice: "طباعة الفاتورة",
     login: "تسجيل الدخول",
     register: "إنشاء حساب جديد",
@@ -324,6 +324,17 @@ class StateManager {
     this.notify();
   }
 
+  // Price & Currency Formatter (Egyptian Pound EGP)
+  public formatPrice(amount: number | string = 0): string {
+    const num = Number(amount) || 0;
+    const rounded = Math.round(num);
+    const formatted = rounded.toLocaleString('en-US');
+    if (this.lang === 'ar') {
+      return `${formatted} ج.م`;
+    }
+    return `${formatted} EGP`;
+  }
+
   // Cart Management
   public getCart(): CartItem[] {
     return this.cart;
@@ -391,7 +402,7 @@ class StateManager {
       i => !(i.productId === productId && i.variantSku === variantSku)
     );
     this.saveCart();
-    showToast(this.lang === 'ar' ? 'تم حذف المنتج من الحقيبة' : 'Item removed from bag', 'info');
+    showToast(this.lang === 'ar' ? 'تم حذف المنتج من السلة' : 'Item removed from cart', 'info');
   }
 
   public clearCart() {
@@ -429,16 +440,41 @@ class StateManager {
   // Auth & Admin State
   public setCurrentUser(user: any, isAdmin: boolean = false) {
     this.currentUser = user;
-    this.isAdminUser = isAdmin;
+    if (isAdmin || (user && user.email?.toLowerCase() === 'muhammedadel.dev@gmail.com')) {
+      this.isAdminUser = true;
+      try {
+        sessionStorage.setItem('eightyeight_admin_auth', 'true');
+        sessionStorage.setItem('eightyeight_admin_user', JSON.stringify(user || { email: 'muhammedadel.dev@gmail.com' }));
+      } catch {}
+    } else if (user === null) {
+      this.isAdminUser = false;
+      try {
+        sessionStorage.removeItem('eightyeight_admin_auth');
+        sessionStorage.removeItem('eightyeight_admin_user');
+      } catch {}
+    } else {
+      this.isAdminUser = false;
+    }
     this.notify();
   }
 
   public getUser() {
+    if (!this.currentUser) {
+      try {
+        const saved = sessionStorage.getItem('eightyeight_admin_user');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
     return this.currentUser;
   }
 
   public isAdmin(): boolean {
-    return this.isAdminUser || (this.currentUser && this.currentUser.email === 'mohamedqwe542@gmail.com');
+    if (this.isAdminUser) return true;
+    if (this.currentUser && this.currentUser.email?.toLowerCase() === 'muhammedadel.dev@gmail.com') return true;
+    try {
+      if (sessionStorage.getItem('eightyeight_admin_auth') === 'true') return true;
+    } catch {}
+    return false;
   }
 }
 

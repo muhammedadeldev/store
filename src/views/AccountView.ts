@@ -187,7 +187,7 @@ export async function renderAccountView(urlParams: URLSearchParams): Promise<str
                       <span class="status-pill ${order.status}">
                         ${order.status}
                       </span>
-                      <span style="font-size: 18px; font-weight: 600; font-family: var(--font-editorial);">$${order.total?.toFixed(2)}</span>
+                      <span style="font-size: 18px; font-weight: 600; font-family: var(--font-editorial);">${state.formatPrice(order.total)}</span>
                     </div>
                   </div>
 
@@ -200,7 +200,7 @@ export async function renderAccountView(urlParams: URLSearchParams): Promise<str
                           <strong>${it.productName}</strong>
                           <div style="font-size: 11px; color: var(--color-text-subtle);">${it.color} • ${it.size} • Qty: ${it.quantity}</div>
                         </div>
-                        <span>$${it.total?.toFixed(2)}</span>
+                        <span>${state.formatPrice(it.total)}</span>
                       </div>
                     `).join('')}
                   </div>

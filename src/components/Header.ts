@@ -25,8 +25,9 @@ export function renderHeader(): string {
         </button>
 
         <!-- Brand Logo -->
-        <a href="#home" class="header-logo">
-          ${brandName}
+        <a href="#home" class="header-logo" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+          <img src="/assets/logo-icon.png" alt="EIGHTY-EIGHT" style="height: 34px; width: auto; object-fit: contain;" />
+          <span style="font-weight: 800; letter-spacing: 0.08em; font-size: 19px; color: #121212;">EIGHTY-EIGHT</span>
         </a>
 
         <!-- Main Navigation -->

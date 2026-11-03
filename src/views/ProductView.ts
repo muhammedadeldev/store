@@ -129,14 +129,14 @@ export async function renderProductView(productId: string): Promise<string> {
           <!-- Pricing -->
           <div style="display: flex; align-items: baseline; gap: var(--space-md); margin-bottom: var(--space-lg); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-lg);">
             <span style="font-size: 26px; font-weight: 600; color: var(--color-brand); font-family: var(--font-editorial);">
-              $${price.toFixed(2)}
+              ${state.formatPrice(price)}
             </span>
             ${originalPrice ? `
               <span style="font-size: 18px; color: var(--color-text-subtle); text-decoration: line-through;">
-                $${originalPrice.toFixed(2)}
+                ${state.formatPrice(originalPrice)}
               </span>
               <span class="product-badge sale" style="position: static; font-size: 11px;">
-                ${lang === 'ar' ? 'وفر ' : 'Save '}$${(originalPrice - price).toFixed(0)}
+                ${lang === 'ar' ? 'وفر ' : 'Save '}${state.formatPrice(originalPrice - price)}
               </span>
             ` : ''}
           </div>
@@ -261,7 +261,7 @@ export async function renderProductView(productId: string): Promise<string> {
               ${state.t('reviews')}
             </h3>
             <p style="font-size: 14px; color: var(--color-text-muted);">
-              ${avgRating} / 5.0 • ${lang === 'ar' ? 'تقييمات موثقة من عملاء الدار' : 'Verified Client Reviews'}
+              ${avgRating} / 5.0 • ${lang === 'ar' ? 'تقييمات موثقة من عملاء المتجر' : 'Verified Client Reviews'}
             </p>
           </div>
           

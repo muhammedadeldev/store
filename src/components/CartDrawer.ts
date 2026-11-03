@@ -27,7 +27,7 @@ export function renderCartDrawer(): string {
       <div style="padding: 12px var(--space-lg); background-color: var(--color-surface-muted); border-bottom: 1px solid var(--color-border); font-size: 12px;">
         ${remainingForFree > 0 ? `
           <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 500;">
-            <span>${lang === 'ar' ? `أضف $${remainingForFree.toFixed(0)} إضافية للحصول على شحن مجاني!` : `Add $${remainingForFree.toFixed(0)} more for Free Express Shipping!`}</span>
+            <span>${lang === 'ar' ? `أضف ${state.formatPrice(remainingForFree)} إضافية للشحن المجاني!` : `Add ${state.formatPrice(remainingForFree)} more for Free Shipping!`}</span>
             <span>${progressPercent}%</span>
           </div>
           <div style="height: 4px; background: #e2ded5; border-radius: 2px; overflow: hidden;">
@@ -36,7 +36,7 @@ export function renderCartDrawer(): string {
         ` : `
           <div style="color: var(--color-success); font-weight: 600; display: flex; align-items: center; gap: 6px;">
             <span>✓</span>
-            <span>${lang === 'ar' ? 'تهانينا! مؤهل للشحن السريع المجاني.' : 'Congratulations! Qualified for Complimentary Express Shipping.'}</span>
+            <span>${lang === 'ar' ? 'أوردرك مؤهل للشحن المجاني لجميع المحافظات!' : 'Congratulations! Qualified for Free Shipping.'}</span>
           </div>
         `}
       </div>
@@ -50,7 +50,7 @@ export function renderCartDrawer(): string {
               ${state.t('emptyCart')}
             </p>
             <p style="font-size: 13px; max-width: 240px; margin-bottom: var(--space-lg);">
-              ${lang === 'ar' ? 'استكشف تشكيلتنا الراقية من أزياء الكوتور والمعاطف الفاخرة.' : 'Discover our exquisite atelier coats, silk dresses, and fine tailoring.'}
+              ${lang === 'ar' ? 'استكشف كولكشن EIGHTY-EIGHT من الهوديز والتيشيرتات والملابس العصرية.' : 'Discover our latest hoodies, t-shirts, and streetwear essentials.'}
             </p>
             <a href="#shop" class="btn btn-secondary btn-sm" onclick="document.getElementById('cart-drawer').classList.remove('open');">
               ${state.t('continueShopping')}
@@ -65,7 +65,7 @@ export function renderCartDrawer(): string {
                 <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
                   <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                      <h4 style="font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--color-text-main);">
+                      <h4 style="font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--color-text-main);">
                         ${lang === 'ar' ? (item.nameAr || item.name) : item.name}
                       </h4>
                       <button class="remove-cart-item-btn" data-prod="${item.productId}" data-sku="${item.variantSku}" style="color: var(--color-text-subtle); padding: 2px;" title="${state.t('remove')}">
@@ -88,8 +88,8 @@ export function renderCartDrawer(): string {
                       <button class="cart-qty-btn" data-action="inc" data-prod="${item.productId}" data-sku="${item.variantSku}" style="padding: 4px 8px; font-size: 14px;">+</button>
                     </div>
 
-                    <span style="font-size: 14px; font-weight: 600; color: var(--color-brand);">
-                      $${(item.price * item.quantity).toFixed(2)}
+                    <span style="font-size: 14px; font-weight: 700; color: var(--color-brand);">
+                      ${state.formatPrice(item.price * item.quantity)}
                     </span>
                   </div>
                 </div>
@@ -104,7 +104,7 @@ export function renderCartDrawer(): string {
         <div class="cart-drawer-footer">
           <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px;">
             <span style="color: var(--color-text-muted);">${state.t('subtotal')}</span>
-            <span style="font-weight: 600; font-size: 16px; color: var(--color-brand);">$${subtotal.toFixed(2)}</span>
+            <span style="font-weight: 700; font-size: 16px; color: var(--color-brand);">${state.formatPrice(subtotal)}</span>
           </div>
 
           <p style="font-size: 11px; color: var(--color-text-subtle); margin-bottom: var(--space-md);">
@@ -113,7 +113,7 @@ export function renderCartDrawer(): string {
 
           <div style="display: flex; flex-direction: column; gap: var(--space-xs);">
             <a href="#checkout" id="drawer-checkout-btn" class="btn btn-primary btn-full">
-              ${state.t('checkout')} • $${subtotal.toFixed(2)}
+              ${state.t('checkout')} • ${state.formatPrice(subtotal)}
             </a>
             <a href="#cart" id="drawer-view-cart-btn" class="btn btn-secondary btn-full btn-sm">
               ${lang === 'ar' ? 'عرض السلة الكاملة وتطبيق الكوبون' : 'View Full Cart & Apply Coupon'}

@@ -62,7 +62,7 @@ export function renderCartView(): string {
                     <div style="display: flex; gap: 12px; font-size: 13px; color: var(--color-text-muted); margin-top: 8px;">
                       ${item.color ? `<span>${state.t('color')}: <strong>${item.color}</strong></span>` : ''}
                       ${item.size ? `<span>${state.t('size')}: <strong>${item.size}</strong></span>` : ''}
-                      <span>${lang === 'ar' ? 'سعر القطعة' : 'Unit Price'}: <strong>$${item.price.toFixed(2)}</strong></span>
+                      <span>${lang === 'ar' ? 'سعر القطعة' : 'Unit Price'}: <strong>${state.formatPrice(item.price)}</strong></span>
                     </div>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
@@ -74,7 +74,7 @@ export function renderCartView(): string {
                       </div>
 
                       <span style="font-size: 16px; font-weight: 600; color: var(--color-brand); font-family: var(--font-editorial);">
-                        $${(item.price * item.quantity).toFixed(2)}
+                        ${state.formatPrice(item.price * item.quantity)}
                       </span>
                     </div>
                   </div>
@@ -125,37 +125,37 @@ export function renderCartView(): string {
               <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; margin-bottom: var(--space-xl);">
                 <div style="display: flex; justify-content: space-between; color: var(--color-text-muted);">
                   <span>${state.t('subtotal')}</span>
-                  <span>$${subtotal.toFixed(2)}</span>
+                  <span>${state.formatPrice(subtotal)}</span>
                 </div>
 
                 ${discount > 0 ? `
                   <div style="display: flex; justify-content: space-between; color: var(--color-success); font-weight: 500;">
                     <span>${lang === 'ar' ? 'الخصم المطبق' : 'Discount'}</span>
-                    <span>-$${discount.toFixed(2)}</span>
+                    <span>-${state.formatPrice(discount)}</span>
                   </div>
                 ` : ''}
 
                 <div style="display: flex; justify-content: space-between; color: var(--color-text-muted);">
                   <span>${state.t('shipping')}</span>
-                  <span>${shippingCost === 0 ? `<strong style="color: var(--color-success);">${state.t('freeShipping')}</strong>` : `$${shippingCost.toFixed(2)}`}</span>
+                  <span>${shippingCost === 0 ? `<strong style="color: var(--color-success);">${state.t('freeShipping')}</strong>` : state.formatPrice(shippingCost)}</span>
                 </div>
 
                 ${taxAmount > 0 ? `
                   <div style="display: flex; justify-content: space-between; color: var(--color-text-muted);">
                     <span>${state.t('tax')} (${settings.taxPercentage}%)</span>
-                    <span>$${taxAmount.toFixed(2)}</span>
+                    <span>${state.formatPrice(taxAmount)}</span>
                   </div>
                 ` : ''}
 
                 <div style="border-top: 1px solid var(--color-border); padding-top: 12px; display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; color: var(--color-brand);">
                   <span>${state.t('total')}</span>
-                  <span style="font-family: var(--font-editorial); font-size: 24px;">$${finalTotal.toFixed(2)}</span>
+                  <span style="font-family: var(--font-editorial); font-size: 24px;">${state.formatPrice(finalTotal)}</span>
                 </div>
               </div>
 
               <!-- Checkout CTA -->
               <a href="#checkout" class="btn btn-primary btn-lg btn-full" style="font-size: 14px;">
-                ${state.t('checkout')} • $${finalTotal.toFixed(2)}
+                ${state.t('checkout')} • ${state.formatPrice(finalTotal)}
               </a>
 
               <div style="margin-top: var(--space-md); text-align: center; font-size: 11px; color: var(--color-text-subtle);">
@@ -235,7 +235,7 @@ export function setupCartEvents() {
             discount: data.calculatedDiscount,
             type: data.discountType
           });
-          showToast(state.getLang() === 'ar' ? `تم تطبيق خصم بقيمة $${data.calculatedDiscount}` : `Discount of $${data.calculatedDiscount} applied!`, 'success');
+          showToast(state.getLang() === 'ar' ? `تم تطبيق خصم بقيمة ${state.formatPrice(data.calculatedDiscount)}` : `Discount of ${state.formatPrice(data.calculatedDiscount)} applied!`, 'success');
         } else {
           showToast(data.message || 'Invalid coupon', 'error');
         }

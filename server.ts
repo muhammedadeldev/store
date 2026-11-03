@@ -48,6 +48,9 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Serve uploaded images statically
 app.use('/uploads', express.static(uploadsDir));
 
+// In-memory cache for ultra-reliable instant order tracking
+const recentOrdersCache: Map<string, any> = new Map();
+
 // API Routes
 app.get('/api/health', async (_req: Request, res: Response) => {
   try {
@@ -418,17 +421,99 @@ app.post('/api/checkout', async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
-      success: true,
-      orderId: orderDocRef.id,
-      orderNumber,
-      total: newOrderData.total,
-      currency: newOrderData.currency,
-      message: 'تم تسجيل طلبك بنجاح / Order placed successfully!'
+      res.json({
+        success: true,
+        orderId: orderDocRef.id,
+        orderNumber,
+        total: newOrderData.total,
+        currency: newOrderData.currency,
+        message: 'تم تسجيل طلبك بنجاح / Order placed successfully!'
+      });
+
+      // Keep in cache for immediate zero-latency tracking
+      recentOrdersCache.set(orderNumber.trim().toUpperCase(), { id: orderDocRef.id, ...newOrderData });
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // Secure Public Order Tracking Endpoint
+app.get('/api/orders/track/:orderNumber', async (req: Request, res: Response) => {
+  try {
+    const rawNumber = req.params.orderNumber || '';
+    const cleanNumber = rawNumber.trim().toUpperCase();
+
+    if (!cleanNumber) {
+      return res.status(400).json({ success: false, message: 'رقم الطلب مطلوب' });
+    }
+
+    // 1. Check in-memory fast cache first
+    if (recentOrdersCache.has(cleanNumber)) {
+      return res.json({ success: true, order: recentOrdersCache.get(cleanNumber) });
+    }
+
+    // 2. Query Firestore with exact match
+    const ordersRef = collection(db, 'orders');
+    const q = query(ordersRef, where('orderNumber', '==', cleanNumber));
+    let snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      // 3. Fallback: Check if orderNumber had different case or slight variation
+      const allOrdersSnap = await getDocs(ordersRef);
+      const matchedDoc = allOrdersSnap.docs.find(d => {
+        const oNum = (d.data().orderNumber || '').toString().trim().toUpperCase();
+        return oNum === cleanNumber || d.id === cleanNumber;
+      });
+
+      if (matchedDoc) {
+        const orderData = { id: matchedDoc.id, ...matchedDoc.data() };
+        recentOrdersCache.set(cleanNumber, orderData);
+        return res.json({ success: true, order: orderData });
+      }
+
+      return res.status(404).json({
+        success: false,
+        message: `لم يتم العثور على طلب برقم "${cleanNumber}"`
+      });
+    }
+
+    const docSnap = snapshot.docs[0];
+    const orderData = { id: docSnap.id, ...docSnap.data() };
+    recentOrdersCache.set(cleanNumber, orderData);
+
+    res.json({ success: true, order: orderData });
+  } catch (err: any) {
+    console.error('Order tracking API error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin Authentication API (Strict Credentials)
+app.post('/api/auth/admin-login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
+
+    if (cleanEmail === 'muhammedadel.dev@gmail.com' && password === 'M@349801m') {
+      return res.json({
+        success: true,
+        user: {
+          uid: 'admin-muhammedadel',
+          email: 'muhammedadel.dev@gmail.com',
+          displayName: 'Muhammed Adel (Super Admin)',
+          role: 'super_admin'
+        },
+        message: 'تم تسجيل الدخول بنجاح كمدير عام'
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: 'بيانات الدخول غير صحيحة أو غير مصرح لها'
     });
-  } catch (error: any) {
-    console.error('Checkout error:', error);
-    res.status(500).json({ success: false, message: error.message });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
@@ -518,99 +603,99 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
     // 1. Settings
     const settingsRef = doc(db, 'settings', 'store');
     await setDoc(settingsRef, {
-      brandName: "L'ÉTOILE",
-      brandNameAr: "لو إتوال",
-      logoUrl: "",
-      tagline: "Haute Couture & Contemporary Tailoring",
-      taglineAr: "الأزياء الراقية والخياطة العصرية الفاخرة",
-      currency: "USD",
-      currencyAr: "$",
-      whatsappNumber: "+971501234567",
-      contactEmail: "concierge@letoile-couture.com",
-      contactPhone: "+971 4 800 3864",
-      address: "Design District, Avenue Montaigne Paris & Dubai Mall Fashion Avenue",
-      announcementBarText: "Complimentary worldwide express shipping on orders over $250 — Autumn/Winter Atelier Edition",
-      announcementBarTextAr: "شحن سريع مجاني لجميع الطلبات التي تتجاوز 250 دولاراً — مجموعة الخريف والشتاء الحصرية",
+      brandName: "EIGHTY-EIGHT",
+      brandNameAr: "EIGHTY-EIGHT",
+      logoUrl: "/assets/logo-transparent.png",
+      tagline: "Contemporary Egyptian Streetwear & Fashion",
+      taglineAr: "براند أزياء مصري عصري بخامات قطنية وفخامة استثنائية",
+      currency: "EGP",
+      currencyAr: "ج.م",
+      whatsappNumber: "+201012345678",
+      contactEmail: "contact@eightyeight-eg.com",
+      contactPhone: "+20 10 1234 5678",
+      address: "التجمع الخامس ومصر الجديدة، القاهرة، مصر",
+      announcementBarText: "Complimentary shipping across Egypt on orders over 1,500 EGP — Use Code: EIGHTY10",
+      announcementBarTextAr: "شحن مجاني لجميع محافظات مصر للطلبات فوق 1,500 ج.م — كود الخصم: EIGHTY10",
       announcementBarActive: true,
-      announcementBarBgColor: "#0f172a",
-      taxPercentage: 5,
-      enableTax: true,
-      freeShippingThreshold: 250,
-      defaultShippingCost: 20,
-      heroTitle: "Elegance In Every Stitch",
-      heroTitleAr: "الأناقة في أدق تفاصيلها",
-      heroSubtitle: "Discover the Autumn/Winter Haute Couture collection crafted from the finest organic Italian silks and Mongolian cashmere.",
-      heroSubtitleAr: "اكتشفي مجموعة الخريف والشتاء الراقية المصنوعة من أرقى الحرير الإيطالي والكشمير المنغولي الفاخر.",
-      heroImageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1800&q=85",
-      heroCtaText: "Explore Collection",
-      heroCtaTextAr: "استكشف المجموعة",
+      announcementBarBgColor: "#000000",
+      taxPercentage: 0,
+      enableTax: false,
+      freeShippingThreshold: 1500,
+      defaultShippingCost: 65,
+      heroTitle: "EIGHTY-EIGHT",
+      heroTitleAr: "EIGHTY-EIGHT • أسلوبك العصري",
+      heroSubtitle: "Discover the Egyptian streetwear edition crafted from 100% premium Egyptian heavy cotton.",
+      heroSubtitleAr: "كولكشن أزياء مصري عصري بخامات قطن مصري 100% ثقيل ومعالج، وتصميمات تجمع بين البساطة والفخامة اليومية.",
+      heroImageUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1800&q=85",
+      heroCtaText: "Shop Collection",
+      heroCtaTextAr: "استكشف الكولكشن الآن",
       heroCtaLink: "#shop",
-      socialInstagram: "https://instagram.com/letoile_official",
-      socialFacebook: "https://facebook.com/letoile.couture",
-      socialTiktok: "https://tiktok.com/@letoilecouture",
+      socialInstagram: "https://instagram.com/eightyeight_eg",
+      socialFacebook: "https://facebook.com/eightyeight.eg",
+      socialTiktok: "https://tiktok.com/@eightyeight.eg",
       updatedAt: new Date().toISOString()
     });
 
-    // 2. Shipping Zones
+    // 2. Shipping Zones (Egyptian Governorates)
     const shippingZones = [
-      { id: 'zone-local', name: 'UAE & Gulf Express', nameAr: 'الإمارات ودول الخليج السريع', cost: 15, estimatedDays: '1-2 Days', estimatedDaysAr: '1-2 يوم عمل', isActive: true },
-      { id: 'zone-egypt', name: 'Egypt & Levant VIP Delivery', nameAr: 'مصر والشام توصيل مميز', cost: 18, estimatedDays: '2-4 Days', estimatedDaysAr: '2-4 أيام عمل', isActive: true },
-      { id: 'zone-europe', name: 'Europe & UK Express Courier', nameAr: 'أوروبا والمملكة المتحدة', cost: 25, estimatedDays: '3-5 Days', estimatedDaysAr: '3-5 أيام عمل', isActive: true },
-      { id: 'zone-global', name: 'Worldwide Air Express', nameAr: 'الشحن الجوي العالمي السريع', cost: 35, estimatedDays: '4-7 Days', estimatedDaysAr: '4-7 أيام عمل', isActive: true },
+      { id: 'zone-cairo', name: 'Cairo & Giza Express', nameAr: 'القاهرة والجيزة (توصيل سريع)', cost: 65, estimatedDays: '1-2 Days', estimatedDaysAr: '1-2 يوم عمل', isActive: true },
+      { id: 'zone-alex', name: 'Alexandria & North Coast', nameAr: 'الإسكندرية والساحل الشمالي', cost: 75, estimatedDays: '2-3 Days', estimatedDaysAr: '2-3 أيام عمل', isActive: true },
+      { id: 'zone-delta', name: 'Delta & Canal Cities', nameAr: 'محافظات الدلتا ومدن القناة', cost: 85, estimatedDays: '2-4 Days', estimatedDaysAr: '2-4 أيام عمل', isActive: true },
+      { id: 'zone-upper', name: 'Upper Egypt & Red Sea', nameAr: 'محافظات الصعيد والبحر الأحمر', cost: 95, estimatedDays: '3-5 Days', estimatedDaysAr: '3-5 أيام عمل', isActive: true },
     ];
     for (const zone of shippingZones) {
       await setDoc(doc(db, 'shippingZones', zone.id), zone);
     }
 
-    // 3. Categories
+    // 3. Categories (Egyptian Streetwear & Fashion)
     const categories = [
       {
-        id: 'cat-coats',
-        name: 'Outerwear & Coats',
-        nameAr: 'المعاطف والسترات الفاخرة',
-        slug: 'outerwear-coats',
-        description: 'Impeccably tailored trench coats, double-breasted blazers, and wool-cashmere longcoats.',
-        imageUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80',
+        id: 'cat-hoodies',
+        name: 'Hoodies & Sweatshirts',
+        nameAr: 'هوديز وسويت شيرت',
+        slug: 'hoodies-sweatshirts',
+        description: 'Heavyweight Egyptian cotton French Terry hoodies and crewnecks.',
+        imageUrl: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80',
         sortOrder: 1,
         isActive: true
       },
       {
-        id: 'cat-dresses',
-        name: 'Evening & Atelier Dresses',
-        nameAr: 'فساتين السهرة والآتيليه',
-        slug: 'evening-dresses',
-        description: 'Sculptural silhouettes, fluid mulberry silks, and bespoke evening wear.',
-        imageUrl: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=800&q=80',
+        id: 'cat-tees',
+        name: 'Oversized T-Shirts & Polos',
+        nameAr: 'تيشيرتات أوفرسايز وبولو',
+        slug: 'tees-polos',
+        description: '240 GSM combed Egyptian cotton t-shirts with dropped shoulders.',
+        imageUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
         sortOrder: 2,
         isActive: true
       },
       {
-        id: 'cat-tailoring',
-        name: 'Tailored Suits & Separates',
-        nameAr: 'البدلات والقطع المفصلة',
-        slug: 'tailored-suits',
-        description: 'Sharp shoulders, fluid wide-leg trousers, and minimalist modern suiting.',
-        imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80',
+        id: 'cat-pants',
+        name: 'Cargo & Street Pants',
+        nameAr: 'بنطلونات كارجو وستريت',
+        slug: 'pants-cargo',
+        description: 'Parachute cargo pants, utility joggers, and relaxed fit denim.',
+        imageUrl: 'https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=800&q=80',
         sortOrder: 3,
         isActive: true
       },
       {
-        id: 'cat-knitwear',
-        name: 'Cashmere & Knitwear',
-        nameAr: 'الكشمير والتريكو الفاخر',
-        slug: 'cashmere-knitwear',
-        description: 'Pure Grade-A Mongolian cashmere turtlenecks, cardigans, and lounge knits.',
-        imageUrl: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=800&q=80',
+        id: 'cat-jackets',
+        name: 'Jackets & Outerwear',
+        nameAr: 'جواكيت وبومبر ومعاطف',
+        slug: 'jackets-outerwear',
+        description: 'Water-resistant utility bomber jackets, overshirts, and winter coats.',
+        imageUrl: 'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80',
         sortOrder: 4,
         isActive: true
       },
       {
         id: 'cat-accessories',
-        name: 'Artisanal Leather & Silk Scarves',
-        nameAr: 'الجلود الطبيعية والأوشحة الحريرية',
+        name: 'Caps & Accessories',
+        nameAr: 'كابات وإكسسوارات',
         slug: 'accessories',
-        description: 'Hand-stitched leather totes, minimalist belts, and silk twill scarves.',
-        imageUrl: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=800&q=80',
+        description: 'Embroidered 88 logo caps, socks, and street accessories.',
+        imageUrl: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80',
         sortOrder: 5,
         isActive: true
       }
@@ -620,255 +705,201 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
       await setDoc(doc(db, 'categories', cat.id), cat);
     }
 
-    // 4. Products with Multi-Variant Matrix
+    // 4. Products with Multi-Variant Matrix (EIGHTY-EIGHT Egyptian Collection)
     const sampleProducts = [
       {
-        id: 'prod-trench-01',
-        name: "L'Atelier Cashmere-Wool Trench Coat",
-        nameAr: "معطف الترنش الفاخر من الكشمير والصوف",
-        slug: "atelier-cashmere-wool-trench-coat",
-        sku: "LET-TC-001",
-        categoryId: "cat-coats",
-        categoryName: "Outerwear & Coats",
-        price: 490,
-        salePrice: 420,
-        cost: 180,
-        description: "Constructed from 70% virgin wool and 30% Mongolian cashmere, this iconic double-breasted trench features horn buttons, a wide storm flap, belted cuffs, and a fluid silhouette tailored to perfection.",
-        descriptionAr: "مصنوع من 70% صوف بكر و30% كشمير منغولي، يتميز هذا المعطف الأيقوني بأزرار قرنية طبيعية، وحزام خصر متناسق، وقصة انسيابية عصرية تمنحك إطلالة راقية في كل مناسبة.",
-        fabric: "70% Virgin Wool, 30% Mongolian Cashmere. 100% Cupro Lining.",
-        careInstructions: "Specialist dry clean only. Do not tumble dry. Cool iron on reverse with press cloth.",
+        id: 'prod-hoodie-01',
+        name: "EIGHTY-EIGHT Signature Heavyweight Hoodie",
+        nameAr: "هودي EIGHTY-EIGHT القطني الثقيل المميز",
+        slug: "eighty-eight-signature-heavyweight-hoodie",
+        sku: "88-HD-001",
+        categoryId: "cat-hoodies",
+        categoryName: "هوديز وسويت شيرت",
+        price: 1450,
+        salePrice: 1250,
+        cost: 650,
+        description: "Crafted from 100% premium Egyptian heavy French Terry cotton (450 GSM). Features an oversized modern drop-shoulder silhouette, double-layered hood, and the iconic 88 embroidered insignia.",
+        descriptionAr: "مصنوع من قطن مصري 100% ميلتون ثقيل 450 جرام مع بطانة فائقة النعومة. يتميز بقصة أوفرسايز عصرية وأكتاف ساقطة، وكابيشون مزدوج، مع تطريز لوجو 88 الفاخر بدقة عالية.",
+        fabric: "100% قطن مصري ثقيل 450 GSM ميلتون معالج ضد الانكماش.",
+        careInstructions: "غسيل آلي بماء بارد ومقلوب. عدم استخدام مبيضات. كوي خفيف على الظهر.",
         images: [
-          "https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=1000&q=85",
-          "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=1000&q=85",
-          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=85"
+          "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=1000&q=85",
+          "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?auto=format&fit=crop&w=1000&q=85"
         ],
         colors: [
-          { name: "Camel Sand", nameAr: "رملي كلاسيكي", hex: "#c29b74" },
-          { name: "Noir Black", nameAr: "أسود داكن", hex: "#111827" },
-          { name: "Slate Olive", nameAr: "زيتي حجري", hex: "#4b5320" }
+          { name: "Pitch Black", nameAr: "أسود داكن", hex: "#111827" },
+          { name: "Heather Grey", nameAr: "رمادي ميلانج", hex: "#6b7280" },
+          { name: "Forest Olive", nameAr: "زيتي غامق", hex: "#3f4f3c" }
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["M", "L", "XL", "2XL"],
         variants: [
-          { sku: "LET-TC-001-CAM-XS", color: "Camel Sand", size: "XS", stock: 6, price: 420 },
-          { sku: "LET-TC-001-CAM-S", color: "Camel Sand", size: "S", stock: 12, price: 420 },
-          { sku: "LET-TC-001-CAM-M", color: "Camel Sand", size: "M", stock: 15, price: 420 },
-          { sku: "LET-TC-001-CAM-L", color: "Camel Sand", size: "L", stock: 8, price: 420 },
-          { sku: "LET-TC-001-CAM-XL", color: "Camel Sand", size: "XL", stock: 4, price: 420 },
-          { sku: "LET-TC-001-BLK-S", color: "Noir Black", size: "S", stock: 10, price: 420 },
-          { sku: "LET-TC-001-BLK-M", color: "Noir Black", size: "M", stock: 14, price: 420 },
-          { sku: "LET-TC-001-BLK-L", color: "Noir Black", size: "L", stock: 5, price: 420 }
+          { sku: "88-HD-001-BLK-M", color: "Pitch Black", size: "M", stock: 15, price: 1250 },
+          { sku: "88-HD-001-BLK-L", color: "Pitch Black", size: "L", stock: 22, price: 1250 },
+          { sku: "88-HD-001-BLK-XL", color: "Pitch Black", size: "XL", stock: 18, price: 1250 },
+          { sku: "88-HD-001-BLK-2XL", color: "Pitch Black", size: "2XL", stock: 8, price: 1250 },
+          { sku: "88-HD-001-GRY-L", color: "Heather Grey", size: "L", stock: 14, price: 1250 },
+          { sku: "88-HD-001-GRY-XL", color: "Heather Grey", size: "XL", stock: 10, price: 1250 }
         ],
-        totalStock: 74,
+        totalStock: 87,
         isPublished: true,
         isFeatured: true,
         isNewArrival: true,
         isBestSeller: true,
-        seoTitle: "Luxury Cashmere-Wool Trench Coat | L'ÉTOILE Haute Couture",
-        seoDescription: "Shop the handcrafted cashmere-wool double-breasted trench coat. Impeccable tailoring and supreme warmth.",
+        seoTitle: "EIGHTY-EIGHT Signature Heavyweight Hoodie | Egyptian Streetwear",
+        seoDescription: "Shop the iconic 450 GSM Egyptian cotton heavyweight hoodie.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
-        id: 'prod-dress-02',
-        name: "Sovereign Bias-Cut Silk Maxi Dress",
-        nameAr: "فستان الحرير الانسيابي ماكسي المقصوص بالورب",
-        slug: "sovereign-bias-cut-silk-maxi-dress",
-        sku: "LET-DR-002",
-        categoryId: "cat-dresses",
-        categoryName: "Evening & Atelier Dresses",
-        price: 360,
-        salePrice: 320,
-        cost: 110,
-        description: "Cut on the bias from heavyweight 22-momme Mulberry silk, this evening gown drapes naturally against the curves. Features delicate spaghetti straps and a low cowl back.",
-        descriptionAr: "مفصل بالورب من حرير التوت الصافي بوزن 22 مومي الفاخر. ينساب بنعومة استثنائية مع ظهر مكشوف ناعم وقصة كتف أنيقة تلفت الأنظار.",
-        fabric: "100% Grade 6A Mulberry Silk (22 Momme).",
-        careInstructions: "Dry clean or delicate hand wash cold using specialized silk detergent. Dry flat in shade.",
+        id: 'prod-tee-02',
+        name: "EIGHTY-EIGHT Oversized Minimal Graphic Tee",
+        nameAr: "تيشيرت أوفرسايز قطن مصري 100% أسود",
+        slug: "eighty-eight-oversized-minimal-graphic-tee",
+        sku: "88-TS-002",
+        categoryId: "cat-tees",
+        categoryName: "تيشيرتات وبولو",
+        price: 750,
+        salePrice: 650,
+        cost: 280,
+        description: "Heavyweight 240 GSM combed Egyptian compact cotton. Retains deep black color through countless washes with zero shrinkage and high-density 88 typography.",
+        descriptionAr: "مصنوع من أنقى خامات القطن المصري الممشط 240 جرام. قماش معالج يحافظ على اللون الأسود ونعومة الملمس مع تطريز وطباعة حفر عالية الدقة لشعار EIGHTY-EIGHT.",
+        fabric: "100% قطن مصري ممشط ومغزول 240 GSM فائق الجودة.",
+        careInstructions: "غسيل مقلوب على درجة حرارة 30 مئوية. عدم كوي الطباعة مباشرة.",
         images: [
-          "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=1000&q=85",
-          "https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1000&q=85",
-          "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1000&q=85"
+          "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1000&q=85",
+          "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1000&q=85"
         ],
         colors: [
-          { name: "Champagne Pearl", nameAr: "لؤلؤي شامبين", hex: "#f5e6d3" },
-          { name: "Emerald Forest", nameAr: "زمردي ملكي", hex: "#164e63" },
-          { name: "Onyx Midnight", nameAr: "أسود أونيكس", hex: "#0f172a" }
+          { name: "Onyx Black", nameAr: "أسود أونيكس", hex: "#0f172a" },
+          { name: "Chalk White", nameAr: "أبيض طباشيري", hex: "#f8fafc" }
         ],
-        sizes: ["XS", "S", "M", "L"],
+        sizes: ["S", "M", "L", "XL"],
         variants: [
-          { sku: "LET-DR-002-CHP-XS", color: "Champagne Pearl", size: "XS", stock: 8, price: 320 },
-          { sku: "LET-DR-002-CHP-S", color: "Champagne Pearl", size: "S", stock: 12, price: 320 },
-          { sku: "LET-DR-002-CHP-M", color: "Champagne Pearl", size: "M", stock: 10, price: 320 },
-          { sku: "LET-DR-002-CHP-L", color: "Champagne Pearl", size: "L", stock: 4, price: 320 },
-          { sku: "LET-DR-002-EMR-S", color: "Emerald Forest", size: "S", stock: 6, price: 320 },
-          { sku: "LET-DR-002-EMR-M", color: "Emerald Forest", size: "M", stock: 9, price: 320 }
+          { sku: "88-TS-002-BLK-M", color: "Onyx Black", size: "M", stock: 25, price: 650 },
+          { sku: "88-TS-002-BLK-L", color: "Onyx Black", size: "L", stock: 30, price: 650 },
+          { sku: "88-TS-002-BLK-XL", color: "Onyx Black", size: "XL", stock: 15, price: 650 },
+          { sku: "88-TS-002-WHT-L", color: "Chalk White", size: "L", stock: 20, price: 650 }
         ],
-        totalStock: 49,
+        totalStock: 90,
+        isPublished: true,
+        isFeatured: true,
+        isNewArrival: true,
+        isBestSeller: true,
+        seoTitle: "EIGHTY-EIGHT Oversized Heavyweight Tee | Premium Cotton",
+        seoDescription: "240 GSM combed Egyptian cotton oversized t-shirt.",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'prod-pants-03',
+        name: "EIGHTY-EIGHT Utility Parachute Cargo Pants",
+        nameAr: "بنطلون كارجو باراشوت زيتي عصري",
+        slug: "eighty-eight-utility-parachute-cargo-pants",
+        sku: "88-PT-003",
+        categoryId: "cat-pants",
+        categoryName: "بنطلونات وكارجو",
+        price: 1150,
+        salePrice: 950,
+        cost: 420,
+        description: "Relaxed baggy parachute cargo pants with functional 3D multi-pockets, adjustable ankle toggles, and water-repellent ripstop cotton blend.",
+        descriptionAr: "تصميم كارجو باراشوت عصري مع جيوب جانبية متعددة وعريضة، واستك سفلي قابل للتعديل عند الكاحل. خامة متينة وعملية ومقاومة للماء.",
+        fabric: "97% قطن تويل عالي الكثافة، 3% إيلاستين للمرونة.",
+        careInstructions: "غسيل آلي بالماء البارد. تجفيف في الظل.",
+        images: [
+          "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=1000&q=85",
+          "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?auto=format&fit=crop&w=1000&q=85"
+        ],
+        colors: [
+          { name: "Military Olive", nameAr: "زيتي عسكري", hex: "#4b5320" },
+          { name: "Stealth Black", nameAr: "أسود مات", hex: "#1f2937" }
+        ],
+        sizes: ["30", "32", "34", "36"],
+        variants: [
+          { sku: "88-PT-003-OLV-32", color: "Military Olive", size: "32", stock: 12, price: 950 },
+          { sku: "88-PT-003-OLV-34", color: "Military Olive", size: "34", stock: 16, price: 950 },
+          { sku: "88-PT-003-BLK-32", color: "Stealth Black", size: "32", stock: 14, price: 950 },
+          { sku: "88-PT-003-BLK-34", color: "Stealth Black", size: "34", stock: 10, price: 950 }
+        ],
+        totalStock: 52,
+        isPublished: true,
+        isFeatured: true,
+        isNewArrival: false,
+        isBestSeller: true,
+        seoTitle: "EIGHTY-EIGHT Parachute Cargo Pants",
+        seoDescription: "Multi-pocket baggy utility cargo pants.",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'prod-jacket-04',
+        name: "EIGHTY-EIGHT Reversible Utility Bomber Jacket",
+        nameAr: "جاكيت بومبر عصري مبطن أسود",
+        slug: "eighty-eight-utility-bomber-jacket",
+        sku: "88-JK-004",
+        categoryId: "cat-jackets",
+        categoryName: "جواكيت ومعاطف",
+        price: 2100,
+        salePrice: 1850,
+        cost: 890,
+        description: "Windproof and water-resistant nylon shell filled with thermal down alternative. Heavy-duty metal zippers, orange emergency lining, and custom 88 zipper pull.",
+        descriptionAr: "جاكيت بومبر شتوي فاخر ومبطن بالكامل للحماية من البرد والرياح. سوست معدنية ثقيلة وقصة كلاسيكية تناسب جميع الإطلالات اليومية.",
+        fabric: "100% نايلون تافيتال عالي الكثافة مع بطانة داخلية دافئة.",
+        careInstructions: "تنظيف جاف أو مسح بقطعة قماش مبللة.",
+        images: [
+          "https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=1000&q=85",
+          "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1000&q=85"
+        ],
+        colors: [
+          { name: "Matte Black", nameAr: "أسود مطفي", hex: "#18181b" }
+        ],
+        sizes: ["M", "L", "XL"],
+        variants: [
+          { sku: "88-JK-004-BLK-M", color: "Matte Black", size: "M", stock: 8, price: 1850 },
+          { sku: "88-JK-004-BLK-L", color: "Matte Black", size: "L", stock: 14, price: 1850 },
+          { sku: "88-JK-004-BLK-XL", color: "Matte Black", size: "XL", stock: 6, price: 1850 }
+        ],
+        totalStock: 28,
         isPublished: true,
         isFeatured: true,
         isNewArrival: true,
         isBestSeller: false,
-        seoTitle: "Mulberry Silk Bias-Cut Maxi Dress | L'ÉTOILE",
-        seoDescription: "Exquisite 100% Mulberry silk evening maxi dress with cowl neckline.",
+        seoTitle: "EIGHTY-EIGHT Utility Bomber Jacket",
+        seoDescription: "Insulated streetwear bomber jacket.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
-        id: 'prod-blazer-03',
-        name: "Sculpted Double-Breasted Wool Blazer",
-        nameAr: "بليزر صوف مفصل مزدوج الأزرار بتصميم نحتي",
-        slug: "sculpted-double-breasted-wool-blazer",
-        sku: "LET-BZ-003",
-        categoryId: "cat-tailoring",
-        categoryName: "Tailored Suits & Separates",
-        price: 340,
-        salePrice: 0,
-        cost: 130,
-        description: "A masterclass in modern power dressing. Featuring accentuated peak lapels, structured padded shoulders, and tailored waist cinching made from high-twist Italian wool crepe.",
-        descriptionAr: "قطعة أساسية تمثل قمة التميز والرقي. يتميز البليزر بياقة عريضة حادة، وأكتاف منظمة، وتفصيل يحدد الخصر بدقة من صوف الكريب الإيطالي.",
-        fabric: "100% Italian Wool Crepe. Hand-finished horn buttons.",
-        careInstructions: "Dry clean only. Steam gently. Store on wide wooden hanger.",
-        images: [
-          "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1000&q=85",
-          "https://images.unsplash.com/photo-1548624149-f9b1859aa9d0?auto=format&fit=crop&w=1000&q=85"
-        ],
-        colors: [
-          { name: "Chalk Ivory", nameAr: "عاجي طباشيري", hex: "#f8fafc" },
-          { name: "Deep Navy", nameAr: "كحلي داكن", hex: "#1e293b" }
-        ],
-        sizes: ["S", "M", "L", "XL"],
-        variants: [
-          { sku: "LET-BZ-003-IVR-S", color: "Chalk Ivory", size: "S", stock: 8, price: 340 },
-          { sku: "LET-BZ-003-IVR-M", color: "Chalk Ivory", size: "M", stock: 14, price: 340 },
-          { sku: "LET-BZ-003-IVR-L", color: "Chalk Ivory", size: "L", stock: 6, price: 340 },
-          { sku: "LET-BZ-003-NVY-S", color: "Deep Navy", size: "S", stock: 10, price: 340 },
-          { sku: "LET-BZ-003-NVY-M", color: "Deep Navy", size: "M", stock: 11, price: 340 }
-        ],
-        totalStock: 49,
-        isPublished: true,
-        isFeatured: true,
-        isNewArrival: false,
-        isBestSeller: true,
-        seoTitle: "Sculpted Italian Wool Blazer | L'ÉTOILE",
-        seoDescription: "Double-breasted Italian wool blazer with structured shoulders.",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'prod-cashmere-04',
-        name: "Pure Mongolian Cashmere Mockneck Sweater",
-        nameAr: "كنزة كشمير منغولي بياقة عالية ناعمة",
-        slug: "pure-mongolian-cashmere-mockneck-sweater",
-        sku: "LET-CS-004",
-        categoryId: "cat-knitwear",
-        categoryName: "Cashmere & Knitwear",
-        price: 280,
-        salePrice: 240,
-        cost: 95,
-        description: "Spun from ultra-fine 15.2-micron 2-ply Mongolian cashmere fibers. Cloud-like softness, thermo-regulating warmth, and ribbed cuff detailing that holds its shape.",
-        descriptionAr: "مغزولة من أجود ألياف الكشمير المنغولي بسماكة 15.2 ميكرون وخيط مزدوج. خفة ونعومة استثنائية مع دفء مثالي وتصميم ياقة أنيق.",
-        fabric: "100% Grade A Mongolian Cashmere (2-Ply).",
-        careInstructions: "Hand wash cold with cashmere wash. Squeeze gently, reshape and dry flat. Do not wring.",
-        images: [
-          "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=1000&q=85",
-          "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=1000&q=85"
-        ],
-        colors: [
-          { name: "Oatmeal Melange", nameAr: "بيج شوفان", hex: "#e7dfd5" },
-          { name: "Charcoal Heather", nameAr: "رمادي فحمي", hex: "#334155" },
-          { name: "Dusty Rose", nameAr: "وردي ناعم", hex: "#d8b4b4" }
-        ],
-        sizes: ["XS", "S", "M", "L", "XL"],
-        variants: [
-          { sku: "LET-CS-004-OAT-S", color: "Oatmeal Melange", size: "S", stock: 9, price: 240 },
-          { sku: "LET-CS-004-OAT-M", color: "Oatmeal Melange", size: "M", stock: 15, price: 240 },
-          { sku: "LET-CS-004-OAT-L", color: "Oatmeal Melange", size: "L", stock: 7, price: 240 },
-          { sku: "LET-CS-004-CHR-M", color: "Charcoal Heather", size: "M", stock: 12, price: 240 }
-        ],
-        totalStock: 43,
-        isPublished: true,
-        isFeatured: false,
-        isNewArrival: true,
-        isBestSeller: true,
-        seoTitle: "Grade-A Mongolian Cashmere Sweater | L'ÉTOILE",
-        seoDescription: "100% Pure Mongolian Cashmere Sweater with mockneck collar.",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'prod-trousers-05',
-        name: "Fluid Pleated High-Waist Wool Trousers",
-        nameAr: "بنطال صوف واسع بخصر عالي وكسرات انسيابية",
-        slug: "fluid-pleated-high-waist-wool-trousers",
-        sku: "LET-TR-005",
-        categoryId: "cat-tailoring",
-        categoryName: "Tailored Suits & Separates",
-        price: 240,
-        salePrice: 0,
-        cost: 85,
-        description: "Tailored with deep double front pleats and a relaxed wide-leg puddle hem. Crafted from breathable lightweight tropical wool that drapes fluidly with each step.",
-        descriptionAr: "مفصل بكسرات أمامية عميقة وخصر مرتفع مع قصة أرجل واسعة مستقيمة من الصوف التروبيكال الفاخر الخفيف الذي يوفر انسيابية وحرية حركة تامة.",
-        fabric: "100% Super 120s Tropical Wool.",
-        careInstructions: "Dry clean only. Press with medium steam.",
-        images: [
-          "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=1000&q=85",
-          "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1000&q=85"
-        ],
-        colors: [
-          { name: "Ecru White", nameAr: "أبيض إكرو", hex: "#f1f5f9" },
-          { name: "Coffee Brown", nameAr: "بني قهوة", hex: "#451a03" }
-        ],
-        sizes: ["XS", "S", "M", "L"],
-        variants: [
-          { sku: "LET-TR-005-ECR-S", color: "Ecru White", size: "S", stock: 11, price: 240 },
-          { sku: "LET-TR-005-ECR-M", color: "Ecru White", size: "M", stock: 16, price: 240 },
-          { sku: "LET-TR-005-CFE-S", color: "Coffee Brown", size: "S", stock: 8, price: 240 },
-          { sku: "LET-TR-005-CFE-M", color: "Coffee Brown", size: "M", stock: 10, price: 240 }
-        ],
-        totalStock: 45,
-        isPublished: true,
-        isFeatured: false,
-        isNewArrival: false,
-        isBestSeller: true,
-        seoTitle: "High-Waist Pleated Wool Trousers | L'ÉTOILE",
-        seoDescription: "Tailored pleated wide-leg trousers crafted from Italian tropical wool.",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'prod-tote-06',
-        name: "The Palais Hand-Stitched Leather Tote",
-        nameAr: "حقيبة باليه الجلدية الطبيعية بحياكة يدوية",
-        slug: "the-palais-hand-stitched-leather-tote",
-        sku: "LET-AC-006",
+        id: 'prod-cap-05',
+        name: "EIGHTY-EIGHT Embroidered 88 Structured Cap",
+        nameAr: "كاب بيسبول لوجو 88 مطرز",
+        slug: "eighty-eight-embroidered-88-structured-cap",
+        sku: "88-CP-005",
         categoryId: "cat-accessories",
-        categoryName: "Artisanal Leather & Silk Scarves",
-        price: 450,
-        salePrice: 395,
-        cost: 160,
-        description: "Crafted in Florence from vegetable-tanned full-grain calfskin. Features hand-painted edge burnishing, brushed gold hardware, and a suede-lined spacious interior with removable zip pouch.",
-        descriptionAr: "صُنعت في فلورنسا من جلد العجل الطبيعي المدبوغ نباتياً بالكامل. تتميز بأطراف مصقولة يدوياً، وإكسسوارات ذهبية مطفية، وبطانة شمواه فاخرة.",
-        fabric: "100% Full-Grain Tuscan Calfskin Leather. Suede Lining.",
-        careInstructions: "Store in provided dust bag with stuffing. Protect from water and direct perfume spray. Clean with leather balm.",
+        categoryName: "كابات وإكسسوارات",
+        price: 500,
+        salePrice: 450,
+        cost: 180,
+        description: "Structured 6-panel baseball cap with 3D embroidered 88 infinity monogram and antique brass buckle closure.",
+        descriptionAr: "كاب كلاسيكي بـ 6 ألواح مقواة وتطريز ثلاثي الأبعاد لشعار 88 مع إبزيم نحاسي خلفي لضبط المقاس بدقة.",
+        fabric: "100% قطن تويل ثقيل مسامي.",
+        careInstructions: "تنظيف يدوي بإسفنجة رطبة.",
         images: [
-          "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1000&q=85",
-          "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=1000&q=85"
+          "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=1000&q=85"
         ],
         colors: [
-          { name: "Cognac Amber", nameAr: "عنبري كوجناك", hex: "#78350f" },
-          { name: "Midnight Black", nameAr: "أسود ليلي", hex: "#0f172a" }
+          { name: "Black / White", nameAr: "أسود بتطريز أبيض", hex: "#000000" }
         ],
-        sizes: ["One Size"],
+        sizes: ["مقاس موحد قابل للتعديل"],
         variants: [
-          { sku: "LET-AC-006-CGN-OS", color: "Cognac Amber", size: "One Size", stock: 12, price: 395 },
-          { sku: "LET-AC-006-BLK-OS", color: "Midnight Black", size: "One Size", stock: 15, price: 395 }
+          { sku: "88-CP-005-BLK-OS", color: "Black / White", size: "مقاس موحد", stock: 35, price: 450 }
         ],
-        totalStock: 27,
+        totalStock: 35,
         isPublished: true,
-        isFeatured: true,
+        isFeatured: false,
         isNewArrival: true,
         isBestSeller: true,
-        seoTitle: "Tuscan Calfskin Leather Tote Bag | L'ÉTOILE",
-        seoDescription: "Artisanal hand-stitched full-grain leather tote bag with suede lining.",
+        seoTitle: "EIGHTY-EIGHT Embroidered Cap",
+        seoDescription: "Structured 88 embroidered cotton cap.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -881,42 +912,42 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
     // 5. Coupons
     const coupons = [
       {
-        id: 'coup-luxe15',
-        code: 'LUXE15',
-        discountType: 'percentage',
-        discountValue: 15,
-        minOrderValue: 200,
-        maxDiscount: 100,
-        usageLimit: 500,
-        usageCount: 24,
-        startDate: '2026-01-01',
-        endDate: '2026-12-31',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'coup-welcome10',
-        code: 'WELCOME10',
+        id: 'coup-eighty10',
+        code: 'EIGHTY10',
         discountType: 'percentage',
         discountValue: 10,
-        minOrderValue: 100,
-        maxDiscount: 50,
+        minOrderValue: 1000,
+        maxDiscount: 300,
         usageLimit: 1000,
-        usageCount: 68,
+        usageCount: 42,
         startDate: '2026-01-01',
         endDate: '2026-12-31',
         isActive: true,
         createdAt: new Date().toISOString()
       },
       {
-        id: 'coup-first50',
-        code: 'FIRST50',
+        id: 'coup-welcome88',
+        code: 'WELCOME88',
+        discountType: 'percentage',
+        discountValue: 15,
+        minOrderValue: 600,
+        maxDiscount: 250,
+        usageLimit: 500,
+        usageCount: 88,
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'coup-freeship',
+        code: 'FREESHIP',
         discountType: 'fixed',
-        discountValue: 50,
-        minOrderValue: 350,
-        maxDiscount: 50,
-        usageLimit: 200,
-        usageCount: 15,
+        discountValue: 65,
+        minOrderValue: 800,
+        maxDiscount: 65,
+        usageLimit: 300,
+        usageCount: 19,
         startDate: '2026-01-01',
         endDate: '2026-12-31',
         isActive: true,
@@ -970,53 +1001,53 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
     const pages = [
       {
         id: 'page-about',
-        title: "The Atelier Story",
-        titleAr: "قصة الدار والحرفية",
+        title: "The EIGHTY-EIGHT Story",
+        titleAr: "قصة براند EIGHTY-EIGHT",
         slug: "about",
-        content: `Founded with an uncompromising devotion to fabric integrity and architectural silhouettes, L'ÉTOILE represents modern minimalism elevated to haute couture standards. Every garment is meticulously patterned in our Parisian atelier and hand-finished by master artisans in northern Italy and Scotland. We source solely certified ethical Mongolian cashmere, Oeko-Tex Grade 6A Mulberry silk, and traceable Australian merino wool.`,
-        contentAr: `تأسست دار لو إتوال L'ÉTOILE انطلاقاً من شغف استثنائي بنقاء الخامات ودقة الخطوط التصميمية لتصل بالبساطة الحديثة إلى آفاق الهوت كوتور العالمية. يتم تصميم وقص كل قطعة داخل الآتيليه الخاص بنا في باريس، وتُستكمل الحياكة يدوياً على أيدي أمهر الحرفيين في شمال إيطاليا واسكتلندا، مع الالتزام بأرقى معايير الاستدامة والخامات الطبيعية الموثقة.`,
+        content: `EIGHTY-EIGHT is an avant-garde Egyptian fashion house engineering oversized silhouettes, luxury heavyweight fleece, and bespoke street-tailoring. Founded in Cairo, our garments merge architectural precision with everyday comfort. Every piece is crafted from 100% Egyptian combed cotton with double-stitched durability and custom dyed in small limited batches.`,
+        contentAr: `براند EIGHTY-EIGHT هو براند مصري يقدم أرقى تصميمات الأزياء العصرية وستريت وير فاخر بقصات معمارية وخامات قطن مصري 100% عالية الجودة. بنصمم كل قطعة بعناية فائقة لتجمع بين الفخامة والراحة والأناقة اليومية بأعلى معايير الحياكة والتقفيل الدقيق.`,
         isPublished: true,
-        seoTitle: "About L'ÉTOILE | The Atelier Story & Heritage",
-        seoDescription: "Discover the heritage, sustainability, and master artisans behind L'ÉTOILE luxury fashion house.",
+        seoTitle: "About EIGHTY-EIGHT | Luxury Egyptian Streetwear & Fashion",
+        seoDescription: "Discover the heritage, quality cotton, and urban craftsmanship behind EIGHTY-EIGHT.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
         id: 'page-shipping',
         title: "Shipping & Delivery Policy",
-        titleAr: "سياسة الشحن والتوصيل الفاخر",
+        titleAr: "سياسة الشحن والتوصيل في مصر",
         slug: "shipping-policy",
-        content: `All L'ÉTOILE orders are packaged by hand in signature embossed keepsake gift boxes with acid-free tissue paper and organic cotton garment bags. We partner with DHL Express and premium air couriers to guarantee swift and insured delivery worldwide. Orders placed before 2:00 PM CET are dispatched the same business day. Tracking details are automatically provided via SMS and email.`,
-        contentAr: `يتم تجهيز وتغليف جميع طلبات لو إتوال يدوياً داخل صناديق هدايا فاخرة مميزة مع أكياس حفظ الملابس القطنية العضوية. نتعاون مع كبرى شركات الشحن الجوي السريع لضمان وصول شحنتكم بأمان وسرعة فائقة مع إمكانية التتبع المباشر لحظة بلحظة.`,
+        content: `All EIGHTY-EIGHT orders are packaged in signature magnetic luxury boxes with branded tissue paper. We deliver to all Egyptian governorates (Cairo, Giza, Alexandria, Delta, and Upper Egypt) within 24 to 72 hours via premium courier services. Cash on Delivery (COD) and live parcel inspection at the doorstep are fully supported.`,
+        contentAr: `بيتم تجهيز وتغليف كل أوردرات EIGHTY-EIGHT في علب هدايا فاخرة ومغناطيسية خاصة بالبراند. بنوصل لجميع محافظات مصر (القاهرة، الجيزة، الإسكندرية، محافظات الدلتا، والصعيد) خلال 24 إلى 72 ساعة عبر شركات شحن سريعة وموثوقة مع إمكانية الدفع عند الاستلام والمعاينة قبل الاستلام.`,
         isPublished: true,
-        seoTitle: "Shipping & Worldwide Delivery | L'ÉTOILE",
-        seoDescription: "Learn about our worldwide white-glove shipping, delivery times, and bespoke packaging.",
+        seoTitle: "Shipping & Delivery in Egypt | EIGHTY-EIGHT",
+        seoDescription: "Fast shipping across Cairo, Giza, Alexandria, and all Egyptian governorates with cash on delivery.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
         id: 'page-returns',
         title: "Returns & Exchanges",
-        titleAr: "سياسة الاستبدال والاسترجاع",
+        titleAr: "سياسة الاستبدال والاسترجاع السلسة",
         slug: "returns-policy",
-        content: `We offer complimentary 14-day returns and exchanges on all unworn items with original security tags attached. Once your return request is submitted through our customer portal, a prepaid courier pickup will be scheduled. Refunds are issued to the original payment method or store credit within 3 to 5 business days after inspection.`,
-        contentAr: `نوفر خدمة الإرجاع والاستبدال المجاني خلال 14 يوماً من استلام الطلب لجميع القطع غير المستخدمة التي تحتفظ ببطاقات الأمان الأصلية. يمكنكم تقديم طلب الإرجاع بسهولة عبر حسابكم في الموقع ليتم التنسيق لاستلام الشحنة وإعادة المبلغ أو استبدال المقاس.`,
+        content: `We offer an easy 14-day exchange and return policy across Egypt. Items must be in brand new, unworn condition with all original tags attached. Simply submit your request or contact our customer support team, and our courier will handle the pickup directly from your doorstep.`,
+        contentAr: `نوفر لحضرتك إمكانية الاستبدال أو الاسترجاع بكل سهولة خلال 14 يوم من استلام الأوردر، بشرط أن تكون القطعة بحالتها الأصلية وغير مستخدمة مع التيكت الخاص بها. المندوب بيوصل لحد باب بيتك يستلم أو يبدل المقاس بدون أي تعقيد.`,
         isPublished: true,
-        seoTitle: "Returns & Exchanges Policy | L'ÉTOILE",
-        seoDescription: "Complimentary 14-day returns and size exchanges on all couture pieces.",
+        seoTitle: "Returns & Exchanges | EIGHTY-EIGHT",
+        seoDescription: "Hassle-free 14-day exchange and return policy across all Egyptian governorates.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
         id: 'page-size-guide',
-        title: "Atelier Size & Fit Guide",
-        titleAr: "دليل المقاسات والقياسات",
+        title: "Size & Fit Guide",
+        titleAr: "دليل المقاسات لبراند EIGHTY-EIGHT",
         slug: "size-guide",
-        content: `Our tailoring follows standard European sizing (FR/IT). For outerwear designed with an oversized fit, we recommend ordering your true size for a relaxed editorial silhouette, or sizing down for a sharper fitted look. Detailed bust, waist, and hip measurements in both centimeters and inches are available on every product page.`,
-        contentAr: `تعتمد قياساتنا على المقاييس الأوروبية القياسية (الفرنسية والإيطالية). يمكنك الاعتماد على جدول المقاسات الدقيق بالسنتيمتر والبوصة المتوفر في كل منتج لتحديد المقاس الأمثل لك.`,
+        content: `EIGHTY-EIGHT garments are designed with modern relaxed and oversized silhouettes. If you prefer a relaxed streetwear drape, select your standard size. For a standard tailored fit, consider sizing down one size. Precise chest, shoulder, and length measurements in centimeters are listed on every product page.`,
+        contentAr: `تصميمات EIGHTY-EIGHT بتعتمد على القصات المريحة والـ Oversized العصرية. لو بتفضل المظهر الـ Oversized اطلب مقاسك المعتاد، ولو بتفضل المقاس المظبوط (Regular Fit) تقدر تختار مقاس أصغر نمرة واحدة. قياسات الصدر والكتف والطول متوفرة بالسنتيمتر داخل صفحة كل منتج.`,
         isPublished: true,
-        seoTitle: "Size & Measurement Guide | L'ÉTOILE",
-        seoDescription: "Comprehensive sizing chart and measuring instructions for coats, dresses, and tailoring.",
+        seoTitle: "Size Guide | EIGHTY-EIGHT",
+        seoDescription: "Accurate size charts and fitting advice for hoodies, t-shirts, jackets, and trousers.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -1072,8 +1103,8 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
     // 9. Bootstrap Super Admin Record
     await setDoc(doc(db, 'admins', 'admin-primary'), {
       id: 'admin-primary',
-      email: 'mohamedqwe542@gmail.com',
-      displayName: 'Brand Director & Super Admin',
+      email: 'muhammedadel.dev@gmail.com',
+      displayName: 'Muhammed Adel • Super Admin',
       role: 'super_admin',
       permissions: ['all', 'products', 'orders', 'inventory', 'returns', 'coupons', 'cms', 'settings', 'reports', 'roles'],
       createdAt: new Date().toISOString(),
@@ -1083,104 +1114,93 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
     // 10. Sample Orders for Dashboard Analytics
     const sampleOrders = [
       {
-        orderNumber: 'ORD-89421-102',
+        orderNumber: 'ORD-88101-CAI',
         customerId: 'cust-demo-1',
-        customerName: 'Amina Al-Mansoor',
-        customerEmail: 'amina.mansoor@example.com',
-        customerPhone: '+971509988771',
-        shippingAddress: {
-          governorate: 'Dubai',
-          city: 'Downtown Dubai',
-          address: 'Burj Residences, Tower 3, Apt 1402'
-        },
-        items: [
-          {
-            productId: 'prod-trench-01',
-            productName: "L'Atelier Cashmere-Wool Trench Coat",
-            variantSku: "LET-TC-001-CAM-S",
-            color: "Camel Sand",
-            size: "S",
-            price: 420,
-            quantity: 1,
-            total: 420,
-            image: "https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=600&q=80"
-          }
-        ],
-        subtotal: 420,
-        shippingCost: 0,
-        shippingZoneName: 'UAE & Gulf Express',
-        discountAmount: 42,
-        couponCode: 'WELCOME10',
-        taxAmount: 18.9,
-        total: 396.9,
-        currency: 'USD',
-        paymentMethod: 'card',
-        paymentStatus: 'paid',
-        status: 'delivered',
-        trackingNumber: 'DHL-UAE-9928172',
-        statusHistory: [
-          { status: 'new', timestamp: new Date(Date.now() - 5 * 86400000).toISOString(), note: 'Order placed' },
-          { status: 'confirmed', timestamp: new Date(Date.now() - 4 * 86400000).toISOString(), note: 'Payment verified' },
-          { status: 'shipped', timestamp: new Date(Date.now() - 3 * 86400000).toISOString(), note: 'Dispatched via DHL' },
-          { status: 'delivered', timestamp: new Date(Date.now() - 1 * 86400000).toISOString(), note: 'Handed to client' }
-        ],
-        createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - 1 * 86400000).toISOString()
-      },
-      {
-        orderNumber: 'ORD-89422-205',
-        customerId: 'cust-demo-2',
-        customerName: 'Youssef El-Shennawy',
-        customerEmail: 'youssef.shennawy@example.com',
+        customerName: 'كريم الشناوي',
+        customerEmail: 'karim.shennawy@example.com',
         customerPhone: '+201012345678',
         shippingAddress: {
           governorate: 'Cairo',
-          city: 'Zamalek',
-          address: '22 Gezira Street, 4th Floor'
+          city: 'التجمع الخامس - القاهرة الجديدة',
+          address: 'كمبوند الديار، فيلا 18'
         },
         items: [
           {
-            productId: 'prod-dress-02',
-            productName: "Sovereign Bias-Cut Silk Maxi Dress",
-            variantSku: "LET-DR-002-CHP-M",
-            color: "Champagne Pearl",
-            size: "M",
-            price: 320,
+            productId: 'prod-hoodie-01',
+            productName: "EIGHTY-EIGHT Heavyweight Signature Hoodie",
+            variantSku: "88-HD-001-BLK-L",
+            color: "Onyx Black",
+            size: "L",
+            price: 1450,
             quantity: 1,
-            total: 320,
-            image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80"
-          },
-          {
-            productId: 'prod-cashmere-04',
-            productName: "Pure Mongolian Cashmere Mockneck Sweater",
-            variantSku: "LET-CS-004-OAT-M",
-            color: "Oatmeal Melange",
-            size: "M",
-            price: 240,
-            quantity: 1,
-            total: 240,
-            image: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=600&q=80"
+            total: 1450,
+            image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=600&q=80"
           }
         ],
-        subtotal: 560,
+        subtotal: 1450,
         shippingCost: 0,
-        shippingZoneName: 'Egypt & Levant VIP Delivery',
-        discountAmount: 84,
-        couponCode: 'LUXE15',
-        taxAmount: 23.8,
-        total: 499.8,
-        currency: 'USD',
+        shippingZoneName: 'القاهرة والجيزة (توصيل سريع)',
+        discountAmount: 145,
+        couponCode: 'EIGHTY10',
+        taxAmount: 0,
+        total: 1305,
+        currency: 'EGP',
+        paymentMethod: 'vodafone_cash',
+        paymentStatus: 'paid',
+        status: 'delivered',
+        trackingNumber: 'EG-CAI-880192',
+        statusHistory: [
+          { status: 'new', timestamp: new Date(Date.now() - 3 * 86400000).toISOString(), note: 'تم استلام الأوردر بنجاح' },
+          { status: 'confirmed', timestamp: new Date(Date.now() - 2 * 86400000).toISOString(), note: 'تم تأكيد الدفع عبر فودافون كاش' },
+          { status: 'shipped', timestamp: new Date(Date.now() - 1 * 86400000).toISOString(), note: 'خرج للتوصيل مع مندوب الشحن' },
+          { status: 'delivered', timestamp: new Date(Date.now() - 6 * 3600000).toISOString(), note: 'تم تسليم الأوردر للعميل' }
+        ],
+        createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+        updatedAt: new Date(Date.now() - 6 * 3600000).toISOString()
+      },
+      {
+        orderNumber: 'ORD-88102-ALX',
+        customerId: 'cust-demo-2',
+        customerName: 'سلمى عبد الرحمن',
+        customerEmail: 'salma.abdelrahman@example.com',
+        customerPhone: '+201123456789',
+        shippingAddress: {
+          governorate: 'Alexandria',
+          city: 'سموحة - الإسكندرية',
+          address: 'شارع فوزي معاذ، عمارة 14 الدور السادس'
+        },
+        items: [
+          {
+            productId: 'prod-tee-02',
+            productName: "EIGHTY-EIGHT Architectural Boxy Tee",
+            variantSku: "88-TEE-002-WHT-M",
+            color: "Raw Off-White",
+            size: "M",
+            price: 750,
+            quantity: 2,
+            total: 1500,
+            image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80"
+          }
+        ],
+        subtotal: 1500,
+        shippingCost: 65,
+        shippingZoneName: 'الإسكندرية والساحل',
+        discountAmount: 0,
+        couponCode: '',
+        taxAmount: 0,
+        total: 1565,
+        currency: 'EGP',
         paymentMethod: 'cod',
         paymentStatus: 'pending',
         status: 'processing',
         trackingNumber: '',
         statusHistory: [
-          { status: 'new', timestamp: new Date(Date.now() - 1 * 86400000).toISOString(), note: 'Order created' },
-          { status: 'confirmed', timestamp: new Date(Date.now() - 18 * 3600000).toISOString(), note: 'Confirmed with client via phone' },
-          { status: 'processing', timestamp: new Date(Date.now() - 4 * 3600000).toISOString(), note: 'Packing at Atelier' }
+          { status: 'new', timestamp: new Date(Date.now() - 1 * 86400000).toISOString(), note: 'تم إنشاء الطلب' },
+          { status: 'confirmed', timestamp: new Date(Date.now() - 12 * 3600000).toISOString(), note: 'تم التواصل وتأكيد العنوان هاتفياً' },
+          { status: 'processing', timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), note: 'جاري التجهيز والتغليف داخل المعمل' }
         ],
         createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - 4 * 3600000).toISOString()
+        updatedAt: new Date(Date.now() - 2 * 3600000).toISOString()
       }
     ];
 

@@ -190,8 +190,8 @@ export function setupShopEvents() {
       const sortVal = sortSelect.value;
 
       cards.sort((a, b) => {
-        const priceA = parseFloat(a.querySelector('.price-current')?.textContent?.replace('$', '') || '0');
-        const priceB = parseFloat(b.querySelector('.price-current')?.textContent?.replace('$', '') || '0');
+        const priceA = parseFloat(a.querySelector('.price-current')?.textContent?.replace(/[^0-9.]/g, '') || '0');
+        const priceB = parseFloat(b.querySelector('.price-current')?.textContent?.replace(/[^0-9.]/g, '') || '0');
         if (sortVal === 'price-asc') return priceA - priceB;
         if (sortVal === 'price-desc') return priceB - priceA;
         return 0;

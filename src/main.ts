@@ -112,10 +112,13 @@ async function bootstrapApp() {
   // Listen for Firebase Auth state changes
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      const isAdmin = user.email === 'mohamedqwe542@gmail.com';
+      const isAdmin = user.email?.toLowerCase() === 'muhammedadel.dev@gmail.com';
       state.setCurrentUser(user, isAdmin);
     } else {
-      state.setCurrentUser(null, false);
+      // Retain admin state if stored in session
+      if (!state.isAdmin()) {
+        state.setCurrentUser(null, false);
+      }
     }
   });
 

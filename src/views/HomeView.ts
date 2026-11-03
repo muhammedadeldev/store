@@ -72,8 +72,8 @@ export async function renderHomeView(): Promise<string> {
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
               <span style="font-size: 24px; color: var(--color-brand-gold);">✦</span>
               <div>
-                <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'شحن جوي سريع مؤمن' : 'Insured Express'}</h4>
-                <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'توصيل مجاني للطلبات فوق 250$' : 'Free express on orders over $250'}</p>
+                <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${lang === 'ar' ? 'شحن سريع لجميع المحافظات' : 'Fast Express Across Egypt'}</h4>
+                <p style="font-size: 12px; color: var(--color-text-muted);">${lang === 'ar' ? 'توصيل مجاني للطلبات فوق 1,500 ج.م' : 'Free express on orders over 1,500 EGP'}</p>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
@@ -256,8 +256,8 @@ export function renderProductCard(prod: any, lang: 'ar' | 'en'): string {
         </a>
         
         <div class="product-price-row">
-          <span class="price-current">$${displayPrice.toFixed(2)}</span>
-          ${originalPrice ? `<span class="price-original">$${originalPrice.toFixed(2)}</span>` : ''}
+          <span class="price-current">${state.formatPrice(displayPrice)}</span>
+          ${originalPrice ? `<span class="price-original">${state.formatPrice(originalPrice)}</span>` : ''}
         </div>
 
         ${prod.colors && prod.colors.length > 0 ? `
