@@ -9,7 +9,7 @@ export function renderFooter(): string {
   return `
     <footer style="background-color: #121212; color: #a3a19d; padding-top: var(--space-4xl); padding-bottom: var(--space-2xl); border-top: 1px solid #292826;">
       <div class="container">
-        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: var(--space-3xl); margin-bottom: var(--space-3xl);" class="footer-grid">
+        <div class="footer-grid">
           
           <!-- Brand Info -->
           <div>

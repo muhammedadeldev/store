@@ -39,12 +39,14 @@ export async function renderHomeView(): Promise<string> {
             <span class="hero-tagline">${lang === 'ar' ? 'المجموعة الحصرية • خريف وشتاء' : 'Atelier Runway Edition • Autumn/Winter'}</span>
             <h1 class="hero-title">${heroTitle}</h1>
             <p class="hero-description">${heroSubtitle}</p>
-            <div style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center;">
+            <div style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center; margin-top: 8px;">
               <a href="${settings.heroCtaLink || '#shop'}" class="btn btn-lg hero-btn-primary">
-                ${heroCtaText}
+                <span>✦</span>
+                <span>${heroCtaText}</span>
               </a>
               <a href="#shop" class="btn btn-lg hero-btn-secondary">
-                ${lang === 'ar' ? 'الهوديز والتيشيرتات' : 'Explore Streetwear'}
+                <span>🧥</span>
+                <span>${lang === 'ar' ? 'الهوديز والتيشيرتات' : 'Explore Streetwear'}</span>
               </a>
             </div>
           </div>
@@ -52,9 +54,9 @@ export async function renderHomeView(): Promise<string> {
       </section>
 
       <!-- Brand Pillars / Values -->
-      <section style="background-color: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: var(--space-xl) 0;">
+      <section class="pillars-section">
         <div class="container">
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg);" class="pillars-grid">
+          <div class="pillars-grid">
             <div style="display: flex; align-items: center; gap: var(--space-sm);">
               <span style="font-size: 24px; color: var(--color-brand-gold);">✦</span>
               <div>
@@ -151,7 +153,7 @@ export async function renderHomeView(): Promise<string> {
       <!-- Editorial Atelier Story Banner -->
       <section style="position: relative; padding: var(--space-4xl) 0; background-color: #121212; color: #ffffff; overflow: hidden;">
         <div class="container" style="position: relative; z-index: 10;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4xl); align-items: center;" class="story-grid">
+          <div class="story-grid">
             <div>
               <span style="font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: var(--space-sm);">
                 ${lang === 'ar' ? 'فلسفة المتجر والإنتاج' : 'The Brand Craft'}
@@ -210,7 +212,7 @@ export async function renderHomeView(): Promise<string> {
             <h3 style="font-family: var(--font-editorial); font-size: 28px; font-weight: 500;">${lang === 'ar' ? 'إطلالات الكوتور في العالم' : 'Worn Across The Globe'}</h3>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-sm);" class="insta-grid">
+          <div class="insta-grid">
             <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80" alt="Runway Look 1" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-xs);" />
             <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80" alt="Runway Look 2" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-xs);" />
             <img src="https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=600&q=80" alt="Runway Look 3" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-xs);" />

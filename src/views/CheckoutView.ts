@@ -54,7 +54,7 @@ export async function renderCheckoutView(): Promise<string> {
         </p>
       </div>
 
-      <form id="checkout-form" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--space-3xl);" class="checkout-layout-grid">
+      <form id="checkout-form" class="checkout-layout-grid">
         
         <!-- Left Column: Delivery & Payment Details -->
         <div>

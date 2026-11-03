@@ -77,8 +77,26 @@ export async function renderShopView(urlParams: URLSearchParams): Promise<string
         </div>
       </div>
 
+      <!-- Mobile Category Chips (Horizontal Scrollable on mobile) -->
+      <div class="mobile-category-chips-bar">
+        <a href="#shop" class="mobile-chip ${!selectedCat && !filterType ? 'active' : ''}">
+          ${lang === 'ar' ? 'الكل' : 'All'} (${products.length})
+        </a>
+        <a href="#shop?filter=new" class="mobile-chip ${filterType === 'new' ? 'active' : ''}">
+          ✨ ${state.t('newArrivals')}
+        </a>
+        <a href="#shop?filter=bestseller" class="mobile-chip ${filterType === 'bestseller' ? 'active' : ''}">
+          🔥 ${state.t('bestSellers')}
+        </a>
+        ${categories.map(c => `
+          <a href="#shop?cat=${c.id}" class="mobile-chip ${selectedCat === c.id ? 'active' : ''}">
+            ${lang === 'ar' ? (c.nameAr || c.name) : c.name}
+          </a>
+        `).join('')}
+      </div>
+
       <!-- Main Layout: Filters Sidebar + Products Grid -->
-      <div style="display: grid; grid-template-columns: 240px 1fr; gap: var(--space-3xl);" class="shop-grid-layout">
+      <div class="shop-grid-layout">
         
         <!-- Filters Sidebar -->
         <aside class="shop-filters-sidebar">

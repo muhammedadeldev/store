@@ -194,6 +194,8 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
 
   return `
     <div class="admin-layout" dir="rtl" style="font-family: 'Cairo', sans-serif;">
+      <!-- Mobile Sidebar Backdrop -->
+      <div id="admin-sidebar-backdrop" class="admin-sidebar-backdrop"></div>
       
       <!-- Collapsible Admin Sidebar -->
       <aside class="admin-sidebar" id="admin-sidebar" style="font-family: 'Cairo', sans-serif;">
@@ -1309,10 +1311,36 @@ export function setupAdminEvents(section: string) {
   // Sidebar mobile toggle
   const sidebarToggle = document.getElementById('admin-sidebar-toggle');
   const sidebar = document.getElementById('admin-sidebar');
-  if (sidebarToggle && sidebar) {
-    sidebarToggle.onclick = () => {
+  const sidebarBackdrop = document.getElementById('admin-sidebar-backdrop');
+
+  function toggleAdminSidebar() {
+    if (sidebar) {
       sidebar.classList.toggle('open');
-    };
+      if (sidebarBackdrop) sidebarBackdrop.classList.toggle('open');
+    }
+  }
+
+  function closeAdminSidebar() {
+    if (sidebar) {
+      sidebar.classList.remove('open');
+      if (sidebarBackdrop) sidebarBackdrop.classList.remove('open');
+    }
+  }
+
+  if (sidebarToggle) {
+    sidebarToggle.onclick = toggleAdminSidebar;
+  }
+  if (sidebarBackdrop) {
+    sidebarBackdrop.onclick = closeAdminSidebar;
+  }
+
+  // Close sidebar on mobile when an item is tapped
+  if (sidebar) {
+    sidebar.querySelectorAll('.admin-nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth <= 900) closeAdminSidebar();
+      });
+    });
   }
 
   // Shipping section events

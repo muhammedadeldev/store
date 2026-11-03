@@ -108,23 +108,23 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
 
           <!-- M3 Stepper Progress Bar -->
           ${!isCancelled ? `
-            <div style="margin-bottom: 36px; padding: 12px 0;">
-              <div style="display: flex; justify-content: space-between; position: relative;">
+            <div class="track-stepper-container" style="margin-bottom: 36px; padding: 12px 0;">
+              <div class="track-stepper-row" style="display: flex; justify-content: space-between; position: relative;">
                 
                 <!-- Connector Line -->
-                <div style="position: absolute; top: 18px; left: 8%; right: 8%; height: 4px; background: #e2e8f0; border-radius: 4px; z-index: 1;">
+                <div class="track-connector-line" style="position: absolute; top: 18px; left: 8%; right: 8%; height: 4px; background: #e2e8f0; border-radius: 4px; z-index: 1;">
                   <div style="height: 100%; width: ${(currentStep / 4) * 100}%; background: #0f172a; border-radius: 4px; transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);"></div>
                 </div>
 
                 ${steps.map((st, i) => `
-                  <div style="position: relative; z-index: 2; text-align: center; flex: 1;">
-                    <div style="width: 38px; height: 38px; border-radius: 50%; background: ${i <= currentStep ? '#0f172a' : '#ffffff'}; border: 3px solid ${i <= currentStep ? '#0f172a' : '#cbd5e1'}; color: ${i <= currentStep ? '#ffffff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; margin: 0 auto 10px auto; transition: all 0.3s; box-shadow: ${i === currentStep ? '0 0 0 4px rgba(15, 23, 42, 0.15)' : 'none'};">
+                  <div class="track-step-item" style="position: relative; z-index: 2; text-align: center; flex: 1;">
+                    <div class="track-step-circle" style="width: 38px; height: 38px; border-radius: 50%; background: ${i <= currentStep ? '#0f172a' : '#ffffff'}; border: 3px solid ${i <= currentStep ? '#0f172a' : '#cbd5e1'}; color: ${i <= currentStep ? '#ffffff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; margin: 0 auto 10px auto; transition: all 0.3s; box-shadow: ${i === currentStep ? '0 0 0 4px rgba(15, 23, 42, 0.15)' : 'none'};">
                       ${i < currentStep ? '✓' : (i + 1)}
                     </div>
-                    <span style="font-size: 13px; font-weight: ${i === currentStep ? '800' : '600'}; color: ${i <= currentStep ? '#0f172a' : '#94a3b8'}; display: block; line-height: 1.3;">
+                    <span class="track-step-label" style="font-size: 13px; font-weight: ${i === currentStep ? '800' : '600'}; color: ${i <= currentStep ? '#0f172a' : '#94a3b8'}; display: block; line-height: 1.3;">
                       ${st.label}
                     </span>
-                    <span style="font-size: 11px; color: #94a3b8; display: block; margin-top: 2px;">
+                    <span class="track-step-desc" style="font-size: 11px; color: #94a3b8; display: block; margin-top: 2px;">
                       ${st.desc}
                     </span>
                   </div>

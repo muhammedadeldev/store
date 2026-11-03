@@ -612,8 +612,8 @@ app.get('/api/admin/data', async (_req: Request, res: Response) => {
           ordersList.push(fo);
         }
       }
-    } catch (e) {
-      console.warn('Admin orders read fallback to stored', e);
+    } catch {
+      // Local persistent JSON storage and memory cache are the primary source for backend orders
     }
 
     const [productsSnap, categoriesSnap, returnsSnap, couponsSnap, reviewsSnap, shippingZonesSnap, movementsSnap, mediaSnap, settingsSnap] = await Promise.all([
@@ -749,6 +749,21 @@ app.post('/api/orders/update-status', async (req: Request, res: Response) => {
     }
 
     await updateDoc(orderRef, updatePayload);
+
+    // Sync persistent stored orders and cache
+    try {
+      const stored = loadStoredOrders();
+      const idx = stored.findIndex((o: any) => o.id === orderId || o.orderNumber === order.orderNumber);
+      if (idx !== -1) {
+        stored[idx] = { ...stored[idx], ...updatePayload };
+        saveStoredOrders(stored);
+        if (stored[idx].orderNumber) {
+          recentOrdersCache.set(stored[idx].orderNumber.toString().trim().toUpperCase(), stored[idx]);
+        }
+      }
+    } catch (storageErr) {
+      console.error('Error syncing order update to storage', storageErr);
+    }
 
     res.json({ success: true, message: 'Order status updated successfully' });
   } catch (error: any) {

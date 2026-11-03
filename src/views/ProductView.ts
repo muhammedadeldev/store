@@ -78,7 +78,7 @@ export async function renderProductView(productId: string): Promise<string> {
       </div>
 
       <!-- Main Product Presentation -->
-      <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--space-4xl);" class="product-details-grid">
+      <div class="product-details-grid">
         
         <!-- Left: Image Gallery & Zoom -->
         <div>
