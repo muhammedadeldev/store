@@ -90,7 +90,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
   let mediaItems: any[] = [];
   let settings: any = state.getSettings();
 
-  if (adminCache && (Date.now() - adminCache.timestamp < 120000)) {
+  if (adminCache) {
     orders = adminCache.orders;
     products = adminCache.products;
     categories = adminCache.categories;
@@ -103,50 +103,70 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
     settings = adminCache.settings;
   } else {
     try {
-      const [oSnap, pSnap, cSnap, rSnap, coupSnap, revSnap, zSnap, mSnap, medSnap, setSnap] = await Promise.all([
-        getDocs(collection(db, 'orders')),
-        getDocs(collection(db, 'products')),
-        getDocs(collection(db, 'categories')),
-        getDocs(collection(db, 'returns')),
-        getDocs(collection(db, 'coupons')),
-        getDocs(collection(db, 'reviews')),
-        getDocs(collection(db, 'shippingZones')),
-        getDocs(query(collection(db, 'inventoryMovements'), limit(20))),
-        getDocs(collection(db, 'media')),
-        getDoc(doc(db, 'settings', 'store'))
-      ]);
-
-      orders = oSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      products = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      categories = cSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      returns = rSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      coupons = coupSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      reviews = revSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      shippingZones = zSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      inventoryMovements = mSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      mediaItems = medSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      mediaItems.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-      if (setSnap.exists()) {
-        settings = { ...settings, ...setSnap.data() };
+      // 1. Ultra-fast single call to backend unified data route
+      const res = await fetch('/api/admin/data');
+      const data = await res.json();
+      if (data && data.success) {
+        orders = data.orders || [];
+        products = data.products || [];
+        categories = data.categories || [];
+        returns = data.returns || [];
+        coupons = data.coupons || [];
+        reviews = data.reviews || [];
+        shippingZones = data.shippingZones || [];
+        inventoryMovements = data.inventoryMovements || [];
+        mediaItems = data.mediaItems || [];
+        if (data.settings) settings = { ...settings, ...data.settings };
       }
-
-      adminCache = {
-        timestamp: Date.now(),
-        orders,
-        products,
-        categories,
-        returns,
-        coupons,
-        reviews,
-        shippingZones,
-        inventoryMovements,
-        mediaItems,
-        settings
-      };
     } catch (e) {
-      console.error('Error fetching admin data', e);
+      console.warn('API admin data fetch error, attempting direct Firestore fallback', e);
+      try {
+        const [oSnap, pSnap, cSnap, rSnap, coupSnap, revSnap, zSnap, mSnap, medSnap, setSnap] = await Promise.all([
+          getDocs(collection(db, 'orders')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'products')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'categories')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'returns')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'coupons')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'reviews')).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'shippingZones')).catch(() => ({ docs: [] })),
+          getDocs(query(collection(db, 'inventoryMovements'), limit(20))).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'media')).catch(() => ({ docs: [] })),
+          getDoc(doc(db, 'settings', 'store')).catch(() => null)
+        ]);
+
+        orders = (oSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        products = (pSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        categories = (cSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        returns = (rSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        coupons = (coupSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        reviews = (revSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        shippingZones = (zSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        inventoryMovements = (mSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        mediaItems = (medSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
+        if (setSnap && (setSnap as any).exists && (setSnap as any).exists()) {
+          settings = { ...settings, ...(setSnap as any).data() };
+        }
+      } catch (err) {
+        console.error('Direct Firestore admin data fallback error', err);
+      }
     }
+
+    mediaItems.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    // Cache in memory for instantaneous zero-latency navigation between tabs
+    adminCache = {
+      timestamp: Date.now(),
+      orders,
+      products,
+      categories,
+      returns,
+      coupons,
+      reviews,
+      shippingZones,
+      inventoryMovements,
+      mediaItems,
+      settings
+    };
   }
 
   // Calculate Metrics
@@ -333,7 +353,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
 
 // Arabic Section Renderer
 function renderAdminSection(section: string, data: any): string {
-  const { orders, products, categories, returns, coupons, shippingZones, inventoryMovements, mediaItems, totalRevenue, activeOrdersCount, newOrdersCount, lowStockProducts, avgOrderValue, settings } = data;
+  const { orders, products, categories, returns, coupons, reviews = [], shippingZones, inventoryMovements, mediaItems, totalRevenue, activeOrdersCount, newOrdersCount, lowStockProducts, avgOrderValue, settings } = data;
 
   switch (section) {
     case 'overview':

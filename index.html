@@ -3,6 +3,48 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Browser extension & executor fetch compatibility shim -->
+    <script>
+      (function() {
+        try {
+          var origFetch = window.fetch;
+          var _customFetch = origFetch ? origFetch.bind(window) : undefined;
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return _customFetch;
+            },
+            set: function(newFetch) {
+              _customFetch = newFetch;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (_) {}
+
+        // Prevent external browser extension errors from breaking application execution
+        window.addEventListener('error', function(event) {
+          if (
+            (event.filename && event.filename.indexOf('chrome-extension://') !== -1) ||
+            (event.error && event.error.stack && event.error.stack.indexOf('chrome-extension://') !== -1)
+          ) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+            return true;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          if (
+            event.reason &&
+            event.reason.stack &&
+            event.reason.stack.indexOf('chrome-extension://') !== -1
+          ) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
     <title>EIGHTY-EIGHT | براند الأزياء والستريت وير المصري المعاصر</title>
     <meta name="description" content="منصة متجر EIGHTY-EIGHT للأزياء والملابس العصرية الراقية - خامات قطن مصري 100%، شحن سريع لجميع المحافظات ودفع عند الاستلام." />
     <meta property="og:title" content="EIGHTY-EIGHT Fashion" />

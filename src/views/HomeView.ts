@@ -39,12 +39,12 @@ export async function renderHomeView(): Promise<string> {
             <span class="hero-tagline">${lang === 'ar' ? 'المجموعة الحصرية • خريف وشتاء' : 'Atelier Runway Edition • Autumn/Winter'}</span>
             <h1 class="hero-title">${heroTitle}</h1>
             <p class="hero-description">${heroSubtitle}</p>
-            <div style="display: flex; gap: var(--space-md); flex-wrap: wrap;">
-              <a href="${settings.heroCtaLink || '#shop'}" class="btn btn-primary btn-lg" style="background: #ffffff; color: #121212; border-color: #ffffff;">
+            <div style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center;">
+              <a href="${settings.heroCtaLink || '#shop'}" class="btn btn-lg hero-btn-primary">
                 ${heroCtaText}
               </a>
-              <a href="#shop?cat=cat-coats" class="btn btn-secondary btn-lg" style="color: #ffffff; border-color: rgba(255,255,255,0.6);">
-                ${lang === 'ar' ? 'معاطف الكشمير' : 'Explore Outerwear'}
+              <a href="#shop" class="btn btn-lg hero-btn-secondary">
+                ${lang === 'ar' ? 'الهوديز والتيشيرتات' : 'Explore Streetwear'}
               </a>
             </div>
           </div>
@@ -154,23 +154,23 @@ export async function renderHomeView(): Promise<string> {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4xl); align-items: center;" class="story-grid">
             <div>
               <span style="font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: var(--space-sm);">
-                ${lang === 'ar' ? 'فلسفة الدار والإنتاج' : 'The Atelier Craft'}
+                ${lang === 'ar' ? 'فلسفة المتجر والإنتاج' : 'The Brand Craft'}
               </span>
               <h2 style="font-family: var(--font-editorial); font-size: clamp(32px, 4.5vw, 48px); line-height: 1.15; font-weight: 400; margin-bottom: var(--space-lg);">
                 ${lang === 'ar' ? 'خياطة معمارية دقيقة لا تعترف بمرور الزمن' : 'Sculptural Tailoring Built For A Lifetime'}
               </h2>
               <p style="font-size: 15px; line-height: 1.8; color: #b8b5af; margin-bottom: var(--space-md);">
                 ${lang === 'ar' 
-                  ? 'في لو إتوال L\'ÉTOILE، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على الصوف البكر الإيطالي وحرير التوت الطبيعي وأرقى ألياف الكشمير المنغولي المختارة بعناية فائقة.'
-                  : 'At L\'ÉTOILE, true luxury resides in the purity of proportion and the integrity of natural fibers. We source only certified ethical Mongolian cashmere, 22-momme Mulberry silks, and hand-milled Italian wools.'}
+                  ? 'في براند EIGHTY-EIGHT، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على القطن المصري 100% الثقيل والمعالج لضمان الراحة التامة والمتانة الاستثنائية.'
+                  : 'At EIGHTY-EIGHT, true streetwear luxury resides in the purity of proportion and the integrity of 100% premium Egyptian heavy cotton.'}
               </p>
               <p style="font-size: 14px; line-height: 1.8; color: #8c8984; margin-bottom: var(--space-xl);">
                 ${lang === 'ar'
-                  ? 'كل تصميم يخضع لعشرات الساعات من التعديل اليدوي في الآتيليه للتأكد من انسيابيته مع حركة الجسد.'
-                  : 'Every piece undergoes rigorous hand draping and tailored basting to guarantee an effortless fluid drape.'}
+                  ? 'كل تصميم يخضع لعشرات الساعات من التعديل اليدوي للتأكد من انسيابيته مع حركة الجسد.'
+                  : 'Every piece undergoes rigorous hand draping and tailoring to guarantee an effortless fluid drape.'}
               </p>
               <a href="#page/about" class="btn btn-gold btn-sm">
-                ${lang === 'ar' ? 'قراءة قصة الدار الكاملة' : 'Read Atelier Story'}
+                ${lang === 'ar' ? 'قراءة قصة المتجر الكاملة' : 'Read Store Story'}
               </a>
             </div>
 
