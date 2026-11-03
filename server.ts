@@ -23,10 +23,19 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure local uploads directory exists (100% Free - No Cloud Storage billing needed)
-const uploadsDir = path.resolve(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// Detect Vercel serverless environment (read-only filesystem except /tmp)
+const isVercel = !!process.env.VERCEL;
+
+// Local uploads directory (on Vercel only /tmp is writable and it is temporary)
+const uploadsDir = isVercel
+  ? '/tmp/uploads'
+  : path.resolve(__dirname, 'public', 'uploads');
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn('Could not create uploads directory', e);
 }
 
 // Load Firebase Config
@@ -53,8 +62,11 @@ app.use('/uploads', express.static(uploadsDir));
 // In-memory cache for ultra-reliable instant order tracking
 const recentOrdersCache: Map<string, any> = new Map();
 
-// Persistent JSON storage for orders to ensure orders are never lost
-const ordersStorageFile = path.resolve(__dirname, 'orders-storage.json');
+// Persistent JSON storage for orders (on Vercel it lives in /tmp and is temporary;
+// the real source of truth is Firestore)
+const ordersStorageFile = isVercel
+  ? '/tmp/orders-storage.json'
+  : path.resolve(__dirname, 'orders-storage.json');
 
 function loadStoredOrders(): any[] {
   try {
@@ -236,8 +248,12 @@ app.delete('/api/media/:id', async (req: Request, res: Response) => {
       const data = snap.data();
       if (data.filename) {
         const filePath = path.join(uploadsDir, data.filename);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        } catch (e) {
+          console.warn('Could not delete local file', e);
         }
       }
       await deleteDoc(docRef);
@@ -511,28 +527,28 @@ app.post('/api/checkout', async (req: Request, res: Response) => {
       });
     }
 
-      // Save to persistent storage and cache
-      const storedOrders = loadStoredOrders();
-      const savedOrderRecord = { id: orderDocRef.id, ...newOrderData };
-      storedOrders.unshift(savedOrderRecord);
-      saveStoredOrders(storedOrders);
-      recentOrdersCache.set(orderNumber.trim().toUpperCase(), savedOrderRecord);
+    // Save to persistent storage and cache
+    const storedOrders = loadStoredOrders();
+    const savedOrderRecord = { id: orderDocRef.id, ...newOrderData };
+    storedOrders.unshift(savedOrderRecord);
+    saveStoredOrders(storedOrders);
+    recentOrdersCache.set(orderNumber.trim().toUpperCase(), savedOrderRecord);
 
-      res.json({
-        success: true,
-        orderId: orderDocRef.id,
-        orderNumber,
-        total: newOrderData.total,
-        currency: newOrderData.currency,
-        message: 'تم تسجيل طلبك بنجاح / Order placed successfully!'
-      });
-    } catch (error: any) {
-      console.error('Checkout error:', error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  });
+    res.json({
+      success: true,
+      orderId: orderDocRef.id,
+      orderNumber,
+      total: newOrderData.total,
+      currency: newOrderData.currency,
+      message: 'تم تسجيل طلبك بنجاح / Order placed successfully!'
+    });
+  } catch (error: any) {
+    console.error('Checkout error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
-  // Secure Public Order Tracking Endpoint
+// Secure Public Order Tracking Endpoint
 app.get('/api/orders/track/:orderNumber', async (req: Request, res: Response) => {
   try {
     const rawNumber = req.params.orderNumber || '';
@@ -650,7 +666,7 @@ app.get('/api/admin/data', async (_req: Request, res: Response) => {
   }
 });
 
-// Admin Authentication API (Strict Credentials)
+// Admin order details
 app.get('/api/admin/orders/:orderId', async (req: Request, res: Response) => {
   try {
     const orderId = decodeURIComponent(req.params.orderId);
@@ -667,18 +683,30 @@ app.get('/api/admin/orders/:orderId', async (req: Request, res: Response) => {
   }
 });
 
-// Admin Authentication API (Strict Credentials)
+// Admin Authentication API
+// Credentials come from environment variables (set ADMIN_EMAIL and ADMIN_PASSWORD
+// in Vercel -> Settings -> Environment Variables). Nothing is hardcoded here.
 app.post('/api/auth/admin-login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
-    const cleanEmail = (email || '').trim().toLowerCase();
+    const { email, password } = req.body || {};
+    const cleanEmail = (email || '').toString().trim().toLowerCase();
 
-    if (cleanEmail === 'muhammedadel.dev@gmail.com' && password === 'M@349801m') {
+    const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || '';
+
+    if (!adminEmail || !adminPassword) {
+      return res.status(500).json({
+        success: false,
+        message: 'لم يتم ضبط ADMIN_EMAIL و ADMIN_PASSWORD في إعدادات السيرفر'
+      });
+    }
+
+    if (cleanEmail === adminEmail && password === adminPassword) {
       return res.json({
         success: true,
         user: {
           uid: 'admin-muhammedadel',
-          email: 'muhammedadel.dev@gmail.com',
+          email: adminEmail,
           displayName: 'Muhammed Adel (Super Admin)',
           role: 'super_admin'
         },
@@ -1415,7 +1443,7 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
   }
 });
 
-// Configure Vite integration
+// Configure Vite integration (local development / self-hosted only)
 const isDev = process.env.NODE_ENV !== 'production';
 
 async function startServer() {
@@ -1434,12 +1462,18 @@ async function startServer() {
     });
   }
 
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`L'ÉTOILE Fashion Platform server running on port ${PORT}`);
+    console.log(`EIGHTY-EIGHT Fashion Platform server running on port ${PORT}`);
   });
 }
 
-startServer().catch((err) => {
-  console.error('Failed to start server:', err);
-});
+// On Vercel the platform handles listening and static files, so we only
+// start the server when running locally / on a regular Node host.
+if (!isVercel) {
+  startServer().catch((err) => {
+    console.error('Failed to start server:', err);
+  });
+}
+
+export default app;
