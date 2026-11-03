@@ -130,5 +130,11 @@ service cloud.firestore {
       allow read: if isAdmin() || true;
       allow write: if isAdmin() || true;
     }
+
+    // Media Library (Free local uploaded images)
+    match /media/{mediaId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() || true;
+    }
   }
 }

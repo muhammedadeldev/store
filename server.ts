@@ -9,6 +9,7 @@ import {
   getDoc, 
   setDoc, 
   updateDoc, 
+  deleteDoc,
   collection, 
   getDocs, 
   query, 
@@ -19,6 +20,12 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Ensure local uploads directory exists (100% Free - No Cloud Storage billing needed)
+const uploadsDir = path.resolve(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // Load Firebase Config
 const firebaseConfigPath = path.resolve(__dirname, 'firebase-applet-config.json');
@@ -35,7 +42,11 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp, firebaseConfig.firestoreDatabaseId);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Serve uploaded images statically
+app.use('/uploads', express.static(uploadsDir));
 
 // API Routes
 app.get('/api/health', async (_req: Request, res: Response) => {
@@ -50,6 +61,98 @@ app.get('/api/health', async (_req: Request, res: Response) => {
     });
   } catch (error: any) {
     res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// Free Image & Media Upload Route
+app.post('/api/upload', async (req: Request, res: Response) => {
+  try {
+    const { name, data, type } = req.body;
+    if (!data) {
+      return res.status(400).json({ success: false, message: 'بيانات الصورة مطلوبة / Image data is required' });
+    }
+
+    let buffer: Buffer;
+    let mimeType = type || 'image/jpeg';
+
+    const matches = data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (matches && matches.length === 3) {
+      mimeType = matches[1];
+      buffer = Buffer.from(matches[2], 'base64');
+    } else {
+      buffer = Buffer.from(data, 'base64');
+    }
+
+    let ext = 'jpg';
+    if (mimeType.includes('png')) ext = 'png';
+    else if (mimeType.includes('webp')) ext = 'webp';
+    else if (mimeType.includes('gif')) ext = 'gif';
+    else if (mimeType.includes('svg')) ext = 'svg';
+
+    const safeName = (name || 'garment').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 30);
+    const filename = `${Date.now()}_${safeName}.${ext}`;
+    const filePath = path.join(uploadsDir, filename);
+
+    fs.writeFileSync(filePath, buffer);
+    const fileUrl = `/uploads/${filename}`;
+
+    // Record in Firestore media collection for easy cataloging
+    const docRef = await addDoc(collection(db, 'media'), {
+      filename,
+      originalName: name || filename,
+      url: fileUrl,
+      mimeType,
+      size: buffer.length,
+      createdAt: new Date().toISOString()
+    });
+
+    res.json({
+      success: true,
+      id: docRef.id,
+      url: fileUrl,
+      filename,
+      size: buffer.length,
+      message: 'تم رفع وحفظ الصورة بنجاح'
+    });
+  } catch (err: any) {
+    console.error('Upload error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Get Media Library
+app.get('/api/media', async (_req: Request, res: Response) => {
+  try {
+    const snap = await getDocs(query(collection(db, 'media')));
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    list.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    res.json({ success: true, media: list });
+  } catch (err: any) {
+    console.error('Fetch media error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Delete Media item
+app.delete('/api/media/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const docRef = doc(db, 'media', id);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.filename) {
+        const filePath = path.join(uploadsDir, data.filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      await deleteDoc(docRef);
+    }
+    res.json({ success: true, message: 'تم حذف الصورة بنجاح' });
+  } catch (err: any) {
+    console.error('Delete media error:', err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

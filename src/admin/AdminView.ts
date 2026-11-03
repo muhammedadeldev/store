@@ -1,3 +1,9 @@
+/**
+ * L'ÉTOILE Haute Couture & Fashion Platform
+ * Admin Dashboard - Production Management System
+ * Pure Vanilla JavaScript ES6+ & CSS3 with Cairo Typography & Full Arabic UI
+ */
+
 import { state, showToast, openModal, closeModal } from '../state';
 import { 
   collection, 
@@ -10,20 +16,50 @@ import {
   addDoc, 
   query, 
   orderBy, 
-  limit, 
-  where 
+  limit 
 } from 'firebase/firestore';
 import { db, auth, googleProvider } from '../firebase';
 import { signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 
+// Helper: Free image file upload to /api/upload
+async function uploadImageFile(file: File): Promise<{ url: string; filename: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64Data = reader.result as string;
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: file.name,
+            data: base64Data,
+            type: file.type
+          })
+        });
+        const resData = await res.json();
+        if (resData.success) {
+          resolve({ url: resData.url, filename: resData.filename });
+        } else {
+          reject(new Error(resData.message || 'فشل رفع الصورة'));
+        }
+      } catch (err: any) {
+        reject(err);
+      }
+    };
+    reader.onerror = (e) => reject(e);
+    reader.readAsDataURL(file);
+  });
+}
+
 export async function renderAdminView(currentSection: string = 'overview'): Promise<string> {
-  const lang = state.getLang();
   const isAdmin = state.isAdmin();
 
   // If user is not logged in as Admin, or explicitly at #admin/login, show the Admin Login Screen
   if (!isAdmin || currentSection === 'login') {
-    return renderAdminLoginView(lang);
+    return renderAdminLoginView();
   }
+
   let orders: any[] = [];
   let products: any[] = [];
   let categories: any[] = [];
@@ -32,6 +68,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
   let reviews: any[] = [];
   let shippingZones: any[] = [];
   let inventoryMovements: any[] = [];
+  let mediaItems: any[] = [];
   let settings: any = state.getSettings();
 
   try {
@@ -59,6 +96,10 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
     const mSnap = await getDocs(query(collection(db, 'inventoryMovements'), limit(20)));
     inventoryMovements = mSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
+    const medSnap = await getDocs(collection(db, 'media'));
+    mediaItems = medSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    mediaItems.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
     const setSnap = await getDoc(doc(db, 'settings', 'store'));
     if (setSnap.exists()) {
       settings = { ...settings, ...setSnap.data() };
@@ -74,88 +115,112 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
   const lowStockProducts = products.filter(p => (p.totalStock !== undefined && p.totalStock <= 10));
   const avgOrderValue = orders.length > 0 ? (totalRevenue / orders.length).toFixed(1) : '0';
 
+  const sectionTitles: Record<string, string> = {
+    overview: 'نظرة عامة والمؤشرات',
+    products: 'إدارة المنتجات والمتغيرات',
+    categories: 'التصنيفات والمجموعات',
+    inventory: 'المخزون وحركة القطع',
+    orders: 'إدارة الطلبات والمبيعات',
+    returns: 'المرتجعات والاستبدال',
+    media: 'مكتبة الوسائط ورفع الصور المجانية',
+    customers: 'قاعدة بيانات العملاء',
+    coupons: 'الكوبونات والخصومات',
+    cms: 'إدارة المحتوى والواجهة (CMS)',
+    shipping: 'إعدادات الشحن والمناطق',
+    reviews: 'مراجعة وتقييمات العملاء',
+    reports: 'التقارير المالية والأرباح'
+  };
+
   return `
-    <div class="admin-layout" dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
+    <div class="admin-layout" dir="rtl" style="font-family: 'Cairo', sans-serif;">
       
       <!-- Collapsible Admin Sidebar -->
-      <aside class="admin-sidebar" id="admin-sidebar">
-        <div class="admin-sidebar-header">
+      <aside class="admin-sidebar" id="admin-sidebar" style="font-family: 'Cairo', sans-serif;">
+        <div class="admin-sidebar-header" style="direction: rtl;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span>✦</span>
-            <span>L'ÉTOILE</span>
+            <span style="color: var(--color-brand-gold);">✦</span>
+            <span style="font-weight: 700; letter-spacing: 0.05em;">لو إتوال كوتور</span>
           </div>
-          <span style="font-size: 10px; background: #334155; padding: 2px 6px; border-radius: 4px; font-family: var(--font-sans);">ADMIN</span>
+          <span style="font-size: 11px; background: #334155; color: #f8fafc; padding: 2px 8px; border-radius: 4px; font-weight: 600;">الإدارة</span>
         </div>
 
-        <nav class="admin-nav">
+        <nav class="admin-nav" style="direction: rtl;">
           <a href="#admin/overview" class="admin-nav-item ${currentSection === 'overview' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            <span>${lang === 'ar' ? 'نظرة عامة والمؤشرات' : 'Dashboard Overview'}</span>
+            <span>نظرة عامة والمؤشرات</span>
           </a>
 
           <a href="#admin/products" class="admin-nav-item ${currentSection === 'products' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line></svg>
-            <span>${lang === 'ar' ? 'إدارة المنتجات والمتغيرات' : 'Products & Variants'}</span>
-            <span style="margin-left: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${products.length}</span>
+            <span>إدارة المنتجات والمتغيرات</span>
+            <span style="margin-right: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${products.length}</span>
+          </a>
+
+          <a href="#admin/media" class="admin-nav-item ${currentSection === 'media' ? 'active' : ''}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            <span>مكتبة الوسائط ورفع الصور</span>
+            <span style="margin-right: auto; font-size: 10px; background: #15803d; color: #fff; padding: 2px 6px; border-radius: 4px;">مجاني</span>
           </a>
 
           <a href="#admin/categories" class="admin-nav-item ${currentSection === 'categories' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-            <span>${lang === 'ar' ? 'التصنيفات والمجموعات' : 'Categories'}</span>
+            <span>التصنيفات والمجموعات</span>
+            <span style="margin-right: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${categories.length}</span>
           </a>
 
           <a href="#admin/inventory" class="admin-nav-item ${currentSection === 'inventory' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-            <span>${lang === 'ar' ? 'المخزون وحركة القطع' : 'Inventory & Movements'}</span>
-            ${lowStockProducts.length > 0 ? `<span style="margin-left: auto; font-size: 11px; background: #b91c1c; color: #fff; padding: 2px 6px; border-radius: 4px;">${lowStockProducts.length} low</span>` : ''}
+            <span>المخزون وحركة القطع</span>
+            ${lowStockProducts.length > 0 ? `<span style="margin-right: auto; font-size: 11px; background: #b91c1c; color: #fff; padding: 2px 6px; border-radius: 4px;">${lowStockProducts.length} منخفض</span>` : ''}
           </a>
 
           <a href="#admin/orders" class="admin-nav-item ${currentSection === 'orders' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-            <span>${lang === 'ar' ? 'إدارة الطلبات' : 'Orders Lifecycle'}</span>
-            ${newOrdersCount > 0 ? `<span style="margin-left: auto; font-size: 11px; background: #2563eb; color: #fff; padding: 2px 6px; border-radius: 4px;">${newOrdersCount} new</span>` : ''}
+            <span>إدارة الطلبات</span>
+            ${newOrdersCount > 0 ? `<span style="margin-right: auto; font-size: 11px; background: #2563eb; color: #fff; padding: 2px 6px; border-radius: 4px;">${newOrdersCount} جديد</span>` : ''}
           </a>
 
           <a href="#admin/returns" class="admin-nav-item ${currentSection === 'returns' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
-            <span>${lang === 'ar' ? 'المرتجعات والاستبدال' : 'Returns & Exchanges'}</span>
-            <span style="margin-left: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${returns.length}</span>
+            <span>المرتجعات والاستبدال</span>
+            <span style="margin-right: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${returns.length}</span>
           </a>
 
           <a href="#admin/customers" class="admin-nav-item ${currentSection === 'customers' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-            <span>${lang === 'ar' ? 'قاعدة العملاء' : 'Customers'}</span>
+            <span>قاعدة العملاء</span>
           </a>
 
           <a href="#admin/coupons" class="admin-nav-item ${currentSection === 'coupons' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
-            <span>${lang === 'ar' ? 'الكوبونات والعروض' : 'Coupons & Discounts'}</span>
+            <span>الكوبونات والعروض</span>
+            <span style="margin-right: auto; font-size: 11px; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${coupons.length}</span>
           </a>
 
           <a href="#admin/cms" class="admin-nav-item ${currentSection === 'cms' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-            <span>${lang === 'ar' ? 'إدارة المحتوى (CMS)' : 'CMS & Banners'}</span>
+            <span>إدارة المحتوى والواجهة (CMS)</span>
           </a>
 
           <a href="#admin/shipping" class="admin-nav-item ${currentSection === 'shipping' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-            <span>${lang === 'ar' ? 'إعدادات الشحن والمناطق' : 'Shipping Zones'}</span>
+            <span>إعدادات الشحن والمناطق</span>
           </a>
 
           <a href="#admin/reviews" class="admin-nav-item ${currentSection === 'reviews' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            <span>${lang === 'ar' ? 'مراجعة التقييمات' : 'Reviews Moderation'}</span>
+            <span>مراجعة التقييمات</span>
           </a>
 
           <a href="#admin/reports" class="admin-nav-item ${currentSection === 'reports' ? 'active' : ''}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-            <span>${lang === 'ar' ? 'التقارير المالية والأرباح' : 'Reports & Analytics'}</span>
+            <span>التقارير المالية والأرباح</span>
           </a>
         </nav>
 
         <div style="padding: var(--space-md); border-top: 1px solid #1e293b;">
-          <a href="#home" class="btn btn-secondary btn-full btn-sm" style="color: #ffffff; border-color: #334155; font-size: 11px;">
-            ← ${lang === 'ar' ? 'العودة للمتجر الرئيسي' : 'Return to Storefront'}
+          <a href="#home" class="btn btn-secondary btn-full btn-sm" style="color: #ffffff; border-color: #334155; font-size: 12px; font-weight: 600;">
+            ← العودة لواجهة المتجر للعملاء
           </a>
         </div>
       </aside>
@@ -169,36 +234,31 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
             <button id="admin-sidebar-toggle" class="icon-btn" style="border: 1px solid #e2e8f0;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
-            <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; text-transform: capitalize;">
-              ${currentSection} Management
+            <h2 style="font-size: 20px; font-weight: 700; color: #0f172a;">
+              ${sectionTitles[currentSection] || 'لوحة التحكم الإدارية'}
             </h2>
           </div>
 
           <div style="display: flex; align-items: center; gap: var(--space-md);">
             <!-- Instant Seed DB Button for Evaluation -->
-            <button id="admin-seed-db-btn" class="btn btn-sm btn-gold" style="font-size: 11px;">
-              🌱 ${lang === 'ar' ? 'توليد البيانات التجريبية (Seed Data)' : 'Populate Luxury Catalog'}
-            </button>
-
-            <!-- Language Switcher in Admin -->
-            <button id="admin-lang-btn" class="btn btn-sm btn-ghost" style="border: 1px solid #e2e8f0; font-size: 11px;">
-              ${lang === 'ar' ? 'English (EN)' : 'العربية (AR)'}
+            <button id="admin-seed-db-btn" class="btn btn-sm btn-gold" style="font-size: 12px;">
+              🌱 توليد البيانات التجريبية للكتالوج
             </button>
 
             <!-- Admin Profile Badge -->
-            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #334155;">
-              <div style="width: 32px; height: 32px; border-radius: 50%; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700;">
-                M
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155;">
+              <div style="width: 34px; height: 34px; border-radius: 50%; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">
+                م
               </div>
               <div style="line-height: 1.2;">
-                <div style="font-weight: 600;">${state.getUser()?.email || 'mohamedqwe542@gmail.com'}</div>
-                <div style="font-size: 10px; color: #64748b;">Super Admin</div>
+                <div style="font-weight: 700;">${state.getUser()?.email || 'mohamedqwe542@gmail.com'}</div>
+                <div style="font-size: 11px; color: #16a34a; font-weight: 600;">سوبر أدمن (مدير عام الدار)</div>
               </div>
             </div>
 
             <!-- Admin Sign Out Button -->
-            <button id="admin-logout-btn" class="btn btn-sm btn-ghost" style="color: #b91c1c; border: 1px solid #fecaca; font-size: 11px; padding: 6px 12px;" title="${lang === 'ar' ? 'تسجيل الخروج من الإدارة' : 'Sign Out of Admin'}">
-              ${lang === 'ar' ? 'تسجيل الخروج ⏻' : 'Sign Out ⏻'}
+            <button id="admin-logout-btn" class="btn btn-sm btn-ghost" style="color: #b91c1c; border: 1px solid #fecaca; font-size: 12px; font-weight: 600; padding: 6px 14px;" title="تسجيل الخروج من لوحة الإدارة">
+              تسجيل الخروج ⏻
             </button>
           </div>
         </header>
@@ -214,13 +274,13 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
             reviews,
             shippingZones,
             inventoryMovements,
+            mediaItems,
             settings,
             totalRevenue,
             activeOrdersCount,
             newOrdersCount,
             lowStockProducts,
-            avgOrderValue,
-            lang
+            avgOrderValue
           })}
         </main>
 
@@ -229,9 +289,9 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
   `;
 }
 
-// Section Renderer
+// Arabic Section Renderer
 function renderAdminSection(section: string, data: any): string {
-  const { lang, orders, products, categories, returns, coupons, shippingZones, inventoryMovements, totalRevenue, activeOrdersCount, newOrdersCount, lowStockProducts, avgOrderValue, settings } = data;
+  const { orders, products, categories, returns, coupons, shippingZones, inventoryMovements, mediaItems, totalRevenue, activeOrdersCount, newOrdersCount, lowStockProducts, avgOrderValue, settings } = data;
 
   switch (section) {
     case 'overview':
@@ -239,27 +299,27 @@ function renderAdminSection(section: string, data: any): string {
         <!-- KPI Cards Grid -->
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); margin-bottom: var(--space-2xl);" class="kpi-grid">
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
-            <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Revenue</span>
-            <div style="font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 4px; font-family: var(--font-editorial);">$${totalRevenue.toFixed(2)}</div>
-            <div style="font-size: 12px; color: #16a34a; margin-top: 4px;">✓ Real-time Firestore sync</div>
+            <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">إجمالي المبيعات والإيرادات</span>
+            <div style="font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 4px; font-family: 'Cairo', sans-serif;">$${totalRevenue.toFixed(2)}</div>
+            <div style="font-size: 12px; color: #16a34a; margin-top: 4px;">✓ مزامنة فورية مع فايربيز Firestore</div>
           </div>
 
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
-            <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Orders</span>
-            <div style="font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 4px; font-family: var(--font-editorial);">${orders.length}</div>
-            <div style="font-size: 12px; color: #2563eb; margin-top: 4px;">${newOrdersCount} pending approval</div>
+            <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">إجمالي الطلبات المسجلة</span>
+            <div style="font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 4px; font-family: 'Cairo', sans-serif;">${orders.length}</div>
+            <div style="font-size: 12px; color: #2563eb; margin-top: 4px;">${newOrdersCount} طلب بانتظار المراجعة والاعتماد</div>
           </div>
 
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
-            <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Average Order Value (AOV)</span>
-            <div style="font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 4px; font-family: var(--font-editorial);">$${avgOrderValue}</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Haute Couture Average</div>
+            <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">متوسط قيمة الطلب (AOV)</span>
+            <div style="font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 4px; font-family: 'Cairo', sans-serif;">$${avgOrderValue}</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">معدل سلة الشراء لمنتجات الكوتور</div>
           </div>
 
           <div class="admin-card" style="padding: var(--space-lg); margin-bottom: 0;">
-            <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Inventory Alerts</span>
-            <div style="font-size: 28px; font-weight: 700; color: ${lowStockProducts.length > 0 ? '#b91c1c' : '#0f172a'}; margin-top: 4px; font-family: var(--font-editorial);">${lowStockProducts.length}</div>
-            <div style="font-size: 12px; color: ${lowStockProducts.length > 0 ? '#b91c1c' : '#16a34a'}; margin-top: 4px;">${lowStockProducts.length > 0 ? 'Action required' : 'Stock levels optimal'}</div>
+            <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">تنبيهات المخزون الحرج</span>
+            <div style="font-size: 28px; font-weight: 700; color: ${lowStockProducts.length > 0 ? '#b91c1c' : '#0f172a'}; margin-top: 4px; font-family: 'Cairo', sans-serif;">${lowStockProducts.length}</div>
+            <div style="font-size: 12px; color: ${lowStockProducts.length > 0 ? '#b91c1c' : '#16a34a'}; margin-top: 4px;">${lowStockProducts.length > 0 ? 'يتطلب إعادة التوريد من ورشة الخياطة' : 'المخزون بوضع ممتاز'}</div>
           </div>
         </div>
 
@@ -267,40 +327,40 @@ function renderAdminSection(section: string, data: any): string {
         <div class="admin-card">
           <div class="admin-card-header">
             <div>
-              <h3 style="font-size: 16px; font-weight: 700;">Recent Client Orders</h3>
-              <p style="font-size: 12px; color: #64748b;">Live purchase records registered through the store</p>
+              <h3 style="font-size: 17px; font-weight: 700;">أحدث طلبات العملاء المباشرة</h3>
+              <p style="font-size: 12px; color: #64748b;">سجلات الشراء الحية المسجلة عبر واجهة المتجر</p>
             </div>
-            <a href="#admin/orders" class="btn btn-secondary btn-sm" style="font-size: 11px;">View All Orders →</a>
+            <a href="#admin/orders" class="btn btn-secondary btn-sm" style="font-size: 12px;">عرض كافة الطلبات (${orders.length}) ←</a>
           </div>
 
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Order Ref</th>
-                <th>Client</th>
-                <th>Phone</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Payment</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>رقم الطلب</th>
+                <th>اسم العميل</th>
+                <th>رقم الجوال</th>
+                <th>عدد القطع</th>
+                <th>الإجمالي</th>
+                <th>طريقة الدفع</th>
+                <th>حالة الطلب</th>
+                <th>الإجراء</th>
               </tr>
             </thead>
             <tbody>
               ${orders.length === 0 ? `
-                <tr><td colspan="8" style="text-align: center; padding: 24px;">No orders recorded yet.</td></tr>
+                <tr><td colspan="8" style="text-align: center; padding: 24px;">لا توجد طلبات مسجلة حتى الآن.</td></tr>
               ` : orders.slice(0, 5).map((o: any) => `
                 <tr>
                   <td><strong>${o.orderNumber}</strong></td>
                   <td>${o.customerName}</td>
                   <td>${o.customerPhone}</td>
-                  <td>${(o.items || []).length} items</td>
+                  <td>${(o.items || []).length} قطع</td>
                   <td><strong>$${o.total?.toFixed(2)}</strong></td>
-                  <td>${o.paymentMethod?.toUpperCase()} (${o.paymentStatus})</td>
-                  <td><span class="status-pill ${o.status}">${o.status}</span></td>
+                  <td>${o.paymentMethod === 'cod' ? 'الدفع عند الاستلام' : (o.paymentMethod?.toUpperCase() || 'دفع إلكتروني')}</td>
+                  <td><span class="status-pill ${o.status}">${getStatusArabic(o.status)}</span></td>
                   <td>
-                    <button class="open-order-details-btn btn btn-ghost btn-sm" data-id="${o.id}" style="font-size: 11px; text-decoration: underline;">
-                      Inspect
+                    <button class="open-order-details-btn btn btn-ghost btn-sm" data-id="${o.id}" style="font-size: 12px; text-decoration: underline; color: #2563eb;">
+                      فحص وإدارة
                     </button>
                   </td>
                 </tr>
@@ -315,12 +375,12 @@ function renderAdminSection(section: string, data: any): string {
         <div class="admin-card">
           <div class="admin-card-header">
             <div>
-              <h3 style="font-size: 16px; font-weight: 700;">Garments & Haute Couture Catalog (${products.length})</h3>
-              <p style="font-size: 12px; color: #64748b;">Manage styles, fabrics, sizes, multi-variant SKUs, and inventory</p>
+              <h3 style="font-size: 17px; font-weight: 700;">كتالوج الأزياء والقطع الفاخرة (${products.length})</h3>
+              <p style="font-size: 12px; color: #64748b;">إدارة التصاميم، الأسعار، المقاسات، الألوان، صور المنتجات، والمخزون</p>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button id="admin-add-product-btn" class="btn btn-primary btn-sm">
-                + Add New Garment
+              <button id="admin-add-product-btn" class="btn btn-primary btn-sm" style="font-size: 12px;">
+                + إضافة قطعة أزياء جديدة
               </button>
             </div>
           </div>
@@ -328,41 +388,41 @@ function renderAdminSection(section: string, data: any): string {
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Item</th>
-                <th>SKU</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Variants & Stock</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>القطعة والصورة</th>
+                <th>كود SKU</th>
+                <th>التصنيف</th>
+                <th>السعر الأساسي</th>
+                <th>المتغيرات والمخزون</th>
+                <th>حالة النشر</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
               ${products.map((p: any) => `
                 <tr>
                   <td style="display: flex; align-items: center; gap: 10px;">
-                    <img src="${(p.images && p.images[0]) || ''}" alt="" style="width: 44px; height: 56px; object-fit: cover; border-radius: 2px;" />
+                    <img src="${(p.images && p.images[0]) || ''}" alt="" style="width: 44px; height: 56px; object-fit: cover; border-radius: 4px; border: 1px solid #e2e8f0;" />
                     <div>
-                      <strong>${p.name}</strong>
-                      <div style="font-size: 11px; color: #64748b;">${p.nameAr || ''}</div>
+                      <strong style="font-size: 14px;">${p.nameAr || p.name}</strong>
+                      <div style="font-size: 12px; color: #64748b;">${p.name || ''}</div>
                     </div>
                   </td>
-                  <td><code>${p.sku || 'N/A'}</code></td>
-                  <td>${p.categoryName || 'Couture'}</td>
+                  <td><code>${p.sku || '—'}</code></td>
+                  <td>${p.categoryName || 'كوتور'}</td>
                   <td><strong>$${(p.salePrice || p.price)?.toFixed(2)}</strong></td>
                   <td>
-                    <span style="font-weight: 600; color: ${p.totalStock <= 5 ? '#b91c1c' : '#0f172a'};">${p.totalStock ?? 'N/A'} in stock</span>
-                    <div style="font-size: 11px; color: #64748b;">${(p.variants || []).length} variants</div>
+                    <span style="font-weight: 700; color: ${p.totalStock <= 5 ? '#b91c1c' : '#0f172a'};">${p.totalStock ?? 0} قطعة بالمخزون</span>
+                    <div style="font-size: 11px; color: #64748b;">${(p.variants || []).length} مقاس ولون</div>
                   </td>
                   <td>
                     <span class="status-pill ${p.isPublished ? 'delivered' : 'cancelled'}">
-                      ${p.isPublished ? 'Published' : 'Draft'}
+                      ${p.isPublished ? 'منشور بالمتجر' : 'مسودة مخفية'}
                     </span>
                   </td>
                   <td>
                     <div style="display: flex; gap: 6px;">
-                      <button class="admin-edit-prod-btn btn btn-ghost btn-sm" data-id="${p.id}" style="color: #2563eb; font-size: 11px;">Edit</button>
-                      <button class="admin-del-prod-btn btn btn-ghost btn-sm" data-id="${p.id}" style="color: #b91c1c; font-size: 11px;">Delete</button>
+                      <button class="admin-edit-prod-btn btn btn-ghost btn-sm" data-id="${p.id}" style="color: #2563eb; font-size: 12px; font-weight: 600;">تعديل</button>
+                      <button class="admin-del-prod-btn btn btn-ghost btn-sm" data-id="${p.id}" style="color: #b91c1c; font-size: 12px; font-weight: 600;">حذف</button>
                     </div>
                   </td>
                 </tr>
@@ -372,48 +432,128 @@ function renderAdminSection(section: string, data: any): string {
         </div>
       `;
 
+    // FREE MEDIA LIBRARY SECTION
+    case 'media':
+      return `
+        <!-- Media Library Header & Upload Box -->
+        <div class="admin-card" style="padding: var(--space-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-lg); flex-wrap: wrap; gap: var(--space-md);">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 style="font-size: 18px; font-weight: 700; margin: 0;">مكتبة الوسائط ورفع الصور المجانية</h3>
+                <span style="background: #15803d; color: #ffffff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;">100% مجاناً بدون وسيلة دفع</span>
+              </div>
+              <p style="font-size: 13px; color: #64748b; margin-top: 4px;">
+                ارفع صور منتجاتك والبانرات مباشرة من جهازك (كمبيوتر أو هاتف) بدون الحاجة لحساب فايربيز مدفوع أو بطاقة بنكية.
+              </p>
+            </div>
+
+            <!-- Upload Button -->
+            <label class="btn btn-gold btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; padding: 10px 18px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <span>+ رفع صور من جهازك</span>
+              <input type="file" id="media-bulk-upload-input" accept="image/*" multiple style="display: none;" />
+            </label>
+          </div>
+
+          <!-- Drag and drop zone -->
+          <div id="media-dropzone" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 32px 20px; text-align: center; background: #f8fafc; transition: all 0.2s; cursor: pointer;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(197, 160, 89, 0.15); color: var(--color-brand-gold); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            </div>
+            <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">اسحب الصور وأفلتها هنا أو اضغط للاختيار من جهازك</h4>
+            <p style="font-size: 12px; color: #64748b; margin: 0;">
+              يدعم صيغ JPG، PNG، WEBP، GIF (حجم غير محدود ومجاني بالكامل)
+            </p>
+          </div>
+        </div>
+
+        <!-- Uploaded Images Grid -->
+        <div class="admin-card" style="padding: var(--space-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+            <h3 style="font-size: 16px; font-weight: 700;">الصور المرفوعة في النظام (${mediaItems.length})</h3>
+            <span style="font-size: 12px; color: #64748b;">تُخزن الصور تلقائياً في السيرفر وتتاح فوراً للاستخدام بالمنتجات</span>
+          </div>
+
+          ${mediaItems.length === 0 ? `
+            <div style="text-align: center; padding: 48px 20px; color: #64748b;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; opacity: 0.5;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <p style="font-size: 14px; font-weight: 600;">لم يتم رفع أي صور بعد.</p>
+              <p style="font-size: 12px;">اضغط على زر "رفع صور من جهازك" أعلاه لبدء رفع صور تصاميمك وملابسك مجاناً.</p>
+            </div>
+          ` : `
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-lg);" id="media-grid">
+              ${mediaItems.map((m: any) => `
+                <div class="media-card" style="border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; background: #ffffff; display: flex; flex-direction: column;">
+                  <div style="position: relative; padding-top: 120%; background: #f1f5f9; overflow: hidden;">
+                    <img src="${m.url}" alt="${m.originalName || ''}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;" />
+                  </div>
+                  <div style="padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                      <div style="font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.originalName || m.filename}">
+                        ${m.originalName || m.filename}
+                      </div>
+                      <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                        ${(m.size ? (m.size / 1024).toFixed(1) + ' KB' : 'صورة')} • ${new Date(m.createdAt || Date.now()).toLocaleDateString('ar-EG')}
+                      </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 6px; margin-top: 10px;">
+                      <button class="btn btn-secondary btn-sm admin-copy-url-btn" data-url="${m.url}" style="flex: 1; font-size: 11px; padding: 4px 8px;" title="نسخ الرابط المباشر">
+                        📋 نسخ الرابط
+                      </button>
+                      <button class="btn btn-ghost btn-sm admin-del-media-btn" data-id="${m.id}" style="color: #b91c1c; font-size: 11px; padding: 4px 8px;" title="حذف الصورة">
+                        🗑
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+
     case 'orders':
       return `
         <div class="admin-card">
           <div class="admin-card-header">
             <div>
-              <h3 style="font-size: 16px; font-weight: 700;">Orders Management Lifecycle (${orders.length})</h3>
-              <p style="font-size: 12px; color: #64748b;">Verify payments, update shipping statuses, print packing slips, and handle cancellations</p>
+              <h3 style="font-size: 17px; font-weight: 700;">دورة حياة الطلبات وإدارة الشحن (${orders.length})</h3>
+              <p style="font-size: 12px; color: #64748b;">تأكيد المدفوعات، تحديث حالات الشحن، إصدار بوليصات التتبع، وإدارة الإلغاء</p>
             </div>
           </div>
 
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Order #</th>
-                <th>Date</th>
-                <th>Client Details</th>
-                <th>Delivery Zone</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Waybill</th>
-                <th>Actions</th>
+                <th>رقم الطلب</th>
+                <th>تاريخ الطلب</th>
+                <th>بيانات العميل</th>
+                <th>منطقة التوصيل</th>
+                <th>الإجمالي</th>
+                <th>الحالة الحالية</th>
+                <th>رقم التتبع</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
               ${orders.map((o: any) => `
                 <tr>
                   <td><strong>${o.orderNumber}</strong></td>
-                  <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+                  <td>${new Date(o.createdAt).toLocaleDateString('ar-EG')}</td>
                   <td>
-                    <div><strong>${o.customerName}</strong></div>
+                    <div style="font-weight: 700;">${o.customerName}</div>
                     <div style="font-size: 11px; color: #64748b;">${o.customerPhone}</div>
                   </td>
-                  <td>${o.shippingZoneName || 'Standard'}</td>
+                  <td>${o.shippingZoneName || o.shippingAddress?.city || 'شحن قياسي'}</td>
                   <td><strong>$${o.total?.toFixed(2)}</strong></td>
-                  <td><span class="status-pill ${o.status}">${o.status}</span></td>
-                  <td><code>${o.trackingNumber || '—'}</code></td>
+                  <td><span class="status-pill ${o.status}">${getStatusArabic(o.status)}</span></td>
+                  <td><code>${o.trackingNumber || 'لم يُحدد'}</code></td>
                   <td>
-                    <div style="display: flex; gap: 6px;">
-                      <button class="open-order-details-btn btn btn-primary btn-sm" data-id="${o.id}" style="font-size: 11px; padding: 4px 10px;">
-                        Manage
-                      </button>
-                    </div>
+                    <button class="open-order-details-btn btn btn-primary btn-sm" data-id="${o.id}" style="font-size: 12px; padding: 4px 12px;">
+                      إدارة الطلب
+                    </button>
                   </td>
                 </tr>
               `).join('')}
@@ -428,27 +568,27 @@ function renderAdminSection(section: string, data: any): string {
           <!-- Live Inventory Table -->
           <div class="admin-card">
             <div class="admin-card-header">
-              <h3 style="font-size: 16px; font-weight: 700;">Variant Stock Matrix</h3>
-              <button id="admin-adjust-stock-btn" class="btn btn-primary btn-sm">+ Manual Stock Adjustment</button>
+              <h3 style="font-size: 17px; font-weight: 700;">مصفوفة مخزون المقاسات والألوان الحية</h3>
+              <button id="admin-adjust-stock-btn" class="btn btn-primary btn-sm" style="font-size: 12px;">+ تعديل المخزون يدوياً</button>
             </div>
             <table class="admin-table">
               <thead>
                 <tr>
-                  <th>Garment</th>
-                  <th>SKU</th>
-                  <th>Color / Size</th>
-                  <th>Available Stock</th>
+                  <th>القطعة</th>
+                  <th>كود SKU</th>
+                  <th>اللون / المقاس</th>
+                  <th>الكمية المتاحة</th>
                 </tr>
               </thead>
               <tbody>
                 ${products.flatMap((p: any) => (p.variants || []).map((v: any) => `
                   <tr>
-                    <td>${p.name}</td>
+                    <td><strong>${p.nameAr || p.name}</strong></td>
                     <td><code>${v.sku}</code></td>
                     <td>${v.color} • ${v.size}</td>
                     <td>
                       <span style="font-weight: 700; color: ${v.stock <= 3 ? '#b91c1c' : '#15803d'};">
-                        ${v.stock} units
+                        ${v.stock} قطعة
                       </span>
                     </td>
                   </tr>
@@ -460,15 +600,15 @@ function renderAdminSection(section: string, data: any): string {
           <!-- Movement History Audit Trail -->
           <div class="admin-card">
             <div class="admin-card-header">
-              <h3 style="font-size: 16px; font-weight: 700;">Stock Movements Ledger</h3>
+              <h3 style="font-size: 17px; font-weight: 700;">سجل حركة وسحب المخزون</h3>
             </div>
             <div style="padding: var(--space-md); display: flex; flex-direction: column; gap: 10px; max-height: 500px; overflow-y: auto;">
               ${inventoryMovements.length === 0 ? `
-                <p style="font-size: 12px; color: #64748b;">No recent movements.</p>
+                <p style="font-size: 12px; color: #64748b;">لا توجد حركات مسجلة مؤخراً.</p>
               ` : inventoryMovements.map((m: any) => `
                 <div style="padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px;">
-                  <div style="display: flex; justify-content: space-between; font-weight: 600;">
-                    <span>${m.type?.toUpperCase()}</span>
+                  <div style="display: flex; justify-content: space-between; font-weight: 700;">
+                    <span>${m.type === 'checkout_deduction' ? 'خصم مبيعات' : 'تعديل مخزني'}</span>
                     <span style="color: ${m.quantityDelta > 0 ? '#16a34a' : '#b91c1c'};">${m.quantityDelta > 0 ? '+' : ''}${m.quantityDelta}</span>
                   </div>
                   <div style="color: #64748b; margin-top: 2px;">SKU: ${m.sku}</div>
@@ -484,34 +624,37 @@ function renderAdminSection(section: string, data: any): string {
       return `
         <div class="admin-card">
           <div class="admin-card-header">
-            <h3 style="font-size: 16px; font-weight: 700;">Categories Management (${categories.length})</h3>
-            <button id="admin-add-category-btn" class="btn btn-primary btn-sm">+ Add New Category</button>
+            <div>
+              <h3 style="font-size: 17px; font-weight: 700;">إدارة الأقسام وتصنيفات الأزياء (${categories.length})</h3>
+              <p style="font-size: 12px; color: #64748b;">تنظيم أقسام المعاطف، الفساتين، ملابس السهرة، والأزياء الراقية</p>
+            </div>
+            <button id="admin-add-category-btn" class="btn btn-primary btn-sm" style="font-size: 12px;">+ إضافة قسم جديد</button>
           </div>
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Category</th>
-                <th>Slug</th>
-                <th>Sort Order</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>القسم والصورة</th>
+                <th>الرابط (Slug)</th>
+                <th>ترتيب العرض</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
               ${categories.map((c: any) => `
                 <tr>
                   <td style="display: flex; align-items: center; gap: 10px;">
-                    <img src="${c.imageUrl}" alt="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" />
+                    <img src="${c.imageUrl}" alt="" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #e2e8f0;" />
                     <div>
-                      <strong>${c.name}</strong>
-                      <div style="font-size: 11px; color: #64748b;">${c.nameAr || ''}</div>
+                      <strong style="font-size: 14px;">${c.nameAr || c.name}</strong>
+                      <div style="font-size: 11px; color: #64748b;">${c.name || ''}</div>
                     </div>
                   </td>
                   <td><code>${c.slug}</code></td>
                   <td>${c.sortOrder || 1}</td>
-                  <td><span class="status-pill ${c.isActive ? 'delivered' : 'cancelled'}">${c.isActive ? 'Active' : 'Hidden'}</span></td>
+                  <td><span class="status-pill ${c.isActive ? 'delivered' : 'cancelled'}">${c.isActive ? 'مفعل بالمتجر' : 'مخفي'}</span></td>
                   <td>
-                    <button class="admin-del-cat-btn btn btn-ghost btn-sm" data-id="${c.id}" style="color: #b91c1c; font-size: 11px;">Delete</button>
+                    <button class="admin-del-cat-btn btn btn-ghost btn-sm" data-id="${c.id}" style="color: #b91c1c; font-size: 12px; font-weight: 600;">حذف</button>
                   </td>
                 </tr>
               `).join('')}
@@ -524,35 +667,37 @@ function renderAdminSection(section: string, data: any): string {
       return `
         <div class="admin-card">
           <div class="admin-card-header">
-            <h3 style="font-size: 16px; font-weight: 700;">Customer Returns & Exchanges (${returns.length})</h3>
-            <p style="font-size: 12px; color: #64748b;">Process client return requests, inspect condition, restock inventory, and issue refunds</p>
+            <div>
+              <h3 style="font-size: 17px; font-weight: 700;">طلبات الإرجاع والاستبدال من العملاء (${returns.length})</h3>
+              <p style="font-size: 12px; color: #64748b;">فحص حالة القطعة المسترجعة، إعادة المخزون، واعتماد الاستبدال أو رد الأموال</p>
+            </div>
           </div>
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Order Ref</th>
-                <th>Client</th>
-                <th>Type</th>
-                <th>Reason</th>
-                <th>Notes</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th>رقم الطلب</th>
+                <th>العميل</th>
+                <th>نوع الطلب</th>
+                <th>السبب</th>
+                <th>ملاحظات العميل</th>
+                <th>حالة المعالجة</th>
+                <th>الإجراء</th>
               </tr>
             </thead>
             <tbody>
               ${returns.length === 0 ? `
-                <tr><td colspan="7" style="text-align: center; padding: 24px;">No return requests received.</td></tr>
+                <tr><td colspan="7" style="text-align: center; padding: 24px;">لا توجد طلبات إرجاع واردة.</td></tr>
               ` : returns.map((r: any) => `
                 <tr>
                   <td><strong>${r.orderNumber}</strong></td>
                   <td>${r.customerEmail}</td>
-                  <td><code>${r.type?.toUpperCase()}</code></td>
+                  <td><code>${r.type === 'exchange' ? 'استبدال مقاس' : 'استرجاع'}</code></td>
                   <td>${r.reason}</td>
                   <td style="font-size: 12px; color: #64748b;">${r.detailedReason || '—'}</td>
                   <td><span class="status-pill ${r.status}">${r.status}</span></td>
                   <td>
-                    <button class="admin-process-return-btn btn btn-secondary btn-sm" data-id="${r.id}" style="font-size: 11px;">
-                      Process Return
+                    <button class="admin-process-return-btn btn btn-secondary btn-sm" data-id="${r.id}" style="font-size: 12px;">
+                      معالجة واتخاذ قرار
                     </button>
                   </td>
                 </tr>
@@ -566,31 +711,34 @@ function renderAdminSection(section: string, data: any): string {
       return `
         <div class="admin-card">
           <div class="admin-card-header">
-            <h3 style="font-size: 16px; font-weight: 700;">Promotional Coupons (${coupons.length})</h3>
-            <button id="admin-add-coupon-btn" class="btn btn-primary btn-sm">+ Create Coupon</button>
+            <div>
+              <h3 style="font-size: 17px; font-weight: 700;">كوبونات الخصم والعروض الترويجية (${coupons.length})</h3>
+              <p style="font-size: 12px; color: #64748b;">إنشاء رموز الخصم بنسبة مئوية أو مبلغ ثابت وتحديد الحد الأدنى للشراء</p>
+            </div>
+            <button id="admin-add-coupon-btn" class="btn btn-primary btn-sm" style="font-size: 12px;">+ إنشاء كود خصم جديد</button>
           </div>
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Discount</th>
-                <th>Min Order</th>
-                <th>Usage Count</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>رمز الكوبون</th>
+                <th>قيمة الخصم</th>
+                <th>الحد الأدنى للطلب</th>
+                <th>عدد مرات الاستخدام</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
               ${coupons.map((cp: any) => `
                 <tr>
-                  <td><strong style="letter-spacing: 0.1em; color: var(--color-brand);">${cp.code}</strong></td>
-                  <td>${cp.discountType === 'percentage' ? `${cp.discountValue}% Off` : `$${cp.discountValue} Fixed Off`}</td>
+                  <td><strong style="letter-spacing: 0.1em; color: var(--color-brand); font-size: 14px;">${cp.code}</strong></td>
+                  <td><strong>${cp.discountType === 'percentage' ? `خصم ${cp.discountValue}%` : `خصم $${cp.discountValue} ثابت`}</strong></td>
                   <td>$${cp.minOrderValue || 0}</td>
-                  <td>${cp.usageCount || 0} / ${cp.usageLimit || '∞'}</td>
-                  <td><span class="status-pill ${cp.isActive ? 'delivered' : 'cancelled'}">${cp.isActive ? 'Active' : 'Inactive'}</span></td>
+                  <td>${cp.usageCount || 0} / ${cp.usageLimit || 'غير محدود'}</td>
+                  <td><span class="status-pill ${cp.isActive ? 'delivered' : 'cancelled'}">${cp.isActive ? 'مفعل' : 'معطل'}</span></td>
                   <td>
-                    <button class="admin-toggle-coupon-btn btn btn-ghost btn-sm" data-id="${cp.id}" data-active="${cp.isActive}" style="font-size: 11px;">
-                      ${cp.isActive ? 'Deactivate' : 'Activate'}
+                    <button class="admin-toggle-coupon-btn btn btn-ghost btn-sm" data-id="${cp.id}" data-active="${cp.isActive}" style="font-size: 12px; font-weight: 600;">
+                      ${cp.isActive ? 'تعطيل الكوبون' : 'تفعيل الكوبون'}
                     </button>
                   </td>
                 </tr>
@@ -603,103 +751,126 @@ function renderAdminSection(section: string, data: any): string {
     case 'cms':
       return `
         <div class="admin-card" style="padding: var(--space-xl);">
-          <h3 style="font-size: 16px; font-weight: 700; margin-bottom: var(--space-lg); border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
-            Storefront CMS & Brand Customization
+          <h3 style="font-size: 18px; font-weight: 700; margin-bottom: var(--space-lg); border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+            تخصيص هوية المتجر والواجهة الرئيسية (CMS)
           </h3>
 
           <form id="admin-settings-form" style="display: flex; flex-direction: column; gap: var(--space-lg);">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
               <div class="form-group">
-                <label class="form-label">Brand Name (English)</label>
-                <input type="text" id="set-brand-en" class="form-input" value="${settings.brandName || ''}" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Brand Name (Arabic)</label>
+                <label class="form-label">اسم البراند (بالعربية) *</label>
                 <input type="text" id="set-brand-ar" class="form-input" value="${settings.brandNameAr || ''}" />
               </div>
+              <div class="form-group">
+                <label class="form-label">اسم البراند (بالإنجليزية) *</label>
+                <input type="text" id="set-brand-en" class="form-input" value="${settings.brandName || ''}" />
+              </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
               <div class="form-group">
-                <label class="form-label">Hero Title (English)</label>
-                <input type="text" id="set-hero-title-en" class="form-input" value="${settings.heroTitle || ''}" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Hero Title (Arabic)</label>
+                <label class="form-label">عنوان البانر الرئيسي Hero (بالعربية)</label>
                 <input type="text" id="set-hero-title-ar" class="form-input" value="${settings.heroTitleAr || ''}" />
               </div>
+              <div class="form-group">
+                <label class="form-label">عنوان البانر الرئيسي Hero (بالإنجليزية)</label>
+                <input type="text" id="set-hero-title-en" class="form-input" value="${settings.heroTitle || ''}" />
+              </div>
             </div>
 
+            <!-- Free upload for hero image -->
             <div class="form-group">
-              <label class="form-label">Hero Image URL</label>
-              <input type="url" id="set-hero-img" class="form-input" value="${settings.heroImageUrl || ''}" />
+              <label class="form-label">صورة البانر الرئيسي Hero (رفع مجاني من جهازك أو رابط) *</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="url" id="set-hero-img" class="form-input" style="flex: 1;" value="${settings.heroImageUrl || ''}" />
+                <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+                  <span>📁 رفع من جهازك</span>
+                  <input type="file" id="set-hero-file-upload" accept="image/*" style="display: none;" />
+                </label>
+              </div>
+              <div id="set-hero-preview-box" style="margin-top: 8px;">
+                <img id="set-hero-preview-img" src="${settings.heroImageUrl || ''}" style="height: 100px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+              </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
               <div class="form-group">
-                <label class="form-label">Announcement Bar Text (English)</label>
-                <input type="text" id="set-ann-en" class="form-input" value="${settings.announcementBarText || ''}" />
+                <label class="form-label">شريط الإعلانات العلوي Announcement Bar (بالعربية)</label>
+                <input type="text" id="set-ann-ar" class="form-input" value="${settings.announcementBarTextAr || ''}" />
               </div>
               <div class="form-group">
-                <label class="form-label">Announcement Bar Text (Arabic)</label>
-                <input type="text" id="set-ann-ar" class="form-input" value="${settings.announcementBarTextAr || ''}" />
+                <label class="form-label">شريط الإعلانات العلوي Announcement Bar (بالإنجليزية)</label>
+                <input type="text" id="set-ann-en" class="form-input" value="${settings.announcementBarText || ''}" />
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md);">
               <div class="form-group">
-                <label class="form-label">Free Shipping Threshold ($)</label>
+                <label class="form-label">حد الشحن المجاني ($)</label>
                 <input type="number" id="set-free-ship" class="form-input" value="${settings.freeShippingThreshold || 250}" />
               </div>
               <div class="form-group">
-                <label class="form-label">WhatsApp Concierge Phone</label>
+                <label class="form-label">رقم واتساب خدمة العملاء Concierge</label>
                 <input type="text" id="set-whatsapp" class="form-input" value="${settings.whatsappNumber || ''}" />
               </div>
               <div class="form-group">
-                <label class="form-label">Tax Rate (%)</label>
+                <label class="form-label">نسبة الضريبة المضافة (%)</label>
                 <input type="number" id="set-tax" class="form-input" value="${settings.taxPercentage || 5}" />
               </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="align-self: flex-start;">
-              Save CMS & Store Settings
+            <button type="submit" class="btn btn-primary" style="align-self: flex-start; padding: 12px 28px; font-weight: 700;">
+              حفظ وتطبيق إعدادات المتجر في فايربيز
             </button>
           </form>
         </div>
       `;
 
     default:
-      return `<p>Select a section from the navigation menu.</p>`;
+      return `<p>يرجى اختيار أحد الأقسام من القائمة الجانبية.</p>`;
   }
 }
 
-export function renderAdminLoginView(lang: 'ar' | 'en'): string {
+function getStatusArabic(status: string): string {
+  const map: Record<string, string> = {
+    new: 'طلب جديد',
+    confirmed: 'مؤكد',
+    processing: 'قيد التجهيز بالأتليه',
+    shipped: 'تم الشحن الجوي',
+    delivered: 'تم التوصيل والإنهاء',
+    cancelled: 'ملغي ومسترجع'
+  };
+  return map[status] || status;
+}
+
+// Security Gate Login View in Arabic with Cairo Font
+export function renderAdminLoginView(): string {
   return `
-    <div class="admin-login-layout" dir="${lang === 'ar' ? 'rtl' : 'ltr'}" style="min-height: 100vh; background-color: #0b0f19; display: flex; align-items: center; justify-content: center; padding: var(--space-xl); font-family: var(--font-sans);">
+    <div class="admin-login-layout" dir="rtl" style="min-height: 100vh; background-color: #0b0f19; display: flex; align-items: center; justify-content: center; padding: var(--space-xl); font-family: 'Cairo', sans-serif;">
       
-      <div style="max-width: 460px; width: 100%; background: #131b2e; border: 1px solid #1e293b; border-radius: 8px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); color: #ffffff;">
+      <div style="max-width: 480px; width: 100%; background: #131b2e; border: 1px solid #1e293b; border-radius: 8px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); color: #ffffff;">
         
         <!-- Brand & Security Header -->
         <div style="text-align: center; margin-bottom: 28px;">
-          <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: rgba(197, 160, 89, 0.12); color: var(--color-brand-gold); margin-bottom: 16px; border: 1px solid rgba(197, 160, 89, 0.3);">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 50%; background: rgba(197, 160, 89, 0.15); color: var(--color-brand-gold); margin-bottom: 16px; border: 1px solid rgba(197, 160, 89, 0.3);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           </div>
           
-          <span style="font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 6px;">
-            L'ÉTOILE HAUTE COUTURE
+          <span style="font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 6px; font-weight: 700;">
+            دار لو إتوال للأزياء الراقية
           </span>
-          <h2 style="font-family: var(--font-editorial); font-size: 28px; font-weight: 500; color: #ffffff;">
-            ${lang === 'ar' ? 'بوابة التحكم الإدارية المشفرة' : 'Admin Security Portal'}
+          <h2 style="font-size: 26px; font-weight: 800; color: #ffffff;">
+            بوابة تسجيل دخول الإدارة المشفرة
           </h2>
           <p style="font-size: 13px; color: #94a3b8; margin-top: 6px; line-height: 1.6;">
-            ${lang === 'ar' ? 'منطقة إدارية مخصصة لمديري الدار والمخزون والمبيعات.' : 'Restricted to authorized brand directors and store managers.'}
+            منطقة أمنية مخصصة لمدير البراند وإدارة المخزون والمبيعات.
           </p>
         </div>
 
         <!-- Admin Login Form -->
         <form id="admin-login-form" style="display: flex; flex-direction: column; gap: 16px;">
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="color: #cbd5e1;">${lang === 'ar' ? 'البريد الإلكتروني للإدارة' : 'Admin Email Address'} *</label>
+            <label class="form-label" style="color: #cbd5e1; font-weight: 600;">البريد الإلكتروني المعتمد للإدارة *</label>
             <input 
               type="email" 
               id="adm-login-email" 
@@ -707,14 +878,12 @@ export function renderAdminLoginView(lang: 'ar' | 'en'): string {
               class="form-input" 
               value="mohamedqwe542@gmail.com" 
               placeholder="admin@letoile-couture.com" 
-              style="background: #0b0f19; border-color: #334155; color: #ffffff;" 
+              style="background: #0b0f19; border-color: #334155; color: #ffffff; direction: ltr; text-align: right;" 
             />
           </div>
 
           <div class="form-group" style="margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-              <label class="form-label" style="color: #cbd5e1; margin-bottom: 0;">${lang === 'ar' ? 'كلمة المرور' : 'Password'} *</label>
-            </div>
+            <label class="form-label" style="color: #cbd5e1; font-weight: 600;">كلمة المرور *</label>
             <input 
               type="password" 
               id="adm-login-password" 
@@ -725,33 +894,33 @@ export function renderAdminLoginView(lang: 'ar' | 'en'): string {
             />
           </div>
 
-          <button type="submit" id="adm-submit-btn" class="btn btn-gold btn-full" style="padding: 12px; margin-top: 6px; font-weight: 600;">
-            🔒 ${lang === 'ar' ? 'تسجيل دخول الإدارة (Authenticate)' : 'Sign In To Dashboard'}
+          <button type="submit" id="adm-submit-btn" class="btn btn-gold btn-full" style="padding: 12px; margin-top: 8px; font-weight: 700; font-size: 14px;">
+            🔒 تسجيل الدخول إلى لوحة التحكم
           </button>
         </form>
 
         <!-- Divider -->
-        <div style="display: flex; align-items: center; margin: 20px 0; color: #475569; font-size: 11px;">
+        <div style="display: flex; align-items: center; margin: 20px 0; color: #475569; font-size: 12px;">
           <div style="flex: 1; height: 1px; background: #334155;"></div>
-          <span style="padding: 0 10px;">${lang === 'ar' ? 'أو عبر الحساب المعتمد' : 'OR WITH AUTHORIZED ACCOUNT'}</span>
+          <span style="padding: 0 10px;">أو الدخول المعتمد بالحساب الإداري</span>
           <div style="flex: 1; height: 1px; background: #334155;"></div>
         </div>
 
         <!-- Google 1-Click for Super Admin -->
-        <button id="admin-google-login-btn" class="btn btn-secondary btn-full" style="border-color: #334155; color: #f8fafc; background: #0b0f19; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; padding: 10px;">
+        <button id="admin-google-login-btn" class="btn btn-secondary btn-full" style="border-color: #334155; color: #f8fafc; background: #0b0f19; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; padding: 10px; font-weight: 600;">
           <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-          <span>${lang === 'ar' ? 'الدخول بحساب Google المشرف' : 'Sign in with Super Admin Google'}</span>
+          <span>تسجيل الدخول بحساب Google المعتمد</span>
         </button>
 
         <!-- Fast Demo Admin Access for Testing -->
-        <button id="admin-quick-demo-btn" class="btn btn-ghost btn-full btn-sm" style="color: var(--color-brand-gold); font-size: 12px; border: 1px dashed rgba(197, 160, 89, 0.4); padding: 8px;">
-          ✦ ${lang === 'ar' ? 'دخول فوري بحساب السوبر أدمن المعتمد (mohamedqwe542@gmail.com)' : 'Instant Super Admin Access (mohamedqwe542@gmail.com)'}
+        <button id="admin-quick-demo-btn" class="btn btn-ghost btn-full btn-sm" style="color: var(--color-brand-gold); font-size: 13px; font-weight: 600; border: 1px dashed rgba(197, 160, 89, 0.4); padding: 10px;">
+          ✦ دخول فوري بحساب السوبر أدمن المعتمد (mohamedqwe542@gmail.com)
         </button>
 
         <!-- Back to Storefront Link -->
         <div style="margin-top: 24px; text-align: center; border-top: 1px solid #1e293b; padding-top: 16px;">
-          <a href="#home" style="font-size: 12px; color: #94a3b8; text-decoration: underline;">
-            ← ${lang === 'ar' ? 'الرجوع للمتجر الإلكتروني للعملاء' : 'Return to Customer Storefront'}
+          <a href="#home" style="font-size: 13px; color: #94a3b8; text-decoration: underline;">
+            ← الرجوع للمتجر الإلكتروني للعملاء
           </a>
         </div>
 
@@ -762,7 +931,6 @@ export function renderAdminLoginView(lang: 'ar' | 'en'): string {
 }
 
 export function setupAdminEvents(section: string) {
-  const lang = state.getLang();
   const isAdmin = state.isAdmin();
 
   // If in login view
@@ -777,29 +945,28 @@ export function setupAdminEvents(section: string) {
 
         try {
           submitBtn.disabled = true;
-          submitBtn.textContent = 'Authenticating...';
+          submitBtn.textContent = 'جاري التحقق الأمني...';
 
           let user: any = null;
           try {
             const cred = await signInWithEmailAndPassword(auth, email, pass);
             user = cred.user;
           } catch {
-            // If email/password is not registered in Firebase Auth yet, verify if email is authorized Super Admin
             if (email.toLowerCase() === 'mohamedqwe542@gmail.com') {
-              user = { uid: 'admin-primary', email: 'mohamedqwe542@gmail.com', displayName: 'Super Admin' };
+              user = { uid: 'admin-primary', email: 'mohamedqwe542@gmail.com', displayName: 'سوبر أدمن' };
             } else {
-              throw new Error(lang === 'ar' ? 'بيانات الدخول غير صحيحة أو غير مصرح لها' : 'Invalid admin credentials');
+              throw new Error('بيانات الدخول غير صحيحة أو غير مصرح لها');
             }
           }
 
           state.setCurrentUser(user, true);
-          showToast(lang === 'ar' ? 'تم تسجيل الدخول بنجاح إلى لوحة الإدارة!' : 'Welcome to Admin Dashboard!', 'success');
+          showToast('تم تسجيل الدخول بنجاح إلى لوحة الإدارة!', 'success');
           window.location.hash = 'admin/overview';
         } catch (err: any) {
           showToast(err.message, 'error');
         } finally {
           submitBtn.disabled = false;
-          submitBtn.textContent = '🔒 ' + (lang === 'ar' ? 'تسجيل دخول الإدارة (Authenticate)' : 'Sign In To Dashboard');
+          submitBtn.textContent = '🔒 تسجيل الدخول إلى لوحة التحكم';
         }
       };
     }
@@ -812,10 +979,10 @@ export function setupAdminEvents(section: string) {
           const email = cred.user.email?.toLowerCase();
           if (email === 'mohamedqwe542@gmail.com') {
             state.setCurrentUser(cred.user, true);
-            showToast(lang === 'ar' ? 'تم التحقق من حساب السوبر أدمن بنجاح!' : 'Super Admin verified!', 'success');
+            showToast('تم التحقق من حساب السوبر أدمن بنجاح!', 'success');
             window.location.hash = 'admin/overview';
           } else {
-            showToast(lang === 'ar' ? 'هذا الحساب غير مسجل كمدير في النظام' : 'Account not authorized as Admin', 'error');
+            showToast('هذا الحساب غير مسجل كمدير في النظام', 'error');
           }
         } catch (err: any) {
           showToast(err.message, 'error');
@@ -829,9 +996,9 @@ export function setupAdminEvents(section: string) {
         state.setCurrentUser({
           uid: 'admin-primary',
           email: 'mohamedqwe542@gmail.com',
-          displayName: 'Brand Director & Super Admin'
+          displayName: 'سوبر أدمن'
         }, true);
-        showToast(lang === 'ar' ? 'تم الدخول بصلاحية السوبر أدمن (mohamedqwe542@gmail.com)' : 'Authenticated as Super Admin', 'success');
+        showToast('تم الدخول بصلاحية السوبر أدمن (mohamedqwe542@gmail.com)', 'success');
         window.location.hash = 'admin/overview';
       };
     }
@@ -849,7 +1016,7 @@ export function setupAdminEvents(section: string) {
         // ignore
       }
       state.setCurrentUser(null, false);
-      showToast(lang === 'ar' ? 'تم تسجيل الخروج من لوحة التحكم بنجاح' : 'Signed out from Admin Dashboard', 'info');
+      showToast('تم تسجيل الخروج من لوحة التحكم بنجاح', 'info');
       window.location.hash = 'admin/login';
     };
   }
@@ -863,21 +1030,12 @@ export function setupAdminEvents(section: string) {
     };
   }
 
-  // Admin language toggle
-  const adminLangBtn = document.getElementById('admin-lang-btn');
-  if (adminLangBtn) {
-    adminLangBtn.onclick = () => {
-      const cur = state.getLang();
-      state.setLang(cur === 'ar' ? 'en' : 'ar');
-    };
-  }
-
   // Seed DB button
   const seedBtn = document.getElementById('admin-seed-db-btn');
   if (seedBtn) {
     seedBtn.onclick = async () => {
-      if (!confirm('Populate the luxury fashion brand database with complete garments, variants, and categories?')) return;
-      seedBtn.textContent = 'Populating...';
+      if (!confirm('هل تريد توليد كتالوج الأزياء الفاخرة والبيانات التجريبية في قاعدة البيانات؟')) return;
+      seedBtn.textContent = 'جاري التوليد...';
       try {
         const res = await fetch('/api/seed', { method: 'POST' });
         const data = await res.json();
@@ -890,47 +1048,167 @@ export function setupAdminEvents(section: string) {
       } catch (err: any) {
         showToast(err.message, 'error');
       } finally {
-        seedBtn.textContent = '🌱 Populate Luxury Catalog';
+        seedBtn.textContent = '🌱 توليد البيانات التجريبية للكتالوج';
       }
     };
   }
 
-  // Add Product Modal
+  // MEDIA SECTION EVENTS (Free Uploads)
+  if (section === 'media') {
+    const bulkInput = document.getElementById('media-bulk-upload-input') as HTMLInputElement;
+    const dropzone = document.getElementById('media-dropzone');
+
+    if (dropzone && bulkInput) {
+      dropzone.onclick = () => bulkInput.click();
+
+      dropzone.ondragover = (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'var(--color-brand-gold)';
+        dropzone.style.background = 'rgba(197, 160, 89, 0.05)';
+      };
+
+      dropzone.ondragleave = () => {
+        dropzone.style.borderColor = '#cbd5e1';
+        dropzone.style.background = '#f8fafc';
+      };
+
+      dropzone.ondrop = async (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#cbd5e1';
+        dropzone.style.background = '#f8fafc';
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+          await handleFilesUpload(files);
+        }
+      };
+    }
+
+    if (bulkInput) {
+      bulkInput.onchange = async () => {
+        if (bulkInput.files && bulkInput.files.length > 0) {
+          await handleFilesUpload(bulkInput.files);
+        }
+      };
+    }
+
+    async function handleFilesUpload(files: FileList) {
+      showToast(`جاري رفع ${files.length} صورة من جهازك مجاناً...`, 'info');
+      try {
+        for (let i = 0; i < files.length; i++) {
+          await uploadImageFile(files[i]);
+        }
+        showToast('تم رفع جميع الصور بنجاح وحفظها محلياً في السيرفر!', 'success');
+        window.location.hash = 'admin/media?reload=' + Date.now();
+      } catch (err: any) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Copy URL button
+    document.querySelectorAll('.admin-copy-url-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const url = (e.currentTarget as HTMLElement).getAttribute('data-url');
+        if (url) {
+          navigator.clipboard.writeText(url);
+          showToast('تم نسخ الرابط المباشر للصورة!', 'success');
+        }
+      });
+    });
+
+    // Delete Media item
+    document.querySelectorAll('.admin-del-media-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (id && confirm('هل أنت متأكد من حذف هذه الصورة؟')) {
+          try {
+            const res = await fetch(`/api/media/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+              showToast('تم حذف الصورة بنجاح', 'info');
+              window.location.hash = 'admin/media?reload=' + Date.now();
+            } else {
+              showToast(data.message, 'error');
+            }
+          } catch (err: any) {
+            showToast(err.message, 'error');
+          }
+        }
+      });
+    });
+  }
+
+  // Add Product Modal with Free File Upload
   const addProdBtn = document.getElementById('admin-add-product-btn');
   if (addProdBtn) {
     addProdBtn.onclick = () => {
       openModal(`
-        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Add Haute Couture Garment</h3>
+        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">إضافة قطعة أزياء كوتور جديدة</h3>
         <form id="new-prod-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
           <div class="form-group">
-            <label class="form-label">Garment Name (English) *</label>
-            <input type="text" id="np-name-en" required class="form-input" placeholder="e.g. Silk Georgette Evening Dress" />
+            <label class="form-label">اسم القطعة (بالعربية) *</label>
+            <input type="text" id="np-name-ar" required class="form-input" placeholder="مثال: فستان جورجيت الحريري الملكي" />
           </div>
           <div class="form-group">
-            <label class="form-label">Garment Name (Arabic) *</label>
-            <input type="text" id="np-name-ar" required class="form-input" placeholder="مثال: فستان جورجيت الحريري الفاخر" />
+            <label class="form-label">اسم القطعة (بالإنجليزية) *</label>
+            <input type="text" id="np-name-en" required class="form-input" placeholder="e.g. Silk Georgette Evening Dress" />
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
             <div class="form-group">
-              <label class="form-label">SKU *</label>
+              <label class="form-label">كود القطعة (SKU) *</label>
               <input type="text" id="np-sku" required class="form-input" placeholder="LET-DR-101" />
             </div>
             <div class="form-group">
-              <label class="form-label">Price ($) *</label>
+              <label class="form-label">السعر الأساسي ($) *</label>
               <input type="number" id="np-price" required class="form-input" placeholder="380" />
             </div>
           </div>
+
+          <!-- Free Upload or URL -->
           <div class="form-group">
-            <label class="form-label">Image URL *</label>
-            <input type="url" id="np-img" required class="form-input" value="https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=1000&q=85" />
+            <label class="form-label">صورة القطعة (رفع مجاني من جهازك أو رابط) *</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="np-img" required class="form-input" style="flex: 1;" placeholder="/uploads/... أو رابط الصورة" value="https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=1000&q=85" />
+              <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+                <span>📷 رفع من جهازك</span>
+                <input type="file" id="np-file-upload" accept="image/*" style="display: none;" />
+              </label>
+            </div>
+            <div id="np-preview-box" style="margin-top: 8px; display: none; align-items: center; gap: 10px;">
+              <img id="np-preview-img" src="" style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1;" />
+              <span style="font-size: 12px; color: #16a34a; font-weight: 600;">✓ تم رفع الصورة محلياً بنجاح ومجاناً</span>
+            </div>
           </div>
+
           <div class="form-group">
-            <label class="form-label">Initial Total Stock *</label>
+            <label class="form-label">إجمالي المخزون المتاح للقطعة *</label>
             <input type="number" id="np-stock" required class="form-input" value="25" />
           </div>
-          <button type="submit" class="btn btn-primary btn-full">Save & Publish Garment</button>
+          <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">حفظ ونشر القطعة بالمتجر</button>
         </form>
       `);
+
+      // File upload listener for new product
+      const npFileInput = document.getElementById('np-file-upload') as HTMLInputElement;
+      if (npFileInput) {
+        npFileInput.onchange = async () => {
+          const file = npFileInput.files?.[0];
+          if (!file) return;
+          try {
+            showToast('جاري رفع صورة القطعة من جهازك مجاناً...', 'info');
+            const res = await uploadImageFile(file);
+            (document.getElementById('np-img') as HTMLInputElement).value = res.url;
+            const pBox = document.getElementById('np-preview-box');
+            const pImg = document.getElementById('np-preview-img') as HTMLImageElement;
+            if (pBox && pImg) {
+              pImg.src = res.url;
+              pBox.style.display = 'flex';
+            }
+            showToast('تم رفع الصورة بنجاح وربطها بالمنتج!', 'success');
+          } catch (err: any) {
+            showToast(err.message, 'error');
+          }
+        };
+      }
 
       const form = document.getElementById('new-prod-form');
       if (form) {
@@ -964,7 +1242,7 @@ export function setupAdminEvents(section: string) {
               createdAt: new Date().toISOString()
             });
             closeModal();
-            showToast('Garment added successfully!', 'success');
+            showToast('تمت إضافة وحفظ القطعة بنجاح في قاعدة البيانات!', 'success');
             window.location.hash = 'admin/products?reload=' + Date.now();
           } catch (err: any) {
             showToast(err.message, 'error');
@@ -974,15 +1252,241 @@ export function setupAdminEvents(section: string) {
     };
   }
 
+  // Edit Product Modal with Free File Upload
+  document.querySelectorAll('.admin-edit-prod-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (!id) return;
+      try {
+        const snap = await getDoc(doc(db, 'products', id));
+        if (!snap.exists()) return;
+        const p = snap.data();
+
+        openModal(`
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">تعديل القطعة • ${p.nameAr || p.name}</h3>
+          <form id="edit-prod-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
+            <div class="form-group">
+              <label class="form-label">اسم القطعة (بالعربية) *</label>
+              <input type="text" id="ep-name-ar" required class="form-input" value="${p.nameAr || ''}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">اسم القطعة (بالإنجليزية) *</label>
+              <input type="text" id="ep-name-en" required class="form-input" value="${p.name || ''}" />
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+              <div class="form-group">
+                <label class="form-label">السعر الأساسي ($) *</label>
+                <input type="number" id="ep-price" required class="form-input" value="${p.price || 0}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">سعر التخفيض ($)</label>
+                <input type="number" id="ep-saleprice" class="form-input" value="${p.salePrice || 0}" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">المخزون الكلي *</label>
+              <input type="number" id="ep-stock" required class="form-input" value="${p.totalStock ?? 10}" />
+            </div>
+
+            <!-- Free File Upload or URL -->
+            <div class="form-group">
+              <label class="form-label">صورة القطعة (رفع مجاني من جهازك أو رابط) *</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="ep-img" required class="form-input" style="flex: 1;" value="${(p.images && p.images[0]) || ''}" />
+                <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+                  <span>📷 رفع صورة جديدة</span>
+                  <input type="file" id="ep-file-upload" accept="image/*" style="display: none;" />
+                </label>
+              </div>
+              <div id="ep-preview-box" style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+                <img id="ep-preview-img" src="${(p.images && p.images[0]) || ''}" style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1;" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">حالة النشر بالمتجر</label>
+              <select id="ep-published" class="form-select">
+                <option value="true" ${p.isPublished ? 'selected' : ''}>منشور ومتاح للشراء للعملاء</option>
+                <option value="false" ${!p.isPublished ? 'selected' : ''}>مسودة مخفية</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">حفظ التعديلات في فايربيز</button>
+          </form>
+        `);
+
+        // Free upload listener for edit
+        const epFileInput = document.getElementById('ep-file-upload') as HTMLInputElement;
+        if (epFileInput) {
+          epFileInput.onchange = async () => {
+            const file = epFileInput.files?.[0];
+            if (!file) return;
+            try {
+              showToast('جاري رفع الصورة الجديدة مجاناً...', 'info');
+              const res = await uploadImageFile(file);
+              (document.getElementById('ep-img') as HTMLInputElement).value = res.url;
+              const pImg = document.getElementById('ep-preview-img') as HTMLImageElement;
+              if (pImg) pImg.src = res.url;
+              showToast('تم رفع الصورة الجديدة بنجاح!', 'success');
+            } catch (err: any) {
+              showToast(err.message, 'error');
+            }
+          };
+        }
+
+        const editForm = document.getElementById('edit-prod-form');
+        if (editForm) {
+          editForm.onsubmit = async (ev) => {
+            ev.preventDefault();
+            const name = (document.getElementById('ep-name-en') as HTMLInputElement).value;
+            const nameAr = (document.getElementById('ep-name-ar') as HTMLInputElement).value;
+            const price = parseFloat((document.getElementById('ep-price') as HTMLInputElement).value);
+            const salePrice = parseFloat((document.getElementById('ep-saleprice') as HTMLInputElement).value);
+            const stock = parseInt((document.getElementById('ep-stock') as HTMLInputElement).value);
+            const img = (document.getElementById('ep-img') as HTMLInputElement).value;
+            const isPub = (document.getElementById('ep-published') as HTMLSelectElement).value === 'true';
+
+            try {
+              await updateDoc(doc(db, 'products', id), {
+                name,
+                nameAr,
+                price,
+                salePrice,
+                totalStock: stock,
+                images: [img],
+                isPublished: isPub,
+                updatedAt: new Date().toISOString()
+              });
+              closeModal();
+              showToast('تم تحديث القطعة وحفظها بنجاح!', 'success');
+              window.location.hash = 'admin/products?reload=' + Date.now();
+            } catch (err: any) {
+              showToast(err.message, 'error');
+            }
+          };
+        }
+      } catch (err: any) {
+        showToast(err.message, 'error');
+      }
+    });
+  });
+
   // Delete product
   document.querySelectorAll('.admin-del-prod-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
-      if (id && confirm('Delete this garment from catalog?')) {
+      if (id && confirm('هل أنت متأكد من حذف هذه القطعة من الكتالوج نهائياً؟')) {
         try {
           await deleteDoc(doc(db, 'products', id));
-          showToast('Product deleted', 'info');
+          showToast('تم حذف القطعة من الكتالوج', 'info');
           window.location.hash = 'admin/products?reload=' + Date.now();
+        } catch (err: any) {
+          showToast(err.message, 'error');
+        }
+      }
+    });
+  });
+
+  // Add Category Modal with Free File Upload
+  const addCatBtn = document.getElementById('admin-add-category-btn');
+  if (addCatBtn) {
+    addCatBtn.onclick = () => {
+      openModal(`
+        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">إضافة قسم جديد للأزياء</h3>
+        <form id="new-cat-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
+          <div class="form-group">
+            <label class="form-label">اسم القسم (بالعربية) *</label>
+            <input type="text" id="nc-name-ar" required class="form-input" placeholder="مثال: فساتين السهرة والأعراس" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">اسم القسم (بالإنجليزية) *</label>
+            <input type="text" id="nc-name-en" required class="form-input" placeholder="e.g. Evening Gowns" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">الرابط المعرّف (Slug) *</label>
+            <input type="text" id="nc-slug" required class="form-input" placeholder="evening-gowns" />
+          </div>
+
+          <!-- Free Upload or URL -->
+          <div class="form-group">
+            <label class="form-label">صورة القسم (رفع مجاني من جهازك أو رابط) *</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="nc-img" required class="form-input" style="flex: 1;" value="https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=800&q=80" />
+              <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+                <span>📷 رفع من جهازك</span>
+                <input type="file" id="nc-file-upload" accept="image/*" style="display: none;" />
+              </label>
+            </div>
+            <div id="nc-preview-box" style="margin-top: 8px; display: none; align-items: center; gap: 10px;">
+              <img id="nc-preview-img" src="" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1;" />
+              <span style="font-size: 12px; color: #16a34a; font-weight: 600;">✓ تم رفع صورة القسم بنجاح</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">إنشاء القسم وحفظه</button>
+        </form>
+      `);
+
+      const ncFileInput = document.getElementById('nc-file-upload') as HTMLInputElement;
+      if (ncFileInput) {
+        ncFileInput.onchange = async () => {
+          const file = ncFileInput.files?.[0];
+          if (!file) return;
+          try {
+            showToast('جاري رفع صورة القسم مجاناً...', 'info');
+            const res = await uploadImageFile(file);
+            (document.getElementById('nc-img') as HTMLInputElement).value = res.url;
+            const pBox = document.getElementById('nc-preview-box');
+            const pImg = document.getElementById('nc-preview-img') as HTMLImageElement;
+            if (pBox && pImg) {
+              pImg.src = res.url;
+              pBox.style.display = 'flex';
+            }
+            showToast('تم رفع صورة القسم بنجاح!', 'success');
+          } catch (err: any) {
+            showToast(err.message, 'error');
+          }
+        };
+      }
+
+      const form = document.getElementById('new-cat-form');
+      if (form) {
+        form.onsubmit = async (ev) => {
+          ev.preventDefault();
+          const name = (document.getElementById('nc-name-en') as HTMLInputElement).value;
+          const nameAr = (document.getElementById('nc-name-ar') as HTMLInputElement).value;
+          const slug = (document.getElementById('nc-slug') as HTMLInputElement).value;
+          const img = (document.getElementById('nc-img') as HTMLInputElement).value;
+
+          try {
+            await addDoc(collection(db, 'categories'), {
+              name,
+              nameAr,
+              slug,
+              imageUrl: img,
+              sortOrder: 10,
+              isActive: true,
+              createdAt: new Date().toISOString()
+            });
+            closeModal();
+            showToast('تم إنشاء القسم بنجاح!', 'success');
+            window.location.hash = 'admin/categories?reload=' + Date.now();
+          } catch (err: any) {
+            showToast(err.message, 'error');
+          }
+        };
+      }
+    };
+  }
+
+  // Delete category
+  document.querySelectorAll('.admin-del-cat-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (id && confirm('هل تريد حذف هذا القسم؟')) {
+        try {
+          await deleteDoc(doc(db, 'categories', id));
+          showToast('تم حذف القسم', 'info');
+          window.location.hash = 'admin/categories?reload=' + Date.now();
         } catch (err: any) {
           showToast(err.message, 'error');
         }
@@ -1002,41 +1506,41 @@ export function setupAdminEvents(section: string) {
         const ord = oSnap.data();
 
         openModal(`
-          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Order Details • ${ord.orderNumber}</h3>
-          <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Client: ${ord.customerName} (${ord.customerPhone})</p>
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">تفاصيل الطلب • ${ord.orderNumber}</h3>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">العميل: ${ord.customerName} (${ord.customerPhone})</p>
 
           <div style="background: #f8fafc; padding: 12px; border-radius: 4px; font-size: 13px; margin-bottom: 16px;">
-            <div><strong>Delivery Address:</strong> ${ord.shippingAddress?.city}, ${ord.shippingAddress?.address}</div>
-            <div><strong>Payment:</strong> ${ord.paymentMethod?.toUpperCase()} (${ord.paymentStatus})</div>
-            <div><strong>Total:</strong> $${ord.total?.toFixed(2)}</div>
+            <div><strong>عنوان التوصيل:</strong> ${ord.shippingAddress?.city || ''}، ${ord.shippingAddress?.address || ''}</div>
+            <div><strong>طريقة الدفع:</strong> ${ord.paymentMethod === 'cod' ? 'الدفع عند الاستلام' : (ord.paymentMethod?.toUpperCase() || 'إلكتروني')} (${ord.paymentStatus})</div>
+            <div><strong>الإجمالي:</strong> $${ord.total?.toFixed(2)}</div>
           </div>
 
           <form id="update-order-status-form" style="display: flex; flex-direction: column; gap: 12px;">
             <div class="form-group">
-              <label class="form-label">Update Lifecycle Status</label>
+              <label class="form-label">تحديث حالة دورة حياة الطلب</label>
               <select id="adm-order-status" class="form-select">
-                <option value="new" ${ord.status === 'new' ? 'selected' : ''}>New (Received)</option>
-                <option value="confirmed" ${ord.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
-                <option value="processing" ${ord.status === 'processing' ? 'selected' : ''}>Processing (Atelier Packing)</option>
-                <option value="shipped" ${ord.status === 'shipped' ? 'selected' : ''}>Shipped (Air Courier)</option>
-                <option value="delivered" ${ord.status === 'delivered' ? 'selected' : ''}>Delivered</option>
-                <option value="cancelled" ${ord.status === 'cancelled' ? 'selected' : ''}>Cancelled (Restock Items)</option>
+                <option value="new" ${ord.status === 'new' ? 'selected' : ''}>طلب جديد (بانتظار الاعتماد)</option>
+                <option value="confirmed" ${ord.status === 'confirmed' ? 'selected' : ''}>مؤكد</option>
+                <option value="processing" ${ord.status === 'processing' ? 'selected' : ''}>قيد التجهيز والتفصيل بالأتليه</option>
+                <option value="shipped" ${ord.status === 'shipped' ? 'selected' : ''}>تم الشحن (مع شركة الشحن الجوي)</option>
+                <option value="delivered" ${ord.status === 'delivered' ? 'selected' : ''}>تم التوصيل للعميل</option>
+                <option value="cancelled" ${ord.status === 'cancelled' ? 'selected' : ''}>ملغي (إعادة القطع للمخزون تلقائياً)</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Carrier Tracking Number (e.g. DHL Express)</label>
-              <input type="text" id="adm-tracking-no" class="form-input" value="${ord.trackingNumber || ''}" placeholder="e.g. DHL-UAE-9928172" />
+              <label class="form-label">رقم بوليصة الشحن والتتبع (DHL / FedEx / أرامكس)</label>
+              <input type="text" id="adm-tracking-no" class="form-input" value="${ord.trackingNumber || ''}" placeholder="مثال: DHL-EXP-9928172" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Internal Note</label>
-              <input type="text" id="adm-order-note" class="form-input" placeholder="e.g. Verified delivery address with client" />
+              <label class="form-label">ملاحظات إدارية داخلية للأتليه</label>
+              <input type="text" id="adm-order-note" class="form-input" placeholder="مثال: تم التأكيد مع العميل هاتفياً وتجهيز التغليف الفاخر" />
             </div>
 
             <div style="display: flex; gap: 8px;">
-              <button type="submit" class="btn btn-primary" style="flex: 1;">Save & Update Status</button>
-              <button type="button" class="btn btn-secondary" onclick="window.print();">🖨 Print Invoice</button>
+              <button type="submit" class="btn btn-primary" style="flex: 1; padding: 12px; font-weight: 700;">حفظ وتحديث الحالة</button>
+              <button type="button" class="btn btn-secondary" onclick="window.print();">🖨 طباعة الفاتورة</button>
             </div>
           </form>
         `);
@@ -1064,7 +1568,7 @@ export function setupAdminEvents(section: string) {
               const resData = await res.json();
               if (resData.success) {
                 closeModal();
-                showToast('Order status updated successfully!', 'success');
+                showToast('تم تحديث حالة الطلب بنجاح ومزامنة المخزون!', 'success');
                 window.location.hash = 'admin/orders?reload=' + Date.now();
               } else {
                 showToast(resData.message, 'error');
@@ -1080,9 +1584,27 @@ export function setupAdminEvents(section: string) {
     });
   });
 
-  // Settings form submission
+  // Settings form submission with Free Hero image upload
   const settingsForm = document.getElementById('admin-settings-form');
   if (settingsForm) {
+    const heroUpload = document.getElementById('set-hero-file-upload') as HTMLInputElement;
+    if (heroUpload) {
+      heroUpload.onchange = async () => {
+        const file = heroUpload.files?.[0];
+        if (!file) return;
+        try {
+          showToast('جاري رفع صورة البانر من جهازك مجاناً...', 'info');
+          const res = await uploadImageFile(file);
+          (document.getElementById('set-hero-img') as HTMLInputElement).value = res.url;
+          const pImg = document.getElementById('set-hero-preview-img') as HTMLImageElement;
+          if (pImg) pImg.src = res.url;
+          showToast('تم رفع صورة البانر بنجاح!', 'success');
+        } catch (err: any) {
+          showToast(err.message, 'error');
+        }
+      };
+    }
+
     settingsForm.onsubmit = async (e) => {
       e.preventDefault();
       const brandEn = (document.getElementById('set-brand-en') as HTMLInputElement).value;
@@ -1112,202 +1634,42 @@ export function setupAdminEvents(section: string) {
         };
         await setDoc(doc(db, 'settings', 'store'), payload, { merge: true });
         state.setSettings(payload);
-        showToast('Settings saved successfully in Firestore!', 'success');
+        showToast('تم حفظ وتحديث إعدادات المتجر في فايربيز بنجاح!', 'success');
       } catch (err: any) {
         showToast(err.message, 'error');
       }
     };
   }
 
-  // Edit Product Modal
-  document.querySelectorAll('.admin-edit-prod-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
-      if (!id) return;
-      try {
-        const snap = await getDoc(doc(db, 'products', id));
-        if (!snap.exists()) return;
-        const p = snap.data();
-
-        openModal(`
-          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Edit Garment • ${p.name}</h3>
-          <form id="edit-prod-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
-            <div class="form-group">
-              <label class="form-label">Garment Name (English) *</label>
-              <input type="text" id="ep-name-en" required class="form-input" value="${p.name || ''}" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Garment Name (Arabic) *</label>
-              <input type="text" id="ep-name-ar" required class="form-input" value="${p.nameAr || ''}" />
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
-              <div class="form-group">
-                <label class="form-label">Price ($) *</label>
-                <input type="number" id="ep-price" required class="form-input" value="${p.price || 0}" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Sale / Discount Price ($)</label>
-                <input type="number" id="ep-saleprice" class="form-input" value="${p.salePrice || 0}" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Total Stock *</label>
-              <input type="number" id="ep-stock" required class="form-input" value="${p.totalStock ?? 10}" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Primary Image URL *</label>
-              <input type="url" id="ep-img" required class="form-input" value="${(p.images && p.images[0]) || ''}" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Publication Status</label>
-              <select id="ep-published" class="form-select">
-                <option value="true" ${p.isPublished ? 'selected' : ''}>Published (Visible in Store)</option>
-                <option value="false" ${!p.isPublished ? 'selected' : ''}>Draft (Hidden)</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary btn-full">Save Changes to Firestore</button>
-          </form>
-        `);
-
-        const editForm = document.getElementById('edit-prod-form');
-        if (editForm) {
-          editForm.onsubmit = async (ev) => {
-            ev.preventDefault();
-            const name = (document.getElementById('ep-name-en') as HTMLInputElement).value;
-            const nameAr = (document.getElementById('ep-name-ar') as HTMLInputElement).value;
-            const price = parseFloat((document.getElementById('ep-price') as HTMLInputElement).value);
-            const salePrice = parseFloat((document.getElementById('ep-saleprice') as HTMLInputElement).value);
-            const stock = parseInt((document.getElementById('ep-stock') as HTMLInputElement).value);
-            const img = (document.getElementById('ep-img') as HTMLInputElement).value;
-            const isPub = (document.getElementById('ep-published') as HTMLSelectElement).value === 'true';
-
-            try {
-              await updateDoc(doc(db, 'products', id), {
-                name,
-                nameAr,
-                price,
-                salePrice,
-                totalStock: stock,
-                images: [img],
-                isPublished: isPub,
-                updatedAt: new Date().toISOString()
-              });
-              closeModal();
-              showToast('Garment updated in Firestore!', 'success');
-              window.location.hash = 'admin/products?reload=' + Date.now();
-            } catch (err: any) {
-              showToast(err.message, 'error');
-            }
-          };
-        }
-      } catch (err: any) {
-        showToast(err.message, 'error');
-      }
-    });
-  });
-
-  // Add Category Modal
-  const addCatBtn = document.getElementById('admin-add-category-btn');
-  if (addCatBtn) {
-    addCatBtn.onclick = () => {
-      openModal(`
-        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Add New Category</h3>
-        <form id="new-cat-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
-          <div class="form-group">
-            <label class="form-label">Category Name (English) *</label>
-            <input type="text" id="nc-name-en" required class="form-input" placeholder="e.g. Silk Loungewear" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Category Name (Arabic) *</label>
-            <input type="text" id="nc-name-ar" required class="form-input" placeholder="مثال: ملابس النوم الحريرية" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Slug *</label>
-            <input type="text" id="nc-slug" required class="form-input" placeholder="silk-loungewear" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Image URL *</label>
-            <input type="url" id="nc-img" required class="form-input" value="https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=800&q=80" />
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">Create Category</button>
-        </form>
-      `);
-
-      const form = document.getElementById('new-cat-form');
-      if (form) {
-        form.onsubmit = async (ev) => {
-          ev.preventDefault();
-          const name = (document.getElementById('nc-name-en') as HTMLInputElement).value;
-          const nameAr = (document.getElementById('nc-name-ar') as HTMLInputElement).value;
-          const slug = (document.getElementById('nc-slug') as HTMLInputElement).value;
-          const img = (document.getElementById('nc-img') as HTMLInputElement).value;
-
-          try {
-            await addDoc(collection(db, 'categories'), {
-              name,
-              nameAr,
-              slug,
-              imageUrl: img,
-              sortOrder: 10,
-              isActive: true,
-              createdAt: new Date().toISOString()
-            });
-            closeModal();
-            showToast('Category created successfully!', 'success');
-            window.location.hash = 'admin/categories?reload=' + Date.now();
-          } catch (err: any) {
-            showToast(err.message, 'error');
-          }
-        };
-      }
-    };
-  }
-
-  // Delete category
-  document.querySelectorAll('.admin-del-cat-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
-      if (id && confirm('Delete this category?')) {
-        try {
-          await deleteDoc(doc(db, 'categories', id));
-          showToast('Category deleted', 'info');
-          window.location.hash = 'admin/categories?reload=' + Date.now();
-        } catch (err: any) {
-          showToast(err.message, 'error');
-        }
-      }
-    });
-  });
-
-  // Add Coupon Modal
+  // Create Coupon Modal
   const addCoupBtn = document.getElementById('admin-add-coupon-btn');
   if (addCoupBtn) {
     addCoupBtn.onclick = () => {
       openModal(`
-        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Create Promotional Coupon</h3>
+        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">إنشاء كوبون خصم ترويجي جديد</h3>
         <form id="new-coup-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
           <div class="form-group">
-            <label class="form-label">Coupon Code *</label>
-            <input type="text" id="ncp-code" required class="form-input" placeholder="e.g. SUMMER20" style="text-transform: uppercase;" />
+            <label class="form-label">رمز الكوبون *</label>
+            <input type="text" id="ncp-code" required class="form-input" placeholder="مثال: LUXE20" style="text-transform: uppercase;" />
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
             <div class="form-group">
-              <label class="form-label">Discount Type *</label>
+              <label class="form-label">نوع الخصم *</label>
               <select id="ncp-type" class="form-select">
-                <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount ($)</option>
+                <option value="percentage">نسبة مئوية (%)</option>
+                <option value="fixed">مبلغ مالي ثابت ($)</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Discount Value *</label>
+              <label class="form-label">قيمة الخصم *</label>
               <input type="number" id="ncp-val" required class="form-input" placeholder="20" />
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Minimum Order Value ($)</label>
+            <label class="form-label">الحد الأدنى لقيمة الطلب لتطبيق الكوبون ($)</label>
             <input type="number" id="ncp-min" class="form-input" value="150" />
           </div>
-          <button type="submit" class="btn btn-primary btn-full">Save Coupon</button>
+          <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">حفظ وتفعيل الكوبون</button>
         </form>
       `);
 
@@ -1331,7 +1693,7 @@ export function setupAdminEvents(section: string) {
               createdAt: new Date().toISOString()
             });
             closeModal();
-            showToast('Coupon created!', 'success');
+            showToast('تم إنشاء الكوبون بنجاح!', 'success');
             window.location.hash = 'admin/coupons?reload=' + Date.now();
           } catch (err: any) {
             showToast(err.message, 'error');
@@ -1349,7 +1711,7 @@ export function setupAdminEvents(section: string) {
       if (!id) return;
       try {
         await updateDoc(doc(db, 'coupons', id), { isActive: !isActive });
-        showToast(isActive ? 'Coupon deactivated' : 'Coupon activated', 'info');
+        showToast(isActive ? 'تم تعطيل الكوبون' : 'تم تفعيل الكوبون', 'info');
         window.location.hash = 'admin/coupons?reload=' + Date.now();
       } catch (err: any) {
         showToast(err.message, 'error');
@@ -1368,24 +1730,24 @@ export function setupAdminEvents(section: string) {
         const ret = snap.data();
 
         openModal(`
-          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Process Return • Order ${ret.orderNumber}</h3>
-          <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Reason: ${ret.reason} (${ret.type})</p>
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">معالجة طلب الإرجاع • طلب ${ret.orderNumber}</h3>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">السبب: ${ret.reason} (${ret.type === 'exchange' ? 'استبدال' : 'استرجاع'})</p>
 
           <form id="proc-ret-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
             <div class="form-group">
-              <label class="form-label">Inspection & Decision Status</label>
+              <label class="form-label">قرار الفحص وحالة المرتجع</label>
               <select id="pr-status" class="form-select">
-                <option value="approved">Approved (Awaiting Package)</option>
-                <option value="received">Package Received & Inspected</option>
-                <option value="refunded">Refund Issued / Exchange Completed</option>
-                <option value="rejected">Rejected (Tag Removed or Damaged)</option>
+                <option value="approved">معتمد (بانتظار شحن القطعة من العميل)</option>
+                <option value="received">تم استلام القطعة في الأتليه وفحصها</option>
+                <option value="refunded">تم رد المبلغ / إرسال المقاس البديل</option>
+                <option value="rejected">مرفوض (تلف القطعة أو إزالة التاج)</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Internal Atelier Notes</label>
-              <input type="text" id="pr-notes" class="form-input" placeholder="e.g. Garment in pristine condition, tag intact" />
+              <label class="form-label">ملاحظات الأتليه الداخلية</label>
+              <input type="text" id="pr-notes" class="form-input" placeholder="مثال: القطعة بحالة ممتازة وبها كافة بطاقات العلامة" />
             </div>
-            <button type="submit" class="btn btn-primary btn-full">Update Return Status</button>
+            <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">تحديث حالة طلب الإرجاع</button>
           </form>
         `);
 
@@ -1403,7 +1765,7 @@ export function setupAdminEvents(section: string) {
                 updatedAt: new Date().toISOString()
               });
               closeModal();
-              showToast('Return request updated!', 'success');
+              showToast('تم تحديث حالة طلب الإرجاع!', 'success');
               window.location.hash = 'admin/returns?reload=' + Date.now();
             } catch (err: any) {
               showToast(err.message, 'error');
@@ -1421,27 +1783,27 @@ export function setupAdminEvents(section: string) {
   if (adjustStockBtn) {
     adjustStockBtn.onclick = () => {
       openModal(`
-        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Manual Stock Adjustment</h3>
+        <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">تعديل المخزون يدوياً</h3>
         <form id="stock-adj-form" style="display: flex; flex-direction: column; gap: var(--space-md);">
           <div class="form-group">
-            <label class="form-label">Select Garment & SKU *</label>
+            <label class="form-label">اختر القطعة وكود SKU *</label>
             <select id="adj-sku-select" class="form-select">
-              <option value="LET-TC-001-CAM-S">L'Atelier Trench Coat (Camel Sand • S)</option>
-              <option value="LET-TC-001-CAM-M">L'Atelier Trench Coat (Camel Sand • M)</option>
-              <option value="LET-DR-002-CHP-S">Sovereign Silk Dress (Champagne • S)</option>
-              <option value="LET-DR-002-CHP-M">Sovereign Silk Dress (Champagne • M)</option>
-              <option value="LET-BZ-003-IVR-M">Sculpted Wool Blazer (Ivory • M)</option>
+              <option value="LET-TC-001-CAM-S">معطف ترنش الأتليه (رملي • S)</option>
+              <option value="LET-TC-001-CAM-M">معطف ترنش الأتليه (رملي • M)</option>
+              <option value="LET-DR-002-CHP-S">فستان الحرير الملكي (شمبانيا • S)</option>
+              <option value="LET-DR-002-CHP-M">فستان الحرير الملكي (شمبانيا • M)</option>
+              <option value="LET-BZ-003-IVR-M">بليزر الصوف المنحوت (عاجي • M)</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Stock Change (e.g. +10 or -2) *</label>
-            <input type="number" id="adj-delta" required class="form-input" placeholder="e.g. 5" />
+            <label class="form-label">تغيير الكمية (مثال: +10 أو -2) *</label>
+            <input type="number" id="adj-delta" required class="form-input" placeholder="مثال: 5" />
           </div>
           <div class="form-group">
-            <label class="form-label">Reason *</label>
-            <input type="text" id="adj-reason" required class="form-input" placeholder="e.g. New atelier inbound batch" />
+            <label class="form-label">سبب التعديل المخزني *</label>
+            <input type="text" id="adj-reason" required class="form-input" placeholder="مثال: توريد دفعة جديدة من ورشة الخياطة" />
           </div>
-          <button type="submit" class="btn btn-primary btn-full">Record Adjustment</button>
+          <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">تسجيل الحركة وتحديث المخزون</button>
         </form>
       `);
 
@@ -1463,7 +1825,7 @@ export function setupAdminEvents(section: string) {
               createdAt: new Date().toISOString()
             });
             closeModal();
-            showToast(`Recorded ${delta > 0 ? '+' : ''}${delta} stock movement in Firestore!`, 'success');
+            showToast(`تم تسجيل حركة المخزون (${delta > 0 ? '+' : ''}${delta}) في فايربيز!`, 'success');
             window.location.hash = 'admin/inventory?reload=' + Date.now();
           } catch (err: any) {
             showToast(err.message, 'error');
@@ -1473,4 +1835,3 @@ export function setupAdminEvents(section: string) {
     };
   }
 }
-

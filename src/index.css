@@ -43,8 +43,8 @@
   --space-4xl: 96px;
 
   /* Typography */
-  --font-editorial: 'Cormorant Garamond', 'Tajawal', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-editorial: 'Cairo', 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Cairo', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
   /* Radii - Subtle & refined, anti-pill luxury */
   --radius-xs: 2px;
@@ -69,20 +69,25 @@
   --announcement-height: 38px;
 }
 
-/* RTL / LTR Font Tuning */
-[dir="rtl"] {
-  font-family: var(--font-sans);
+/* RTL / LTR Font Tuning with Cairo font as requested */
+[dir="rtl"], html[lang="ar"], body {
+  font-family: 'Cairo', var(--font-sans) !important;
 }
-[dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] .font-editorial {
-  font-family: 'Tajawal', var(--font-editorial);
+[dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] .font-editorial {
+  font-family: 'Cairo', sans-serif !important;
   font-weight: 700;
 }
 [dir="ltr"] {
   font-family: var(--font-sans);
 }
 [dir="ltr"] h1, [dir="ltr"] h2, [dir="ltr"] h3, [dir="ltr"] .font-editorial {
-  font-family: var(--font-editorial);
+  font-family: 'Cormorant Garamond', 'Cairo', serif;
   letter-spacing: -0.02em;
+}
+
+/* Admin Dashboard font */
+.admin-layout, .admin-sidebar, .admin-main, .admin-header, .admin-card, .admin-login-wrapper {
+  font-family: 'Cairo', sans-serif !important;
 }
 
 /* Reset & Base */
