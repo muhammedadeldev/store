@@ -23,9 +23,9 @@ export async function renderAccountView(urlParams: URLSearchParams): Promise<str
             <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 4px;">
               ${lang === 'ar' ? 'حساب العميل الخاص' : 'The Client Portal'}
             </span>
-            <h2 style="font-family: var(--font-editorial); font-size: 28px; font-weight: 500;">
+            <h3 style="font-family: var(--font-editorial); font-size: 28px; font-weight: 500;">
               ${lang === 'ar' ? 'تسجيل الدخول إلى حسابك' : 'Sign In To Your Account'}
-            </h2>
+            </h3>
             <p style="font-size: 13px; color: var(--color-text-muted); margin-top: 4px;">
               ${lang === 'ar' ? 'متابعة الطلبات، قائمة المفضلة، وإدارة العناوين والمرتجعات' : 'Manage your bespoke orders, wishlist, and returns'}
             </p>

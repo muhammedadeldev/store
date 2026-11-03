@@ -27,7 +27,7 @@ export function renderCartView(): string {
       ${cart.length === 0 ? `
         <div style="text-align: center; padding: var(--space-4xl) 0; background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-sm);">
           <i class="fa-solid fa-bag-shopping" aria-hidden="true" style="font-size: 64px;"></i>
-          <h2 style="font-size: 22px; font-weight: 500; margin-bottom: 8px;">${state.t('emptyCart')}</h2>
+          <h3 style="font-size: 22px; font-weight: 500; margin-bottom: 8px;">${state.t('emptyCart')}</h3>
           <p style="font-size: 14px; color: var(--color-text-muted); max-width: 320px; margin: 0 auto var(--space-xl) auto;">
             ${lang === 'ar' ? 'لم تقم بإضافة أي قطع إلى سلة التسوق بعد.' : 'Your shopping cart is currently empty.'}
           </p>

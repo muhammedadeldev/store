@@ -7,7 +7,7 @@ export async function renderProductView(productId: string): Promise<string> {
   const lang = state.getLang();
   
   if (!productId) {
-    return `<div class="container" style="padding: 100px 0; text-align: center;"><h2>Product not found</h2><a href="#shop" class="btn btn-primary" style="margin-top: 16px;">Back to Shop</a></div>`;
+    return `<div class="container" style="padding: 100px 0; text-align: center;"><h3>Product not found</h3><a href="#shop" class="btn btn-primary" style="margin-top: 16px;">Back to Shop</a></div>`;
   }
 
   let product: any = null;
@@ -39,7 +39,7 @@ export async function renderProductView(productId: string): Promise<string> {
   if (!product) {
     return `
       <div class="container" style="padding: 80px 0; text-align: center;">
-        <h2 style="font-family: var(--font-editorial); font-size: 32px; margin-bottom: 16px;">${lang === 'ar' ? 'المنتج غير موجود' : 'Product Not Found'}</h2>
+        <h3 style="font-family: var(--font-editorial); font-size: 32px; margin-bottom: 16px;">${lang === 'ar' ? 'المنتج غير موجود' : 'Product Not Found'}</h3>
         <a href="#shop" class="btn btn-primary">${state.t('continueShopping')}</a>
       </div>
     `;

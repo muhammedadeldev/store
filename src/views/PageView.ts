@@ -35,7 +35,7 @@ export async function renderPageView(slug: string): Promise<string> {
     } else {
       return `
         <div class="container" style="padding: 100px 0; text-align: center;">
-          <h2 style="font-family: var(--font-editorial); font-size: 32px; margin-bottom: 16px;">${copy(`page.notFound.${lang}`, lang === 'ar' ? 'الصفحة غير موجودة' : 'Page Not Found')}</h2>
+          <h3 style="font-family: var(--font-editorial); font-size: 32px; margin-bottom: 16px;">${copy(`page.notFound.${lang}`, lang === 'ar' ? 'الصفحة غير موجودة' : 'Page Not Found')}</h3>
           <a href="#home" class="btn btn-primary">${state.t('home')}</a>
         </div>
       `;

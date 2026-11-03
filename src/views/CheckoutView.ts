@@ -9,7 +9,7 @@ export async function renderCheckoutView(): Promise<string> {
   if (cart.length === 0) {
     return `
       <div class="container" style="padding: 100px 0; text-align: center;">
-        <h2 style="font-family: var(--font-editorial); font-size: 32px; margin-bottom: 16px;">${state.t('emptyCart')}</h2>
+        <h3 style="font-family: var(--font-editorial); font-size: 32px; margin-bottom: 16px;">${state.t('emptyCart')}</h3>
         <a href="#shop" class="btn btn-primary">${state.t('continueShopping')}</a>
       </div>
     `;
@@ -363,9 +363,9 @@ export function setupCheckoutEvents() {
                   ${lang === 'ar' ? 'تم تأكيد طلبك بنجاح' : 'Order Confirmed'}
                 </span>
 
-                <h2 style="font-family: var(--font-editorial); font-size: clamp(26px, 4vw, 36px); font-weight: 500; margin-bottom: var(--space-sm);">
+                <h3 style="font-family: var(--font-editorial); font-size: clamp(26px, 4vw, 36px); font-weight: 500; margin-bottom: var(--space-sm);">
                   ${lang === 'ar' ? 'شكراً لاختيارك براند EIGHTY-EIGHT' : 'Thank You For Choosing EIGHTY-EIGHT'}
-                </h2>
+                </h3>
 
                 <p style="font-size: 14px; color: var(--color-text-muted); line-height: 1.7; margin-bottom: var(--space-xl);">
                   ${lang === 'ar' 

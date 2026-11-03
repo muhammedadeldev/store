@@ -90,9 +90,9 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
               <span style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">
                 ${lang === 'ar' ? 'كود الطلب المسجل' : 'Order Reference'}
               </span>
-              <h2 style="font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 2px; letter-spacing: 0.02em;">
+              <h3 style="font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 2px; letter-spacing: 0.02em;">
                 ${foundOrder.orderNumber}
-              </h2>
+              </h3>
               <span style="font-size: 12px; color: #94a3b8;">
                 ${new Date(foundOrder.createdAt || Date.now()).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
               </span>

@@ -101,9 +101,9 @@ export async function renderHomeView(): Promise<string> {
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--space-2xl);">
             <div>
               <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 4px;">${copy(`home.collections.eyebrow.${lang}`, lang === 'ar' ? 'المجموعات والتصنيفات' : 'The Curations')}</span>
-              <h2 style="font-family: var(--font-editorial); font-size: clamp(28px, 4vw, 38px); font-weight: 500;">
+              <h3 style="font-family: var(--font-editorial); font-size: clamp(28px, 4vw, 38px); font-weight: 500;">
                 ${copy(`home.collections.title.${lang}`, lang === 'ar' ? 'المجموعات والتصنيفات الفاخرة' : 'Signature Collections')}
-              </h2>
+              </h3>
             </div>
             <a href="${copy('home.collections.link.href', '#shop')}" class="nav-link" style="font-size: 13px; font-weight: 600;">
               ${copy(`home.collections.link.${lang}`, lang === 'ar' ? 'عرض كل التصنيفات ←' : 'View All Collections →')}
@@ -136,9 +136,9 @@ export async function renderHomeView(): Promise<string> {
             <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 6px;">
               ${copy(`home.arrivals.eyebrow.${lang}`, lang === 'ar' ? 'إبداعات الموسم' : 'Runway Highlights')}
             </span>
-            <h2 style="font-family: var(--font-editorial); font-size: clamp(30px, 4.5vw, 42px); font-weight: 500;">
+            <h3 style="font-family: var(--font-editorial); font-size: clamp(30px, 4.5vw, 42px); font-weight: 500;">
               ${copy(`home.arrivals.title.${lang}`, state.t('newArrivals'))}
-            </h2>
+            </h3>
             <p style="font-size: 14px; color: var(--color-text-muted); margin-top: var(--space-xs);">
               ${copy(`home.arrivals.description.${lang}`, lang === 'ar' ? 'قطع حصرية محدودة الإصدار تم قصها وتفصيلها بأعلى معايير الهوت كوتور.' : 'Limited atelier pieces cut and hand-finished with timeless contemporary proportions.')}
             </p>
@@ -164,9 +164,9 @@ export async function renderHomeView(): Promise<string> {
               <span style="font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: var(--space-sm);">
                 ${copy(`home.story.eyebrow.${lang}`, lang === 'ar' ? 'فلسفة المتجر والإنتاج' : 'The Brand Craft')}
               </span>
-              <h2 style="font-family: var(--font-editorial); font-size: clamp(32px, 4.5vw, 48px); line-height: 1.15; font-weight: 400; margin-bottom: var(--space-lg);">
+              <h3 style="font-family: var(--font-editorial); font-size: clamp(32px, 4.5vw, 48px); line-height: 1.15; font-weight: 400; margin-bottom: var(--space-lg);">
                 ${copy(`home.story.title.${lang}`, lang === 'ar' ? 'خياطة معمارية دقيقة لا تعترف بمرور الزمن' : 'Sculptural Tailoring Built For A Lifetime')}
-              </h2>
+              </h3>
               <p style="font-size: 15px; line-height: 1.8; color: #b8b5af; margin-bottom: var(--space-md);">
                 ${lang === 'ar' 
                   ? copy('home.story.body1.ar', 'في براند EIGHTY-EIGHT، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على القطن المصري 100% الثقيل والمعالج لضمان الراحة التامة والمتانة الاستثنائية.')
@@ -195,9 +195,9 @@ export async function renderHomeView(): Promise<string> {
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--space-2xl);">
             <div>
               <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 4px;">${copy(`home.bestsellers.eyebrow.${lang}`, lang === 'ar' ? 'القطع الأيقونية' : 'The Icons')}</span>
-              <h2 style="font-family: var(--font-editorial); font-size: clamp(28px, 4vw, 38px); font-weight: 500;">
+              <h3 style="font-family: var(--font-editorial); font-size: clamp(28px, 4vw, 38px); font-weight: 500;">
                 ${copy(`home.bestsellers.title.${lang}`, state.t('bestSellers'))}
-              </h2>
+              </h3>
             </div>
             <a href="${copy('home.bestsellers.link.href', '#shop?filter=bestseller')}" class="nav-link" style="font-size: 13px; font-weight: 600;">
               ${copy(`home.bestsellers.link.${lang}`, lang === 'ar' ? 'عرض الأكثر طلباً ←' : 'View All Best Sellers →')}

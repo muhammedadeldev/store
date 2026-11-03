@@ -487,9 +487,9 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
             <button id="admin-sidebar-toggle" class="icon-btn" style="border: 1px solid #e2e8f0;">
               <i class="fa-solid fa-bars" aria-hidden="true" style="font-size: 20px;"></i>
             </button>
-            <h2 style="font-size: 20px; font-weight: 700; color: #0f172a;">
+            <h3 style="font-size: 20px; font-weight: 700; color: #0f172a;">
               ${sectionTitles[currentSection] || 'لوحة التحكم الإدارية'}
-            </h2>
+            </h3>
           </div>
 
           <div class="admin-header-actions">
@@ -1466,9 +1466,9 @@ export function renderAdminLoginView(): string {
           <span style="font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 6px; font-weight: 700;">
             EIGHTY-EIGHT • لوحة التحكم الإدارية
           </span>
-          <h2 style="font-size: 22px; font-weight: 800; color: #ffffff;">
+          <h3 style="font-size: 22px; font-weight: 800; color: #ffffff;">
             تسجيل دخول مدير المتجر
-          </h2>
+          </h3>
           <p style="font-size: 13px; color: #94a3b8; margin-top: 6px; line-height: 1.6;">
             منطقة أمنية مخصصة لإدارة المنتجات، الطلبات، المخزون، والوسائط.
           </p>
