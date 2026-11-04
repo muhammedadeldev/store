@@ -12,6 +12,7 @@ export async function renderProductView(productId: string): Promise<string> {
 
   let product: any = null;
   let relatedProducts: any[] = [];
+  let bestSellerProducts: any[] = [];
   let reviews: any[] = [];
 
   try {
@@ -19,17 +20,19 @@ export async function renderProductView(productId: string): Promise<string> {
     if (pSnap.exists()) {
       product = { id: pSnap.id, ...pSnap.data() };
       
-      // Fetch related products in the same category
-      if (product.categoryId) {
-        const relSnap = await getDocs(query(collection(db, 'products'), where('categoryId', '==', product.categoryId)));
-        relatedProducts = relSnap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter(p => p.id !== productId)
-          .slice(0, 4);
-      }
-
-      // Fetch reviews
-      const revSnap = await getDocs(query(collection(db, 'reviews'), where('productId', '==', productId)));
+      // Load recommendation candidates once, then build both shelves locally.
+      const [productsSnap, revSnap] = await Promise.all([
+        getDocs(query(collection(db, 'products'), where('isPublished', '==', true))),
+        getDocs(query(collection(db, 'reviews'), where('productId', '==', productId)))
+      ]);
+      const candidates: any[] = productsSnap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(p => p.id !== productId);
+      relatedProducts = candidates
+        .filter(p => product.categoryId && p.categoryId === product.categoryId)
+        .slice(0, 4);
+      bestSellerProducts = candidates.filter(p => p.isBestSeller).slice(0, 4);
+      if (bestSellerProducts.length === 0) bestSellerProducts = candidates.slice(0, 4);
       reviews = revSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
   } catch (e) {
@@ -254,6 +257,38 @@ export async function renderProductView(productId: string): Promise<string> {
 
       </div>
 
+      <!-- Product Recommendations -->
+      <section class="product-recommendations" aria-label="${lang === 'ar' ? 'ترشيحات المنتجات' : 'Product recommendations'}">
+        ${bestSellerProducts.length > 0 ? `
+          <div class="recommendation-shelf">
+            <div class="recommendation-heading">
+              <div>
+                <span class="recommendation-eyebrow">${lang === 'ar' ? 'اختيارات العملاء' : 'Client Favorites'}</span>
+                <h3>${lang === 'ar' ? 'الأكثر مبيعًا' : 'Best Sellers'}</h3>
+              </div>
+              <a href="#shop?filter=bestseller" class="recommendation-link">${lang === 'ar' ? 'عرض الكل ←' : 'View all →'}</a>
+            </div>
+            <div class="grid-products recommendation-grid">
+              ${bestSellerProducts.map(p => renderProductCard(p, lang)).join('')}
+            </div>
+          </div>
+        ` : ''}
+        ${relatedProducts.length > 0 ? `
+          <div class="recommendation-shelf">
+            <div class="recommendation-heading">
+              <div>
+                <span class="recommendation-eyebrow">${lang === 'ar' ? 'اختيارات من نفس المجموعة' : 'From The Same Collection'}</span>
+                <h3>${lang === 'ar' ? 'منتجات متعلقة' : 'Related Products'}</h3>
+              </div>
+              <a href="#shop?cat=${product.categoryId || ''}" class="recommendation-link">${lang === 'ar' ? 'استكشف المجموعة ←' : 'Explore collection →'}</a>
+            </div>
+            <div class="grid-products recommendation-grid">
+              ${relatedProducts.map(p => renderProductCard(p, lang)).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </section>
+
       <!-- Customer Reviews Section -->
       <section style="margin-top: var(--space-4xl); border-top: 1px solid var(--color-border); padding-top: var(--space-3xl);">
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--space-2xl); flex-wrap: wrap; gap: var(--space-md);">
@@ -293,21 +328,6 @@ export async function renderProductView(productId: string): Promise<string> {
           `).join('')}
         </div>
       </section>
-
-      <!-- Related Garments -->
-      ${relatedProducts.length > 0 ? `
-        <section style="margin-top: var(--space-4xl); border-top: 1px solid var(--color-border); padding-top: var(--space-3xl);">
-          <div style="text-align: center; margin-bottom: var(--space-2xl);">
-            <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-brand-gold); display: block;">${lang === 'ar' ? 'إطلالات متناسقة' : 'Complete The Silhouette'}</span>
-            <h3 style="font-family: var(--font-editorial); font-size: 30px; font-weight: 500;">
-              ${lang === 'ar' ? 'قطع يتم تنسيقها معاً' : 'Pairs Elegantly With'}
-            </h3>
-          </div>
-          <div class="grid-products">
-            ${relatedProducts.map(p => renderProductCard(p, lang)).join('')}
-          </div>
-        </section>
-      ` : ''}
 
     </div>
   `;

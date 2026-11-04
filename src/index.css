@@ -668,7 +668,51 @@ button {
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-xl) var(--space-lg);
 }
-
+.product-recommendations {
+  margin-top: var(--space-4xl);
+  padding-top: var(--space-3xl);
+  border-top: 1px solid var(--color-border);
+}
+.recommendation-shelf + .recommendation-shelf {
+  margin-top: var(--space-4xl);
+  padding-top: var(--space-3xl);
+  border-top: 1px solid var(--color-border);
+}
+.recommendation-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+.recommendation-eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-brand-gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.recommendation-heading h3 {
+  font-family: var(--font-editorial);
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 500;
+  line-height: 1.25;
+}
+.recommendation-link {
+  flex: 0 0 auto;
+  color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.recommendation-link:hover {
+  color: var(--color-brand-primary-hover);
+}
+.recommendation-grid .product-card {
+  height: 100%;
+}
 @media (max-width: 1200px) {
   .grid-products {
     grid-template-columns: repeat(3, 1fr);
@@ -684,6 +728,23 @@ button {
   .grid-products {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--space-md) var(--space-xs);
+  }
+  .product-recommendations {
+    margin-top: var(--space-3xl);
+    padding-top: var(--space-2xl);
+  }
+  .recommendation-shelf + .recommendation-shelf {
+    margin-top: var(--space-3xl);
+    padding-top: var(--space-2xl);
+  }
+  .recommendation-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: var(--space-lg);
+  }
+  .recommendation-heading h3 {
+    font-size: 24px;
   }
 }
 
