@@ -21,8 +21,8 @@ import {
 import { db, auth, googleProvider } from '../firebase';
 import { signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 
-// Vercel limits a function request body. Base64 adds roughly 33% overhead,
-// so compress large images in the browser before posting them as JSON.
+// Convert every static image to WebP before uploading. Keeping the result below
+// this size also leaves headroom for Base64 and JSON overhead on Vercel.
 const MAX_UPLOAD_IMAGE_BYTES = 2.75 * 1024 * 1024;
 
 function readBlobAsDataUrl(blob: Blob): Promise<string> {
@@ -45,12 +45,8 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number):
 }
 
 async function prepareImageForUpload(file: File): Promise<{ data: string; type: string }> {
-  if (file.size <= MAX_UPLOAD_IMAGE_BYTES) {
-    return { data: await readBlobAsDataUrl(file), type: file.type || 'application/octet-stream' };
-  }
-
-  if (file.type === 'image/gif' || file.type === 'image/svg+xml') {
-    throw new Error('الصورة كبيرة على الرفع المباشر. حوّلها إلى JPG أو PNG أو WebP ثم حاول مرة أخرى.');
+  if (file.type === 'image/gif') {
+    throw new Error('للحفاظ على حركة GIF، ارفعها كصورة ثابتة بصيغة JPG أو PNG أو WebP بدلاً منها.');
   }
 
   let bitmap: ImageBitmap;
@@ -75,6 +71,9 @@ async function prepareImageForUpload(file: File): Promise<{ data: string; type: 
 
       for (const quality of [0.82, 0.72, 0.62, 0.52]) {
         const blob = await canvasToBlob(canvas, 'image/webp', quality);
+        if (blob.type !== 'image/webp') {
+          throw new Error('المتصفح لا يدعم تحويل الصور إلى WebP. جرّب استخدام متصفح حديث.');
+        }
         if (blob.size <= MAX_UPLOAD_IMAGE_BYTES) {
           return { data: await readBlobAsDataUrl(blob), type: blob.type || 'image/webp' };
         }
@@ -87,7 +86,7 @@ async function prepareImageForUpload(file: File): Promise<{ data: string; type: 
   throw new Error('حجم الصورة ما زال كبيراً بعد الضغط. اختر صورة أصغر أو قلّل أبعادها.');
 }
 
-// Helper: compress large images locally, then upload to /api/upload.
+// Helper: convert static images to WebP locally, then upload to /api/upload.
 async function uploadImageFile(file: File): Promise<{ url: string; filename: string }> {
   const prepared = await prepareImageForUpload(file);
   const res = await fetch('/api/upload', {
