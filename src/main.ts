@@ -24,6 +24,12 @@ import { renderAdminView, setupAdminEvents } from './admin/AdminView';
 
 const appRoot = document.getElementById('app') || document.body;
 
+// The storefront owns the user's selected theme. Admin is intentionally kept
+// light and must not inherit the storefront's dark-mode presentation.
+function applyRouteTheme(isAdminRoute: boolean) {
+  document.documentElement.dataset.theme = isAdminRoute ? 'light' : state.getTheme();
+}
+
 // Router dispatcher
 async function handleRouting() {
   const hash = window.location.hash.slice(1) || 'home';
@@ -32,6 +38,7 @@ async function handleRouting() {
 
   // Admin routes check
   if (routePath.startsWith('admin')) {
+    applyRouteTheme(true);
     const parts = routePath.split('/');
     const section = parts[1] || 'overview';
     
@@ -40,6 +47,8 @@ async function handleRouting() {
     window.scrollTo(0, 0);
     return;
   }
+
+  applyRouteTheme(false);
 
   // Storefront Layout Wrapper
   let mainContentHtml = '';
