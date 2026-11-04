@@ -2045,3 +2045,102 @@ html[data-theme="dark"] .nav-link:hover {
     line-height: 1.3 !important;
   }
 }
+
+/* Admin header polish: keep the mobile toolbar intentional instead of squeezing
+   three controls into one narrow row. */
+.admin-header {
+  position: relative;
+  isolation: isolate;
+  gap: 18px;
+}
+.admin-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+.admin-header-title h3 {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.admin-header-title .icon-btn {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px !important;
+  background: #f8fafc;
+  color: #334155;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.admin-header-title .icon-btn:hover {
+  background: #ecfdf5;
+  color: #15803d;
+}
+.admin-header-title .icon-btn:active,
+.admin-header-actions .btn:active {
+  transform: scale(0.97);
+}
+.admin-header-actions .btn {
+  min-height: 40px;
+  white-space: nowrap;
+  box-shadow: none;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.admin-header-actions #admin-refresh-data-btn {
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+.admin-header-actions #admin-refresh-data-btn:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+.admin-header-actions #admin-logout-btn {
+  background: #fff7f7;
+}
+.admin-header-actions #admin-logout-btn:hover {
+  background: #fef2f2;
+  border-color: #fca5a5 !important;
+}
+@media (max-width: 600px) {
+  .admin-header {
+    height: auto;
+    min-height: 0;
+    display: block;
+    padding: 12px;
+  }
+  .admin-header-title {
+    width: 100%;
+    min-height: 42px;
+    gap: 9px;
+  }
+  .admin-header-title h3 {
+    font-size: 16px !important;
+  }
+  .admin-header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .admin-header-actions .btn,
+  .admin-header-actions .btn > span {
+    font-size: 12px !important;
+  }
+  .admin-header-actions .btn {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 10px !important;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 12px !important;
+  }
+  .admin-header-actions .btn > i {
+    font-size: 14px;
+  }
+}
