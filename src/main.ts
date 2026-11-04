@@ -28,6 +28,10 @@ const appRoot = document.getElementById('app') || document.body;
 // light and must not inherit the storefront's dark-mode presentation.
 function applyRouteTheme(isAdminRoute: boolean) {
   document.documentElement.dataset.theme = isAdminRoute ? 'light' : state.getTheme();
+  // The admin portal is Arabic-only and must remain RTL even when the storefront
+  // language is switched to English. Storefront routes restore the user's choice.
+  document.documentElement.lang = isAdminRoute ? 'ar' : state.getLang();
+  document.documentElement.dir = isAdminRoute ? 'rtl' : (state.getLang() === 'ar' ? 'rtl' : 'ltr');
 }
 
 // Router dispatcher
