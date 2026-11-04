@@ -21,35 +21,90 @@ import {
 import { db, auth, googleProvider } from '../firebase';
 import { signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 
-// Helper: Free image file upload to /api/upload
-async function uploadImageFile(file: File): Promise<{ url: string; filename: string }> {
+// Vercel limits a function request body. Base64 adds roughly 33% overhead,
+// so compress large images in the browser before posting them as JSON.
+const MAX_UPLOAD_IMAGE_BYTES = 2.75 * 1024 * 1024;
+
+function readBlobAsDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const base64Data = reader.result as string;
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: file.name,
-            data: base64Data,
-            type: file.type
-          })
-        });
-        const resData = await res.json();
-        if (resData.success) {
-          resolve({ url: resData.url, filename: resData.filename });
-        } else {
-          reject(new Error(resData.message || 'فشل رفع الصورة'));
-        }
-      } catch (err: any) {
-        reject(err);
-      }
-    };
-    reader.onerror = (e) => reject(e);
-    reader.readAsDataURL(file);
+    reader.onload = () => typeof reader.result === 'string'
+      ? resolve(reader.result)
+      : reject(new Error('تعذر قراءة الصورة'));
+    reader.onerror = () => reject(reader.error || new Error('تعذر قراءة الصورة'));
+    reader.readAsDataURL(blob);
   });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => blob
+      ? resolve(blob)
+      : reject(new Error('تعذر ضغط الصورة في المتصفح')), type, quality);
+  });
+}
+
+async function prepareImageForUpload(file: File): Promise<{ data: string; type: string }> {
+  if (file.size <= MAX_UPLOAD_IMAGE_BYTES) {
+    return { data: await readBlobAsDataUrl(file), type: file.type || 'application/octet-stream' };
+  }
+
+  if (file.type === 'image/gif' || file.type === 'image/svg+xml') {
+    throw new Error('الصورة كبيرة على الرفع المباشر. حوّلها إلى JPG أو PNG أو WebP ثم حاول مرة أخرى.');
+  }
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error('تعذر تجهيز الصورة. جرّب حفظها بصيغة JPG أو PNG أو WebP.');
+  }
+
+  try {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('المتصفح لا يدعم ضغط الصور');
+
+    const sourceEdge = Math.max(bitmap.width, bitmap.height);
+    for (const maxEdge of [1920, 1600, 1344, 1128, 960, 768]) {
+      const scale = Math.min(1, maxEdge / sourceEdge);
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+      for (const quality of [0.82, 0.72, 0.62, 0.52]) {
+        const blob = await canvasToBlob(canvas, 'image/webp', quality);
+        if (blob.size <= MAX_UPLOAD_IMAGE_BYTES) {
+          return { data: await readBlobAsDataUrl(blob), type: blob.type || 'image/webp' };
+        }
+      }
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  throw new Error('حجم الصورة ما زال كبيراً بعد الضغط. اختر صورة أصغر أو قلّل أبعادها.');
+}
+
+// Helper: compress large images locally, then upload to /api/upload.
+async function uploadImageFile(file: File): Promise<{ url: string; filename: string }> {
+  const prepared = await prepareImageForUpload(file);
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: file.name,
+      data: prepared.data,
+      type: prepared.type
+    })
+  });
+
+  const resData = await res.json();
+  if (resData.success) {
+    return { url: resData.url, filename: resData.filename };
+  }
+  throw new Error(resData.message || `فشل رفع الصورة (${res.status})`);
 }
 
 interface AdminCache {
