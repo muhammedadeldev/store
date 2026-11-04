@@ -92,9 +92,10 @@ export async function renderProductView(productId: string): Promise<string> {
               ${images.map((img: string, idx: number) => `
                 <img 
                   src="${img}" 
-                  alt="Thumbnail ${idx + 1}" 
+                  alt=""
                   class="product-thumb ${idx === 0 ? 'active' : ''}" 
                   style="width: 80px; height: 100px; object-fit: cover; cursor: pointer; border-radius: var(--radius-xs); border: 2px solid ${idx === 0 ? 'var(--color-brand)' : 'transparent'}; opacity: ${idx === 0 ? '1' : '0.7'}; transition: all 0.2s;"
+                  onerror="this.style.display='none'"
                   onclick="
                     document.getElementById('main-product-image').src = '${img}';
                     document.querySelectorAll('.product-thumb').forEach(el => { el.style.borderColor='transparent'; el.style.opacity='0.7'; });
