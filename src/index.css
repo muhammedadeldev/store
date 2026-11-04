@@ -2179,3 +2179,94 @@ html[data-theme="dark"] .nav-link:hover {
     font-size: 12px;
   }
 }
+
+/* Compact top toolbar: title stays on the right, actions sit together on the left. */
+@media (max-width: 600px) {
+  .admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    padding: 8px 10px;
+  }
+  .admin-header-title {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+  .admin-header-actions {
+    flex: 0 0 auto;
+    width: auto;
+    margin-top: 0;
+    gap: 5px;
+  }
+  .admin-header-actions .btn {
+    min-height: 32px;
+    padding: 4px 7px !important;
+    gap: 4px;
+    font-size: 10px !important;
+  }
+  .admin-header-actions .btn > span {
+    display: inline !important;
+    font-size: 10px !important;
+  }
+  .admin-header-actions .btn > i {
+    font-size: 11px;
+  }
+}
+
+/* KPI cards: smaller type, gentle color washes and a restrained dashboard palette. */
+.kpi-grid .admin-card {
+  border: 1px solid transparent;
+  border-radius: 18px;
+  padding: 18px !important;
+  min-height: 104px;
+  box-shadow: none;
+}
+.kpi-grid .admin-card:nth-child(1) {
+  background: linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%);
+  border-color: #dbeafe;
+}
+.kpi-grid .admin-card:nth-child(2) {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f7fffb 100%);
+  border-color: #bbf7d0;
+}
+.kpi-grid .admin-card:nth-child(3) {
+  background: linear-gradient(135deg, #fffbeb 0%, #fffef8 100%);
+  border-color: #fde68a;
+}
+.kpi-grid .admin-card:nth-child(4) {
+  background: linear-gradient(135deg, #fff1f2 0%, #fffafa 100%);
+  border-color: #fecdd3;
+}
+.kpi-grid .admin-card > span {
+  display: block;
+  font-size: 10px !important;
+  line-height: 1.5;
+  color: #64748b !important;
+  letter-spacing: 0;
+}
+.kpi-grid .admin-card > div:first-of-type {
+  margin-top: 3px !important;
+  font-size: 21px !important;
+  line-height: 1.35;
+}
+.kpi-grid .admin-card > div:last-of-type {
+  margin-top: 3px !important;
+  font-size: 10px !important;
+  line-height: 1.55;
+  color: #64748b !important;
+}
+@media (max-width: 600px) {
+  .kpi-grid .admin-card {
+    min-height: 92px;
+    padding: 13px 14px !important;
+    border-radius: 15px;
+  }
+  .kpi-grid .admin-card > div:first-of-type {
+    font-size: 19px !important;
+  }
+  .kpi-grid .admin-card > div:last-of-type {
+    font-size: 9px !important;
+  }
+}
