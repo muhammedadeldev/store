@@ -186,17 +186,84 @@ function parseProductColors(raw: string): Array<{ name: string; hex: string }> {
     return { name: name || 'Color', hex: hex || '#111827' };
   });
 }
-
-function buildProductVariants(sku: string, sizes: string[], colors: Array<{ name: string; hex: string }>, stock: number) {
+type VariantStockMap = Record<string, number>;
+function getVariantStockKey(color: string, size: string) {
+  return `${color}::${size}`;
+}
+function stockMapFromVariants(variants: any[] = []): VariantStockMap {
+  return variants.reduce((map, variant) => {
+    map[getVariantStockKey(variant.color || '', variant.size || '')] = Number(variant.stock) || 0;
+    return map;
+  }, {} as VariantStockMap);
+}
+function buildProductVariants(sku: string, sizes: string[], colors: Array<{ name: string; hex: string }>, stockByVariant: VariantStockMap = {}) {
   const combinations = sizes.flatMap(size => colors.map(color => ({ size, color: color.name })));
-  const each = combinations.length ? Math.floor(stock / combinations.length) : 0;
-  let remainder = combinations.length ? stock - each * combinations.length : 0;
-  return combinations.map((variant, index) => ({
+  return combinations.map(variant => ({
     sku: `${sku}-${variant.color.replace(/\s+/g, '-').toUpperCase()}-${variant.size}`,
     color: variant.color,
     size: variant.size,
-    stock: each + (index < remainder ? 1 : 0)
+    stock: Math.max(0, Number(stockByVariant[getVariantStockKey(variant.color, variant.size)]) || 0)
   }));
+}
+function renderVariantStockMatrix(containerId: string, totalId: string, sku: string, sizes: string[], colors: Array<{ name: string; hex: string }>, stockByVariant: VariantStockMap = {}) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const combinations = sizes.flatMap(size => colors.map(color => ({ size, color: color.name })));
+  if (!combinations.length) {
+    container.innerHTML = '<p style="font-size:12px;color:#64748b;">أضف مقاسًا ولونًا لعرض خانات المخزون.</p>';
+    const total = document.getElementById(totalId) as HTMLInputElement | null;
+    if (total) total.value = '0';
+    return;
+  }
+  container.innerHTML = `
+    <div style="overflow:auto;border:1px solid #e2e8f0;border-radius:6px;">
+      <table class="admin-table" style="min-width:420px;margin:0;">
+        <thead><tr><th>اللون</th><th>المقاس</th><th>عدد القطع</th><th>SKU</th></tr></thead>
+        <tbody>${combinations.map(({ color, size }) => {
+          const key = getVariantStockKey(color, size);
+          const value = Math.max(0, Number(stockByVariant[key]) || 0);
+          const variantSku = `${sku || 'SKU'}-${color.replace(/\s+/g, '-').toUpperCase()}-${size}`;
+          return `<tr>
+            <td>${color}</td><td>${size}</td>
+            <td><input type="number" min="0" step="1" class="form-input variant-stock-input" data-variant-key="${key.replace(/"/g, '&quot;')}" value="${value}" style="max-width:120px;" /></td>
+            <td><code>${variantSku}</code></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+  const updateTotal = () => {
+    const total = Array.from(container.querySelectorAll<HTMLInputElement>('.variant-stock-input'))
+      .reduce((sum, input) => sum + Math.max(0, Number(input.value) || 0), 0);
+    const totalInput = document.getElementById(totalId) as HTMLInputElement | null;
+    if (totalInput) totalInput.value = String(total);
+  };
+  container.querySelectorAll<HTMLInputElement>('.variant-stock-input').forEach(input => input.addEventListener('input', updateTotal));
+  updateTotal();
+}
+function readVariantStockMap(containerId: string): VariantStockMap {
+  const container = document.getElementById(containerId);
+  if (!container) return {};
+  return Array.from(container.querySelectorAll<HTMLInputElement>('.variant-stock-input')).reduce((map, input) => {
+    const key = input.dataset.variantKey;
+    if (key) map[key] = Math.max(0, Number(input.value) || 0);
+    return map;
+  }, {} as VariantStockMap);
+}
+function bindVariantStockMatrix(prefix: string, initialStock: VariantStockMap = {}) {
+  const sizesInput = document.getElementById(`${prefix}-sizes`) as HTMLInputElement | null;
+  const colorsInput = document.getElementById(`${prefix}-colors`) as HTMLTextAreaElement | null;
+  const skuInput = document.getElementById(`${prefix}-sku`) as HTMLInputElement | null;
+  if (!sizesInput || !colorsInput || !skuInput) return;
+  const render = () => {
+    const current = { ...initialStock, ...readVariantStockMap(`${prefix}-stock-matrix`) };
+    const sizes = sizesInput.value.split(',').map(v => v.trim()).filter(Boolean);
+    const colors = parseProductColors(colorsInput.value);
+    renderVariantStockMatrix(`${prefix}-stock-matrix`, `${prefix}-stock`, skuInput.value.trim(), sizes, colors, current);
+  };
+  sizesInput.addEventListener('input', render);
+  colorsInput.addEventListener('input', render);
+  skuInput.addEventListener('input', render);
+  render();
 }
 
 const CMS_CONTENT_GROUPS: Array<{ title: string; fields: Array<{ key: string; label: string; fallback: string; multiline?: boolean }> }> = [
@@ -949,6 +1016,7 @@ function renderAdminSection(section: string, data: any): string {
                   <th>كود SKU</th>
                   <th>اللون / المقاس</th>
                   <th>الكمية المتاحة</th>
+                  <th>إجراء</th>
                 </tr>
               </thead>
               <tbody>
@@ -962,6 +1030,7 @@ function renderAdminSection(section: string, data: any): string {
                         ${v.stock} قطعة
                       </span>
                     </td>
+                    <td><button type="button" class="admin-edit-stock-btn btn btn-ghost btn-sm" data-id="${p.id}" style="color:#15803d;font-weight:700;">تعديل</button></td>
                   </tr>
                 `)).join('')}
               </tbody>
@@ -2132,7 +2201,15 @@ export function setupAdminEvents(section: string) {
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);"><div class="form-group"><label class="form-label">التصنيف</label><input type="text" id="np-category" class="form-input" placeholder="هوديز، تيشيرتات، جاكيتات" /></div><div class="form-group"><label class="form-label">سعر التخفيض</label><input type="number" id="np-saleprice" class="form-input" value="0" /></div></div>
           <div class="form-group"><label class="form-label">المقاسات (افصل بينها بفاصلة) *</label><input type="text" id="np-sizes" required class="form-input" value="S, M, L, XL" /></div>
           <div class="form-group"><label class="form-label">الألوان (الاسم | كود اللون، كل لون في سطر) *</label><textarea id="np-colors" required class="form-textarea" rows="3">أسود | #111827</textarea></div>
-          <div class="form-group"><label class="form-label">إجمالي المخزون المتاح للقطعة *</label><input type="number" id="np-stock" required class="form-input" value="25" min="0" /></div>
+          <div class="form-group">
+            <label class="form-label">إجمالي المخزون المتاح للقطعة</label>
+            <input type="number" id="np-stock" class="form-input" value="0" min="0" readonly />
+            <small style="display:block;color:#64748b;margin-top:5px;">الإجمالي محسوب تلقائياً من أعداد القطع التي تدخلها لكل مقاس ولون.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">عدد القطع لكل مقاس ولون *</label>
+            <div id="np-stock-matrix"></div>
+          </div>
           <div class="form-group"><label class="form-label">الوصف بالعربية</label><textarea id="np-description-ar" class="form-textarea" rows="3"></textarea></div>
           <div class="form-group"><label class="form-label">الخامة والعناية</label><input type="text" id="np-fabric" class="form-input" placeholder="قطن مصري 100%" /><input type="text" id="np-care" class="form-input" style="margin-top:8px" placeholder="إرشادات العناية" /></div>
           <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">حفظ ونشر القطعة بالمتجر</button>
@@ -2140,6 +2217,7 @@ export function setupAdminEvents(section: string) {
       `);
 
       bindImageUploadControls(document);
+      bindVariantStockMatrix('np');
 
       // File upload listener for new product
       const npFileInput = document.getElementById('np-file-upload') as HTMLInputElement;
@@ -2174,7 +2252,8 @@ export function setupAdminEvents(section: string) {
           const price = parseFloat((document.getElementById('np-price') as HTMLInputElement).value);
           const img = (document.getElementById('np-img') as HTMLInputElement).value;
           const extraImages = (document.getElementById('np-extra-images') as HTMLTextAreaElement).value.split('\n').map(value => value.trim()).filter(Boolean);
-          const stock = parseInt((document.getElementById('np-stock') as HTMLInputElement).value) || 0;
+          const stockByVariant = readVariantStockMap('np-stock-matrix');
+          const stock = Object.values(stockByVariant).reduce((sum, value) => sum + value, 0);
           const categoryName = (document.getElementById('np-category') as HTMLInputElement).value.trim();
           const salePrice = parseFloat((document.getElementById('np-saleprice') as HTMLInputElement).value) || 0;
           const sizes = (document.getElementById('np-sizes') as HTMLInputElement).value.split(',').map(v => v.trim()).filter(Boolean);
@@ -2187,7 +2266,7 @@ export function setupAdminEvents(section: string) {
             await addDoc(collection(db, 'products'), {
               name, nameAr, slug: sku.toLowerCase(), sku, price, salePrice, categoryName, images: [img, ...extraImages], totalStock: stock,
               descriptionAr, fabric, careInstructions, isPublished: true, isFeatured: true, isNewArrival: true, sizes, colors,
-              variants: buildProductVariants(sku, sizes, colors, stock), createdAt: new Date().toISOString()
+              variants: buildProductVariants(sku, sizes, colors, stockByVariant), createdAt: new Date().toISOString()
             });
             closeModal();
             showToast('تمت إضافة وحفظ القطعة بنجاح في قاعدة البيانات!', 'success');
@@ -2238,9 +2317,14 @@ export function setupAdminEvents(section: string) {
               </div>
             </div>
             <div class="form-group"><label class="form-label">التصنيف</label><input type="text" id="ep-category" class="form-input" value="${p.categoryName || ''}" /></div>
-            <div class="form-group"><label class="form-label">المخزون الكلي *</label><input type="number" id="ep-stock" required class="form-input" value="${p.totalStock ?? 10}" min="0" /></div>
+            <div class="form-group">
+              <label class="form-label">إجمالي المخزون المتاح للقطعة</label>
+              <input type="number" id="ep-stock" class="form-input" value="${p.totalStock ?? 0}" min="0" readonly />
+              <small style="display:block;color:#64748b;margin-top:5px;">الإجمالي محسوب تلقائياً من أعداد القطع التي تدخلها لكل مقاس ولون.</small>
+            </div>
             <div class="form-group"><label class="form-label">المقاسات *</label><input type="text" id="ep-sizes" required class="form-input" value="${(p.sizes || []).join(', ')}" /></div>
             <div class="form-group"><label class="form-label">الألوان (الاسم | كود اللون) *</label><textarea id="ep-colors" required class="form-textarea" rows="3">${(p.colors || []).map((c: any) => `${c.name} | ${c.hex}`).join('\n')}</textarea></div>
+            <div class="form-group"><label class="form-label">عدد القطع لكل مقاس ولون *</label><div id="ep-stock-matrix"></div></div>
             <div class="form-group"><label class="form-label">الوصف بالعربية</label><textarea id="ep-description-ar" class="form-textarea" rows="3">${p.descriptionAr || ''}</textarea></div>
             <div class="form-group"><label class="form-label">الوصف بالإنجليزية</label><textarea id="ep-description-en" class="form-textarea" rows="3">${p.description || ''}</textarea></div>
             <div class="form-group"><label class="form-label">الخامة والعناية</label><input type="text" id="ep-fabric" class="form-input" value="${p.fabric || ''}" /><input type="text" id="ep-care" class="form-input" style="margin-top:8px" value="${p.careInstructions || ''}" /></div>
@@ -2283,6 +2367,7 @@ export function setupAdminEvents(section: string) {
         `);
 
         bindImageUploadControls(document);
+        bindVariantStockMatrix('ep', stockMapFromVariants(p.variants || []));
 
         // Free upload listener for edit
         const epFileInput = document.getElementById('ep-file-upload') as HTMLInputElement;
@@ -2311,7 +2396,8 @@ export function setupAdminEvents(section: string) {
             const nameAr = (document.getElementById('ep-name-ar') as HTMLInputElement).value;
             const price = parseFloat((document.getElementById('ep-price') as HTMLInputElement).value);
             const salePrice = parseFloat((document.getElementById('ep-saleprice') as HTMLInputElement).value) || 0;
-            const stock = parseInt((document.getElementById('ep-stock') as HTMLInputElement).value) || 0;
+            const stockByVariant = readVariantStockMap('ep-stock-matrix');
+            const stock = Object.values(stockByVariant).reduce((sum, value) => sum + value, 0);
             const img = (document.getElementById('ep-img') as HTMLInputElement).value;
             const sku = (document.getElementById('ep-sku') as HTMLInputElement).value.trim();
             const slug = (document.getElementById('ep-slug') as HTMLInputElement).value.trim();
@@ -2328,7 +2414,7 @@ export function setupAdminEvents(section: string) {
             try {
               await updateDoc(doc(db, 'products', id), {
                 name, nameAr, sku, slug, price, salePrice, categoryName, totalStock: stock, images: [img, ...extraImages], sizes, colors,
-                variants: buildProductVariants((sku || id), sizes, colors, stock), description, descriptionAr, fabric, careInstructions,
+                variants: buildProductVariants((sku || id), sizes, colors, stockByVariant), description, descriptionAr, fabric, careInstructions,
                 isFeatured: (document.getElementById('ep-featured') as HTMLInputElement).checked,
                 isNewArrival: (document.getElementById('ep-newarrival') as HTMLInputElement).checked,
                 isBestSeller: (document.getElementById('ep-bestseller') as HTMLInputElement).checked,
@@ -3021,6 +3107,71 @@ export function setupAdminEvents(section: string) {
     });
   });
 
+  // Direct per-variant stock editing from the inventory page.
+  document.querySelectorAll('.admin-edit-stock-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const productId = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      if (!productId) return;
+      try {
+        const snap = await getDoc(doc(db, 'products', productId));
+        if (!snap.exists()) throw new Error('لم يتم العثور على المنتج');
+        const product: any = snap.data();
+        const variants = product.variants || [];
+        openModal(`
+          <h3 style="font-size:20px;font-weight:700;margin-bottom:8px;">تعديل مخزون • ${product.nameAr || product.name}</h3>
+          <p style="font-size:12px;color:#64748b;margin-bottom:14px;">اكتب الرصيد النهائي لكل مقاس ولون. لن يتم توزيع الكمية تلقائياً.</p>
+          <form id="direct-stock-form" style="display:flex;flex-direction:column;gap:12px;">
+            <div style="overflow:auto;border:1px solid #e2e8f0;border-radius:6px;">
+              <table class="admin-table" style="min-width:520px;margin:0;">
+                <thead><tr><th>اللون</th><th>المقاس</th><th>SKU</th><th>الكمية النهائية</th></tr></thead>
+                <tbody>${variants.map((v: any, index: number) => `
+                  <tr><td>${v.color || '—'}</td><td>${v.size || '—'}</td><td><code>${v.sku || '—'}</code></td>
+                  <td><input type="number" min="0" step="1" class="form-input direct-stock-input" data-index="${index}" data-old-stock="${Number(v.stock) || 0}" value="${Number(v.stock) || 0}" /></td></tr>
+                `).join('')}</tbody>
+              </table>
+            </div>
+            <input id="direct-stock-reason" class="form-input" required placeholder="سبب التعديل (مثال: جرد فعلي للمخزن)" />
+            <button type="submit" class="btn btn-primary btn-full">حفظ المخزون وتسجيل الحركة</button>
+          </form>`);
+        const form = document.getElementById('direct-stock-form');
+        if (!form) return;
+        form.onsubmit = async (submitEvent) => {
+          submitEvent.preventDefault();
+          const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('.direct-stock-input'));
+          const updatedVariants = variants.map((variant: any, index: number) => ({
+            ...variant,
+            stock: Math.max(0, Number(inputs[index]?.value) || 0)
+          }));
+          const reason = (document.getElementById('direct-stock-reason') as HTMLInputElement).value.trim();
+          const performedBy = state.getUser()?.email || 'admin';
+          await updateDoc(doc(db, 'products', productId), {
+            variants: updatedVariants,
+            totalStock: updatedVariants.reduce((sum: number, variant: any) => sum + (Number(variant.stock) || 0), 0),
+            updatedAt: new Date().toISOString()
+          });
+          for (let index = 0; index < updatedVariants.length; index += 1) {
+            const delta = updatedVariants[index].stock - (Number(variants[index].stock) || 0);
+            if (!delta) continue;
+            await addDoc(collection(db, 'inventoryMovements'), {
+              productId,
+              sku: updatedVariants[index].sku,
+              quantityDelta: delta,
+              type: 'manual_adjustment',
+              reason,
+              performedBy,
+              createdAt: new Date().toISOString()
+            });
+          }
+          closeModal();
+          showToast('تم تحديث أرصدة المقاسات والألوان بنجاح', 'success');
+          refreshAdminSection(section);
+        };
+      } catch (err: any) {
+        showToast(err.message || 'تعذر تعديل المخزون', 'error');
+      }
+    });
+  });
+
   // Manual Stock Adjustment Modal
   const adjustStockBtn = document.getElementById('admin-adjust-stock-btn');
   if (adjustStockBtn) {
@@ -3059,7 +3210,23 @@ export function setupAdminEvents(section: string) {
           const reason = (document.getElementById('adj-reason') as HTMLInputElement).value;
 
           try {
+            const productSnapList = await getDocs(collection(db, 'products'));
+            const productDoc = productSnapList.docs.find((candidate: any) => (candidate.data().variants || []).some((variant: any) => variant.sku === sku));
+            const product = productDoc ? { id: productDoc.id, ...productDoc.data() } : null;
+            if (!product) throw new Error('لم يتم العثور على المنتج المرتبط بهذا الـ SKU');
+            const productSnap = await getDoc(doc(db, 'products', product.id));
+            if (!productSnap.exists()) throw new Error('لم يتم العثور على المنتج في قاعدة البيانات');
+            const productData: any = productSnap.data();
+            const updatedVariants = (productData.variants || []).map((variant: any) => variant.sku === sku
+              ? { ...variant, stock: Math.max(0, (Number(variant.stock) || 0) + delta) }
+              : variant);
+            await updateDoc(doc(db, 'products', product.id), {
+              variants: updatedVariants,
+              totalStock: updatedVariants.reduce((sum: number, variant: any) => sum + (Number(variant.stock) || 0), 0),
+              updatedAt: new Date().toISOString()
+            });
             await addDoc(collection(db, 'inventoryMovements'), {
+              productId: product.id,
               sku,
               quantityDelta: delta,
               type: 'manual_adjustment',
