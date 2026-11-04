@@ -355,6 +355,32 @@ const CMS_CONTENT_GROUPS: Array<{ title: string; fields: Array<{ key: string; la
   ] }
 ];
 
+const HOME_VISIBILITY_GROUPS = [
+  { key: 'hero', label: 'البانر الرئيسي (Hero)', elements: [
+    ['hero.background', 'صورة الخلفية'], ['hero.tagline', 'عنوان المجموعة أعلى البانر'], ['hero.title', 'العنوان الرئيسي'], ['hero.subtitle', 'الوصف'],
+    ['hero.primaryCta', 'الزر الأول'], ['hero.secondaryCta', 'الزر الثاني'], ['hero.overlay', 'طبقة تحسين وضوح الصورة']
+  ] },
+  { key: 'pillars', label: 'مزايا البراند', elements: [
+    ['pillars.item1', 'الميزة الأولى'], ['pillars.item2', 'الميزة الثانية'], ['pillars.item3', 'الميزة الثالثة'], ['pillars.item4', 'الميزة الرابعة']
+  ] },
+  { key: 'collections', label: 'المجموعات والتصنيفات', elements: [
+    ['collections.eyebrow', 'العنوان الصغير'], ['collections.title', 'عنوان القسم'], ['collections.link', 'رابط عرض كل التصنيفات'], ['collections.grid', 'بطاقات التصنيفات'], ['collections.discover', 'عبارة اكتشف القطع داخل البطاقة']
+  ] },
+  { key: 'arrivals', label: 'وصل حديثاً', elements: [
+    ['arrivals.eyebrow', 'العنوان الصغير'], ['arrivals.title', 'عنوان القسم'], ['arrivals.description', 'الوصف'], ['arrivals.products', 'شبكة المنتجات'], ['arrivals.button', 'زر عرض التشكيلة']
+  ] },
+  { key: 'story', label: 'قصة البراند', elements: [
+    ['story.eyebrow', 'العنوان الصغير'], ['story.title', 'العنوان الرئيسي'], ['story.body1', 'الفقرة الأولى'], ['story.body2', 'الفقرة الثانية'], ['story.button', 'زر قراءة القصة'], ['story.image', 'الصورة']
+  ] },
+  { key: 'bestsellers', label: 'الأكثر مبيعاً', elements: [
+    ['bestsellers.eyebrow', 'العنوان الصغير'], ['bestsellers.title', 'عنوان القسم'], ['bestsellers.link', 'رابط عرض الأكثر طلباً'], ['bestsellers.products', 'شبكة المنتجات']
+  ] },
+  { key: 'social', label: 'معرض الصور والتواصل', elements: [
+    ['social.handle', 'اسم حساب التواصل'], ['social.title', 'عنوان المعرض'], ['social.image1', 'الصورة الأولى'], ['social.image2', 'الصورة الثانية'],
+    ['social.image3', 'الصورة الثالثة'], ['social.image4', 'الصورة الرابعة'], ['social.image5', 'الصورة الخامسة']
+  ] }
+] as const;
+
 export async function renderAdminView(currentSection: string = 'overview'): Promise<string> {
   const isAdmin = state.isAdmin();
 
@@ -1216,17 +1242,27 @@ function renderAdminSection(section: string, data: any): string {
               <div class="form-group"><label class="form-label"><input type="checkbox" id="set-ann-active" ${settings.announcementBarActive !== false ? 'checked' : ''} /> إظهار شريط الإعلانات العلوي</label></div>
               <div class="form-group"><label class="form-label">لون شريط الإعلانات</label><input type="color" id="set-ann-color" class="form-input" value="${settings.announcementBarBgColor || '#15803d'}" /></div>
             </div>
-            <div class="admin-card" style="padding:var(--space-md);">
-              <strong>إظهار وإخفاء عناصر الهيرو</strong>
-              <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;">
-                <label><input type="checkbox" id="set-hero-tagline-active" ${settings.heroTaglineActive !== false ? 'checked' : ''} /> عنوان المجموعة أعلى الهيرو</label>
-                <label><input type="checkbox" id="set-hero-title-active" ${settings.heroTitleActive !== false ? 'checked' : ''} /> العنوان</label>
-                <label><input type="checkbox" id="set-hero-subtitle-active" ${settings.heroSubtitleActive !== false ? 'checked' : ''} /> الوصف</label>
-                <label><input type="checkbox" id="set-hero-cta-primary-active" ${settings.heroCtaPrimaryActive !== false ? 'checked' : ''} /> الزر الأول</label>
-                <label><input type="checkbox" id="set-hero-cta-secondary-active" ${settings.heroCtaSecondaryActive !== false ? 'checked' : ''} /> الزر الثاني</label>
-                <label><input type="checkbox" id="set-hero-overlay-active" ${settings.heroOverlayActive !== false ? 'checked' : ''} /> طبقة تحسين وضوح الصورة</label>
+            <details class="admin-card" open style="padding:var(--space-md);">
+              <summary style="cursor:pointer;font-weight:700;font-size:16px;">إظهار وإخفاء أقسام الصفحة الرئيسية وعناصرها</summary>
+              <p style="font-size:12px;color:var(--color-text-muted);margin:8px 0 14px;">فعّل أو أخفِ أي قسم بالكامل، أو تحكم في ظهور كل عنصر بداخله. الأقسام الجديدة تعمل بالإظهار افتراضياً.</p>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+                ${HOME_VISIBILITY_GROUPS.map(group => `
+                  <fieldset style="border:1px solid var(--color-border);border-radius:8px;padding:12px;min-width:0;">
+                    <legend style="padding:0 6px;font-weight:700;">${group.label}</legend>
+                    <label style="display:flex;gap:8px;align-items:center;font-weight:700;margin-bottom:10px;">
+                      <input type="checkbox" data-home-visibility="section.${group.key}" ${settings.homeVisibility?.[`section.${group.key}`] !== false ? 'checked' : ''} /> إظهار القسم بالكامل
+                    </label>
+                    <div style="display:grid;gap:7px;">
+                      ${group.elements.map(([key, label]) => `
+                        <label style="display:flex;gap:8px;align-items:center;font-size:13px;">
+                          <input type="checkbox" data-home-visibility="${key}" ${settings.homeVisibility?.[key] !== false ? 'checked' : ''} /> ${label}
+                        </label>
+                      `).join('')}
+                    </div>
+                  </fieldset>
+                `).join('')}
               </div>
-            </div>
+            </details>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
               <div class="form-group"><label class="form-label">عنوان الشريط فوق الهيرو (عربي)</label><input id="set-hero-tagline-ar" class="form-input" value="${settings.heroTaglineAr || ''}" /></div>
               <div class="form-group"><label class="form-label">عنوان الشريط فوق الهيرو (إنجليزي)</label><input id="set-hero-tagline-en" class="form-input" value="${settings.heroTagline || ''}" /></div>
@@ -2727,6 +2763,11 @@ export function setupAdminEvents(section: string) {
         const key = field.dataset.cmsKey;
         if (key) siteContent[key] = field.value;
       });
+      const homeVisibility: Record<string, boolean> = {};
+      document.querySelectorAll<HTMLInputElement>('[data-home-visibility]').forEach((field) => {
+        const key = field.dataset.homeVisibility;
+        if (key) homeVisibility[key] = field.checked;
+      });
 
       try {
         const payload = {
@@ -2748,12 +2789,12 @@ export function setupAdminEvents(section: string) {
           heroCtaSecondaryLink: (document.getElementById('set-hero-cta2-link') as HTMLInputElement).value,
           heroTagline: (document.getElementById('set-hero-tagline-en') as HTMLInputElement).value,
           heroTaglineAr: (document.getElementById('set-hero-tagline-ar') as HTMLInputElement).value,
-          heroTaglineActive: (document.getElementById('set-hero-tagline-active') as HTMLInputElement).checked,
-          heroTitleActive: (document.getElementById('set-hero-title-active') as HTMLInputElement).checked,
-          heroSubtitleActive: (document.getElementById('set-hero-subtitle-active') as HTMLInputElement).checked,
-          heroCtaPrimaryActive: (document.getElementById('set-hero-cta-primary-active') as HTMLInputElement).checked,
-          heroCtaSecondaryActive: (document.getElementById('set-hero-cta-secondary-active') as HTMLInputElement).checked,
-          heroOverlayActive: (document.getElementById('set-hero-overlay-active') as HTMLInputElement).checked,
+          heroTaglineActive: homeVisibility['hero.tagline'] !== false,
+          heroTitleActive: homeVisibility['hero.title'] !== false,
+          heroSubtitleActive: homeVisibility['hero.subtitle'] !== false,
+          heroCtaPrimaryActive: homeVisibility['hero.primaryCta'] !== false,
+          heroCtaSecondaryActive: homeVisibility['hero.secondaryCta'] !== false,
+          heroOverlayActive: homeVisibility['hero.overlay'] !== false,
           announcementBarBgColor: (document.getElementById('set-ann-color') as HTMLInputElement).value,
           headerLogoUrl: (document.getElementById('set-header-logo') as HTMLInputElement).value,
           footerLogoUrl: (document.getElementById('set-footer-logo') as HTMLInputElement).value,
@@ -2774,6 +2815,7 @@ export function setupAdminEvents(section: string) {
           socialFacebook: (document.getElementById('set-social-facebook') as HTMLInputElement).value,
           socialTiktok: (document.getElementById('set-social-tiktok') as HTMLInputElement).value,
           siteContent,
+          homeVisibility,
           updatedAt: new Date().toISOString()
         };
         await setDoc(doc(db, 'settings', 'store'), payload, { merge: true });

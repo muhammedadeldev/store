@@ -58,6 +58,7 @@ export interface StoreSettings {
   heroCtaSecondaryActive?: boolean;
   heroOverlayActive?: boolean;
   siteContent?: Record<string, string>;
+  homeVisibility?: Record<string, boolean>;
   socialInstagram: string;
   socialFacebook: string;
   socialTiktok: string;
