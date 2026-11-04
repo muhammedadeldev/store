@@ -163,7 +163,7 @@ export async function renderProductView(productId: string): Promise<string> {
                     class="color-select-btn ${idx === 0 ? 'selected' : ''}" 
                     data-color="${c.name}"
                     data-color-ar="${c.nameAr || c.name}"
-                    style="width: 32px; height: 32px; border-radius: 50%; background-color: ${c.hex}; border: 2px solid ${idx === 0 ? 'var(--color-brand)' : 'transparent'}; box-shadow: 0 0 0 1px #d1cfc7; cursor: pointer; transition: all 0.2s;"
+                    style="width: 32px; height: 32px; border-radius: var(--radius-xs); background-color: ${c.hex}; border: 2px solid ${idx === 0 ? 'var(--color-brand)' : 'transparent'}; box-shadow: 0 0 0 1px #d1cfc7; cursor: pointer; transition: all 0.2s;"
                     title="${lang === 'ar' ? (c.nameAr || c.name) : c.name}"
                   ></button>
                 `).join('')}
