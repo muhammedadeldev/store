@@ -2144,3 +2144,38 @@ html[data-theme="dark"] .nav-link:hover {
     font-size: 14px;
   }
 }
+
+/* Clean edge-to-edge chrome: no directional shadow bleeding from the shell. */
+.site-header,
+.admin-header,
+.admin-sidebar,
+.mobile-bottom-nav {
+  box-shadow: none !important;
+}
+
+@media (max-width: 600px) {
+  .admin-header-actions {
+    width: auto;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    direction: ltr;
+    gap: 6px;
+    margin-top: 9px;
+  }
+  .admin-header-actions .btn {
+    width: auto;
+    min-height: 34px;
+    padding: 5px 8px !important;
+    gap: 5px;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+    line-height: 1.2;
+  }
+  .admin-header-actions .btn > span {
+    font-size: 11px !important;
+  }
+  .admin-header-actions .btn > i {
+    font-size: 12px;
+  }
+}
