@@ -19,6 +19,7 @@ import {
   limit,
   orderBy
 } from 'firebase/firestore';
+import { v2 as cloudinary } from 'cloudinary';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -169,54 +170,72 @@ app.get('/api/health', async (_req: Request, res: Response) => {
   }
 });
 
-// Free Image & Media Upload Route
+// Upload image assets to Cloudinary so their URLs remain available across Vercel deployments.
 app.post('/api/upload', async (req: Request, res: Response) => {
   try {
-    const { name, data, type } = req.body;
-    if (!data) {
+    const { name, data } = req.body || {};
+    if (typeof data !== 'string' || !data) {
       return res.status(400).json({ success: false, message: 'بيانات الصورة مطلوبة / Image data is required' });
     }
 
-    let buffer: Buffer;
-    let mimeType = type || 'image/jpeg';
-
-    const matches = data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (matches && matches.length === 3) {
-      mimeType = matches[1];
-      buffer = Buffer.from(matches[2], 'base64');
-    } else {
-      buffer = Buffer.from(data, 'base64');
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+    const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    if (!cloudName || !apiKey || !apiSecret) {
+      return res.status(503).json({
+        success: false,
+        message: 'إعداد Cloudinary غير مكتمل. أضف CLOUDINARY_CLOUD_NAME وCLOUDINARY_API_KEY وCLOUDINARY_API_SECRET إلى إعدادات Vercel.'
+      });
     }
 
-    let ext = 'jpg';
-    if (mimeType.includes('png')) ext = 'png';
-    else if (mimeType.includes('webp')) ext = 'webp';
-    else if (mimeType.includes('gif')) ext = 'gif';
-    else if (mimeType.includes('svg')) ext = 'svg';
+    const matches = data.match(/^data:(image\/[A-Za-z0-9.+-]+);base64,([A-Za-z0-9+/=\r\n]+)$/);
+    if (!matches) {
+      return res.status(400).json({ success: false, message: 'صيغة الصورة غير صالحة' });
+    }
 
-    const safeName = (name || 'garment').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 30);
-    const filename = `${Date.now()}_${safeName}.${ext}`;
-    const filePath = path.join(uploadsDir, filename);
+    const mimeType = matches[1].toLowerCase();
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'].includes(mimeType)) {
+      return res.status(415).json({ success: false, message: 'نوع الصورة غير مدعوم' });
+    }
 
-    fs.writeFileSync(filePath, buffer);
-    const fileUrl = `/uploads/${filename}`;
+    const buffer = Buffer.from(matches[2], 'base64');
+    if (!buffer.length || buffer.length > 4 * 1024 * 1024) {
+      return res.status(413).json({ success: false, message: 'حجم الصورة بعد الضغط يجب ألا يتجاوز 4 ميجابايت' });
+    }
 
-    // Record in Firestore media collection for easy cataloging
+    cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
+    const originalName = String(name || 'store-image');
+    const safeName = path.parse(path.basename(originalName)).name
+      .normalize('NFKD')
+      .replace(/[^a-zA-Z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 50) || 'store-image';
+    const uploaded = await cloudinary.uploader.upload(data, {
+      folder: 'store',
+      public_id: `${Date.now()}_${safeName}`,
+      resource_type: 'image',
+      overwrite: false,
+      unique_filename: false,
+      use_filename: false
+    });
+
     const docRef = await addDoc(collection(db, 'media'), {
-      filename,
-      originalName: name || filename,
-      url: fileUrl,
-      mimeType,
-      size: buffer.length,
+      filename: uploaded.public_id,
+      originalName,
+      url: uploaded.secure_url,
+      mimeType: `image/${uploaded.format}`,
+      size: uploaded.bytes,
+      storage: 'cloudinary',
+      cloudinaryPublicId: uploaded.public_id,
       createdAt: new Date().toISOString()
     });
 
     res.json({
       success: true,
       id: docRef.id,
-      url: fileUrl,
-      filename,
-      size: buffer.length,
+      url: uploaded.secure_url,
+      filename: uploaded.public_id,
+      size: uploaded.bytes,
       message: 'تم رفع وحفظ الصورة بنجاح'
     });
   } catch (err: any) {
