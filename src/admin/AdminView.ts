@@ -169,6 +169,7 @@ interface AdminCache {
   settings: any;
 }
 let adminCache: AdminCache | null = null;
+let adminCategories: any[] = [];
 
 export function invalidateAdminCache() {
   adminCache = null;
@@ -178,6 +179,23 @@ function refreshAdminSection(section: string) {
   invalidateAdminCache();
   const nextHash = `#admin/${section}?updated=${Date.now()}`;
   window.location.hash = nextHash;
+}
+function escapeSelectValue(value: unknown): string {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function renderCategoryOptions(selectedCategory = ''): string {
+  const categories = adminCategories
+    .filter(category => category.isActive !== false)
+    .sort((a, b) => String(a.nameAr || a.name || '').localeCompare(String(b.nameAr || b.name || ''), 'ar'));
+  const hasSelected = categories.some(category => (category.nameAr || category.name) === selectedCategory);
+  const currentOption = selectedCategory && !hasSelected
+    ? `<option value="${escapeSelectValue(selectedCategory)}" selected>${escapeSelectValue(selectedCategory)} (الحالي)</option>`
+    : '';
+  return `<option value="">اختر الفئة</option>${currentOption}${categories.map(category => {
+    const value = category.nameAr || category.name || '';
+    const label = category.nameAr && category.name ? `${category.nameAr} — ${category.name}` : value;
+    return `<option value="${escapeSelectValue(value)}" ${value === selectedCategory ? 'selected' : ''}>${escapeSelectValue(label)}</option>`;
+  }).join('')}`;
 }
 
 function parseProductColors(raw: string): Array<{ name: string; hex: string }> {
@@ -552,6 +570,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
     };
   }
 
+  adminCategories = categories;
   // Calculate Metrics
   const totalRevenue = orders.reduce((sum, o) => o.status !== 'cancelled' ? sum + (o.total || 0) : sum, 0);
   const activeOrdersCount = orders.filter(o => !['delivered', 'cancelled', 'returned'].includes(o.status)).length;
@@ -2198,7 +2217,7 @@ export function setupAdminEvents(section: string) {
             <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع صور إضافية من الجهاز<input type="file" accept="image/*" multiple data-image-upload-for="np-extra-images" data-image-upload-mode="append-lines" style="display:none;" /></label>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);"><div class="form-group"><label class="form-label">التصنيف</label><input type="text" id="np-category" class="form-input" placeholder="هوديز، تيشيرتات، جاكيتات" /></div><div class="form-group"><label class="form-label">سعر التخفيض</label><input type="number" id="np-saleprice" class="form-input" value="0" /></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);"><div class="form-group"><label class="form-label">الفئة</label><select id="np-category" class="form-select">${renderCategoryOptions()}</select></div><div class="form-group"><label class="form-label">سعر التخفيض</label><input type="number" id="np-saleprice" class="form-input" value="0" /></div></div>
           <div class="form-group"><label class="form-label">المقاسات (افصل بينها بفاصلة) *</label><input type="text" id="np-sizes" required class="form-input" value="S, M, L, XL" /></div>
           <div class="form-group"><label class="form-label">الألوان (الاسم | كود اللون، كل لون في سطر) *</label><textarea id="np-colors" required class="form-textarea" rows="3">أسود | #111827</textarea></div>
           <div class="form-group">
@@ -2254,7 +2273,7 @@ export function setupAdminEvents(section: string) {
           const extraImages = (document.getElementById('np-extra-images') as HTMLTextAreaElement).value.split('\n').map(value => value.trim()).filter(Boolean);
           const stockByVariant = readVariantStockMap('np-stock-matrix');
           const stock = Object.values(stockByVariant).reduce((sum, value) => sum + value, 0);
-          const categoryName = (document.getElementById('np-category') as HTMLInputElement).value.trim();
+          const categoryName = (document.getElementById('np-category') as HTMLSelectElement).value.trim();
           const salePrice = parseFloat((document.getElementById('np-saleprice') as HTMLInputElement).value) || 0;
           const sizes = (document.getElementById('np-sizes') as HTMLInputElement).value.split(',').map(v => v.trim()).filter(Boolean);
           const colors = parseProductColors((document.getElementById('np-colors') as HTMLTextAreaElement).value);
@@ -2316,7 +2335,7 @@ export function setupAdminEvents(section: string) {
                 <input type="number" id="ep-saleprice" class="form-input" value="${p.salePrice || 0}" />
               </div>
             </div>
-            <div class="form-group"><label class="form-label">التصنيف</label><input type="text" id="ep-category" class="form-input" value="${p.categoryName || ''}" /></div>
+            <div class="form-group"><label class="form-label">الفئة</label><select id="ep-category" class="form-select">${renderCategoryOptions(p.categoryName || '')}</select></div>
             <div class="form-group">
               <label class="form-label">إجمالي المخزون المتاح للقطعة</label>
               <input type="number" id="ep-stock" class="form-input" value="${p.totalStock ?? 0}" min="0" readonly />
@@ -2402,7 +2421,7 @@ export function setupAdminEvents(section: string) {
             const sku = (document.getElementById('ep-sku') as HTMLInputElement).value.trim();
             const slug = (document.getElementById('ep-slug') as HTMLInputElement).value.trim();
             const extraImages = (document.getElementById('ep-extra-images') as HTMLTextAreaElement).value.split('\n').map(v => v.trim()).filter(Boolean);
-            const categoryName = (document.getElementById('ep-category') as HTMLInputElement).value.trim();
+            const categoryName = (document.getElementById('ep-category') as HTMLSelectElement).value.trim();
             const sizes = (document.getElementById('ep-sizes') as HTMLInputElement).value.split(',').map(v => v.trim()).filter(Boolean);
             const colors = parseProductColors((document.getElementById('ep-colors') as HTMLTextAreaElement).value);
             const descriptionAr = (document.getElementById('ep-description-ar') as HTMLTextAreaElement).value.trim();
