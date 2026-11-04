@@ -106,6 +106,54 @@ async function uploadImageFile(file: File): Promise<{ url: string; filename: str
   throw new Error(resData.message || `فشل رفع الصورة (${res.status})`);
 }
 
+function bindImageUploadControls(root: ParentNode = document) {
+  root.querySelectorAll<HTMLInputElement>('[data-image-upload-for]').forEach(fileInput => {
+    if (fileInput.dataset.imageUploadBound === 'true') return;
+    fileInput.dataset.imageUploadBound = 'true';
+    fileInput.onchange = async () => {
+      const files = Array.from(fileInput.files || []);
+      if (!files.length) return;
+
+      const targetId = fileInput.dataset.imageUploadFor;
+      const target = targetId ? document.getElementById(targetId) as HTMLInputElement | HTMLTextAreaElement | null : null;
+      if (!target) {
+        showToast('تعذر العثور على حقل الصورة في النموذج', 'error');
+        return;
+      }
+
+      const appendLines = fileInput.dataset.imageUploadMode === 'append-lines';
+      const previewId = fileInput.dataset.imagePreview;
+      const preview = previewId ? document.getElementById(previewId) as HTMLImageElement | null : null;
+      const previewBoxId = fileInput.dataset.imagePreviewBox;
+      const previewBox = previewBoxId ? document.getElementById(previewBoxId) as HTMLElement | null : null;
+
+      try {
+        showToast(files.length > 1 ? `جاري رفع ${files.length} صورة...` : 'جاري رفع الصورة...', 'info');
+        const urls: string[] = [];
+        for (const file of files) {
+          const uploaded = await uploadImageFile(file);
+          urls.push(uploaded.url);
+        }
+
+        if (appendLines) {
+          target.value = [...target.value.split('\n').map(value => value.trim()).filter(Boolean), ...urls].join('\n');
+        } else {
+          target.value = urls[0];
+          if (preview) preview.src = urls[0];
+          if (previewBox) previewBox.style.display = 'block';
+        }
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        target.dispatchEvent(new Event('change', { bubbles: true }));
+        showToast(files.length > 1 ? 'تم رفع الصور وربطها بنجاح' : 'تم رفع الصورة وربطها بنجاح', 'success');
+      } catch (err: any) {
+        showToast(err.message || 'تعذر رفع الصورة', 'error');
+      } finally {
+        fileInput.value = '';
+      }
+    };
+  });
+}
+
 interface AdminCache {
   timestamp: number;
   orders: any[];
@@ -234,12 +282,12 @@ const CMS_CONTENT_GROUPS: Array<{ title: string; fields: Array<{ key: string; la
     { key: 'home.story.imageAlt.ar', label: 'وصف صورة قصة البراند (عربي)', fallback: 'قصة وحرفية البراند' },
     { key: 'home.story.imageAlt.en', label: 'وصف صورة قصة البراند (إنجليزي)', fallback: 'Atelier Craft' },
     { key: 'home.social.handle', label: 'اسم حساب التواصل في معرض الصور', fallback: '@letoile_official' },
-    { key: 'home.story.image', label: 'رابط صورة قصة البراند', fallback: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=85' },
+    { key: 'home.story.image', label: 'صورة قصة البراند', fallback: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=85' },
     { key: 'home.collections.link.href', label: 'رابط جميع التصنيفات في الرئيسية', fallback: '#shop' },
     { key: 'home.arrivals.link.href', label: 'رابط زر التشكيلة الجديدة', fallback: '#shop' },
     { key: 'home.story.link.href', label: 'رابط قصة البراند في الرئيسية', fallback: '#page/about' },
     { key: 'home.bestsellers.link.href', label: 'رابط الأكثر مبيعاً في الرئيسية', fallback: '#shop?filter=bestseller' },
-    ...([1, 2, 3, 4, 5] as const).map((i) => ({ key: `home.social.image.${i}`, label: `رابط صورة معرض التواصل ${i}`, fallback: [
+    ...([1, 2, 3, 4, 5] as const).map((i) => ({ key: `home.social.image.${i}`, label: `صورة معرض التواصل ${i}`, fallback: [
       'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
       'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80',
       'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=600&q=80',
@@ -1091,8 +1139,18 @@ function renderAdminSection(section: string, data: any): string {
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
-              <div class="form-group"><label class="form-label">رابط شعار الهيدر</label><input type="url" id="set-header-logo" class="form-input" value="${settings.headerLogoUrl || '/assets/logo-icon.png'}" /></div>
-              <div class="form-group"><label class="form-label">رابط شعار الفوتر</label><input type="url" id="set-footer-logo" class="form-input" value="${settings.footerLogoUrl || '/assets/logo-icon-white.png'}" /></div>
+              <div class="form-group">
+                <label class="form-label">شعار الهيدر</label>
+                <input type="url" id="set-header-logo" class="form-input" value="${settings.headerLogoUrl || '/assets/logo-icon.png'}" />
+                <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع شعار من الجهاز<input type="file" accept="image/*" data-image-upload-for="set-header-logo" data-image-preview="set-header-logo-preview" style="display:none;" /></label>
+                <img id="set-header-logo-preview" src="${settings.headerLogoUrl || '/assets/logo-icon.png'}" alt="معاينة شعار الهيدر" style="display:block;height:42px;max-width:160px;object-fit:contain;margin-top:8px;" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">شعار الفوتر</label>
+                <input type="url" id="set-footer-logo" class="form-input" value="${settings.footerLogoUrl || '/assets/logo-icon-white.png'}" />
+                <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع شعار من الجهاز<input type="file" accept="image/*" data-image-upload-for="set-footer-logo" data-image-preview="set-footer-logo-preview" style="display:none;" /></label>
+                <img id="set-footer-logo-preview" src="${settings.footerLogoUrl || '/assets/logo-icon-white.png'}" alt="معاينة شعار الفوتر" style="display:block;height:42px;max-width:160px;object-fit:contain;margin-top:8px;" />
+              </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
               <div class="form-group"><label class="form-label">وصف المتجر (عربي)</label><input id="set-tagline-ar" class="form-input" value="${settings.taglineAr || ''}" /></div>
@@ -1221,9 +1279,18 @@ function renderAdminSection(section: string, data: any): string {
                     ${group.fields.map(field => `
                       <div class="form-group">
                         <label class="form-label">${field.label}</label>
-                        ${field.multiline
-                          ? `<textarea class="form-textarea" rows="3" data-cms-key="${field.key}">${settings.siteContent?.[field.key] ?? field.fallback}</textarea>`
-                          : `<input class="form-input" data-cms-key="${field.key}" value="${settings.siteContent?.[field.key] ?? field.fallback}" />`}
+                        ${field.key === 'home.story.image' || field.key.startsWith('home.social.image.')
+                          ? (() => {
+                              const inputId = `cms-image-${field.key.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+                              const previewId = `${inputId}-preview`;
+                              const value = settings.siteContent?.[field.key] ?? field.fallback;
+                              return `<input id="${inputId}" class="form-input" data-cms-key="${field.key}" value="${value}" />
+                                <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع صورة من الجهاز<input type="file" accept="image/*" data-image-upload-for="${inputId}" data-image-preview="${previewId}" style="display:none;" /></label>
+                                <img id="${previewId}" src="${value}" alt="معاينة الصورة" style="display:block;width:100%;max-width:180px;height:90px;object-fit:cover;border-radius:6px;margin-top:8px;" />`;
+                            })()
+                          : field.multiline
+                            ? `<textarea class="form-textarea" rows="3" data-cms-key="${field.key}">${settings.siteContent?.[field.key] ?? field.fallback}</textarea>`
+                            : `<input class="form-input" data-cms-key="${field.key}" value="${settings.siteContent?.[field.key] ?? field.fallback}" />`}
                       </div>
                     `).join('')}
                   </div>
@@ -1632,6 +1699,8 @@ export function setupAdminEvents(section: string) {
     return;
   }
 
+  bindImageUploadControls(document);
+
   // Admin Logout Button Handler
   const logoutBtn = document.getElementById('admin-logout-btn');
   if (logoutBtn) {
@@ -1939,7 +2008,7 @@ export function setupAdminEvents(section: string) {
         for (let i = 0; i < files.length; i++) {
           await uploadImageFile(files[i]);
         }
-        showToast('تم رفع جميع الصور بنجاح وحفظها محلياً في السيرفر!', 'success');
+        showToast('تم رفع جميع الصور إلى Cloudinary وحفظها في مكتبة الوسائط!', 'success');
         refreshAdminSection(section);
       } catch (err: any) {
         showToast(err.message, 'error');
@@ -2007,7 +2076,7 @@ export function setupAdminEvents(section: string) {
 
           <!-- Free Upload or URL -->
           <div class="form-group">
-            <label class="form-label">صورة القطعة (رفع مجاني من جهازك أو رابط) *</label>
+            <label class="form-label">صورة القطعة (ارفعها من جهازك، والرابط اختياري) *</label>
             <div style="display: flex; gap: 8px;">
               <input type="text" id="np-img" required class="form-input" style="flex: 1;" placeholder="/uploads/... أو رابط الصورة" value="https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=1000&q=85" />
               <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
@@ -2017,8 +2086,11 @@ export function setupAdminEvents(section: string) {
             </div>
             <div id="np-preview-box" style="margin-top: 8px; display: none; align-items: center; gap: 10px;">
               <img id="np-preview-img" src="" style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1;" />
-              <span style="font-size: 12px; color: #16a34a; font-weight: 600;">✓ تم رفع الصورة محلياً بنجاح ومجاناً</span>
+              <span style="font-size: 12px; color: #16a34a; font-weight: 600;">✓ تم رفع الصورة بنجاح</span>
             </div>
+            <label class="form-label" style="display:block;margin-top:12px;">صور إضافية للمنتج</label>
+            <textarea id="np-extra-images" class="form-textarea" rows="2" placeholder="اختياري: ارفع صوراً متعددة أو الصق رابطاً لكل صورة"></textarea>
+            <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع صور إضافية من الجهاز<input type="file" accept="image/*" multiple data-image-upload-for="np-extra-images" data-image-upload-mode="append-lines" style="display:none;" /></label>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);"><div class="form-group"><label class="form-label">التصنيف</label><input type="text" id="np-category" class="form-input" placeholder="هوديز، تيشيرتات، جاكيتات" /></div><div class="form-group"><label class="form-label">سعر التخفيض</label><input type="number" id="np-saleprice" class="form-input" value="0" /></div></div>
@@ -2030,6 +2102,8 @@ export function setupAdminEvents(section: string) {
           <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">حفظ ونشر القطعة بالمتجر</button>
         </form>
       `);
+
+      bindImageUploadControls(document);
 
       // File upload listener for new product
       const npFileInput = document.getElementById('np-file-upload') as HTMLInputElement;
@@ -2063,6 +2137,7 @@ export function setupAdminEvents(section: string) {
           const sku = (document.getElementById('np-sku') as HTMLInputElement).value;
           const price = parseFloat((document.getElementById('np-price') as HTMLInputElement).value);
           const img = (document.getElementById('np-img') as HTMLInputElement).value;
+          const extraImages = (document.getElementById('np-extra-images') as HTMLTextAreaElement).value.split('\n').map(value => value.trim()).filter(Boolean);
           const stock = parseInt((document.getElementById('np-stock') as HTMLInputElement).value) || 0;
           const categoryName = (document.getElementById('np-category') as HTMLInputElement).value.trim();
           const salePrice = parseFloat((document.getElementById('np-saleprice') as HTMLInputElement).value) || 0;
@@ -2074,7 +2149,7 @@ export function setupAdminEvents(section: string) {
           if (!sizes.length || !colors.length) { showToast('أضف مقاسًا ولونًا واحدًا على الأقل', 'warning'); return; }
           try {
             await addDoc(collection(db, 'products'), {
-              name, nameAr, slug: sku.toLowerCase(), sku, price, salePrice, categoryName, images: [img], totalStock: stock,
+              name, nameAr, slug: sku.toLowerCase(), sku, price, salePrice, categoryName, images: [img, ...extraImages], totalStock: stock,
               descriptionAr, fabric, careInstructions, isPublished: true, isFeatured: true, isNewArrival: true, sizes, colors,
               variants: buildProductVariants(sku, sizes, colors, stock), createdAt: new Date().toISOString()
             });
@@ -2136,7 +2211,7 @@ export function setupAdminEvents(section: string) {
 
             <!-- Free File Upload or URL -->
             <div class="form-group">
-              <label class="form-label">صورة القطعة (رفع مجاني من جهازك أو رابط) *</label>
+              <label class="form-label">صورة القطعة (ارفعها من جهازك، والرابط اختياري) *</label>
               <div style="display: flex; gap: 8px;">
                 <input type="text" id="ep-img" required class="form-input" style="flex: 1;" value="${(p.images && p.images[0]) || ''}" />
                 <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
@@ -2147,7 +2222,11 @@ export function setupAdminEvents(section: string) {
               <div id="ep-preview-box" style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
                 <img id="ep-preview-img" src="${(p.images && p.images[0]) || ''}" style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1;" />
               </div>
-              <div class="form-group" style="margin-top:10px;"><label class="form-label">روابط صور إضافية (رابط في كل سطر)</label><textarea id="ep-extra-images" class="form-textarea" rows="3">${(p.images || []).slice(1).join('\n')}</textarea></div>
+              <div class="form-group" style="margin-top:10px;">
+                <label class="form-label">صور إضافية للمنتج</label>
+                <textarea id="ep-extra-images" class="form-textarea" rows="3" placeholder="يمكنك رفع الصور من جهازك أو لصق رابط لكل صورة">${(p.images || []).slice(1).join('\n')}</textarea>
+                <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع صور إضافية من الجهاز<input type="file" accept="image/*" multiple data-image-upload-for="ep-extra-images" data-image-upload-mode="append-lines" style="display:none;" /></label>
+              </div>
             </div>
 
             <div style="display:flex;gap:16px;flex-wrap:wrap;">
@@ -2166,6 +2245,8 @@ export function setupAdminEvents(section: string) {
             <button type="submit" class="btn btn-primary btn-full" style="padding: 12px; font-weight: 700;">حفظ التعديلات في فايربيز</button>
           </form>
         `);
+
+        bindImageUploadControls(document);
 
         // Free upload listener for edit
         const epFileInput = document.getElementById('ep-file-upload') as HTMLInputElement;
@@ -2269,7 +2350,7 @@ export function setupAdminEvents(section: string) {
 
           <!-- Free Upload or URL -->
           <div class="form-group">
-            <label class="form-label">صورة القسم (رفع مجاني من جهازك أو رابط) *</label>
+            <label class="form-label">صورة القسم (ارفعها من جهازك، والرابط اختياري) *</label>
             <div style="display: flex; gap: 8px;">
               <input type="text" id="nc-img" required class="form-input" style="flex: 1;" value="https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=800&q=80" />
               <label class="btn btn-secondary btn-sm" style="cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
@@ -2354,11 +2435,17 @@ export function setupAdminEvents(section: string) {
           <input id="ec-name-ar" class="form-input" required value="${cat.nameAr || ''}" placeholder="اسم القسم بالعربية" />
           <input id="ec-name-en" class="form-input" required value="${cat.name || ''}" placeholder="اسم القسم بالإنجليزية" />
           <input id="ec-slug" class="form-input" required value="${cat.slug || ''}" placeholder="Slug" />
-          <input id="ec-img" class="form-input" required value="${cat.imageUrl || ''}" placeholder="رابط صورة القسم" />
+          <div class="form-group">
+            <label class="form-label" for="ec-img">صورة القسم</label>
+            <input id="ec-img" class="form-input" required value="${cat.imageUrl || ''}" placeholder="ارفع صورة من جهازك أو الصق رابط الصورة" />
+            <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع صورة من الجهاز<input type="file" accept="image/*" data-image-upload-for="ec-img" data-image-preview="ec-img-preview" style="display:none;" /></label>
+            <img id="ec-img-preview" src="${cat.imageUrl || ''}" alt="معاينة صورة القسم" style="display:block;width:88px;height:88px;object-fit:cover;border-radius:6px;margin-top:8px;" />
+          </div>
           <input id="ec-sort" type="number" class="form-input" value="${cat.sortOrder || 1}" placeholder="ترتيب العرض" />
           <label class="form-label"><input id="ec-active" type="checkbox" ${cat.isActive !== false ? 'checked' : ''} /> ظاهر في المتجر</label>
           <button type="submit" class="btn btn-primary btn-full">حفظ التعديلات</button>
         </form>`);
+      bindImageUploadControls(document);
       const form = document.getElementById('edit-cat-form');
       if (form) form.onsubmit = async (ev) => {
         ev.preventDefault();
