@@ -1,0 +1,1 @@
+{"routes":[{"path":"/","title":"RAVE Home"},{"path":"/shop","title":"RAVE Shop"},{"path":"/product","title":"RAVE Product"},{"path":"/cart","title":"Shopping Bag"},{"path":"/checkout","title":"Checkout"},{"path":"/account","title":"Account"},{"path":"/track","title":"Track Order"},{"path":"/page/:slug","title":"Content Page"},{"path":"/admin/:section","title":"Admin Dashboard"}]}

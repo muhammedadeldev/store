@@ -7,6 +7,12 @@ export function renderHeader(): string {
   const cartCount = state.getCartCount();
   const wishlistCount = state.getWishlist().length;
   const brandName = lang === 'ar' ? settings.brandNameAr || settings.brandName : settings.brandName;
+  const logoUrl = state.getTheme() === 'dark'
+    ? (settings.headerLogoDarkUrl || settings.headerLogoUrl || '/assets/rave-logo-white.png')
+    : (settings.headerLogoUrl || '/assets/rave-logo.png');
+  const logoWidth = Math.max(16, Math.min(240, Number(settings.headerLogoWidthPx) || 34));
+  const logoHeight = Math.max(16, Math.min(240, Number(settings.headerLogoHeightPx) || 34));
+  const logoStyle = `width:${logoWidth}px;height:${logoHeight}px;object-fit:contain;`;
   const announcement = lang === 'ar' ? settings.announcementBarTextAr : settings.announcementBarText;
   const currentHash = window.location.hash.slice(1) || 'home';
 
@@ -28,7 +34,7 @@ export function renderHeader(): string {
 
         <!-- Brand Logo -->
         <a href="#home" class="header-logo" style="text-decoration: none;">
-          <img src="${settings.headerLogoUrl || '/assets/logo-icon.png'}" alt="${brandName}" class="header-logo-img" />
+          <img src="${logoUrl}" alt="${brandName} logo" class="header-logo-img" style="${logoStyle}" />
           <span class="header-brand-title">${brandName}</span>
         </a>
 
@@ -82,7 +88,7 @@ export function renderHeader(): string {
     <aside id="mobile-nav-drawer" class="mobile-nav-drawer" aria-label="Mobile Navigation">
       <div class="mobile-nav-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <img src="${settings.headerLogoUrl || '/assets/logo-icon.png'}" alt="${brandName}" style="height: 30px; width: auto;" />
+          <img src="${logoUrl}" alt="${brandName} logo" style="${logoStyle}" />
           <div>
             <div style="font-weight: 800; font-size: 16px; color: var(--color-text-main); letter-spacing: 0.05em;">${brandName}</div>
             <div style="font-size: 11px; color: var(--color-text-muted); font-weight: 600;">${copy(`header.tagline.${lang}`, lang === 'ar' ? 'ستريت وير مصري معاصر' : 'Contemporary Egyptian streetwear')}</div>

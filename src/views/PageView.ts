@@ -27,10 +27,10 @@ export async function renderPageView(slug: string): Promise<string> {
     // Default fallback content for essential pages
     if (slug === 'about') {
       pageData = {
-        title: copy('page.about.title.en', 'The EIGHTY-EIGHT Story'),
+        title: copy('page.about.title.en', 'The RAVE Story'),
         titleAr: copy('page.about.title.ar', 'قصة المتجر والحرفية'),
-        content: copy('page.about.content.en', 'Founded with an uncompromising devotion to fabric integrity and architectural silhouettes, EIGHTY-EIGHT represents modern Egyptian streetwear elevated to luxury standards. Every garment is crafted from 100% combed heavy Egyptian cotton, engineered for lasting comfort and durability.'),
-        contentAr: copy('page.about.content.ar', 'تأسس متجر EIGHTY-EIGHT انطلاقاً من شغف استثنائي بنقاء خامات القطن المصري 100% ودقة الخطوط التصميمية لتصل بالستريت وير المصري إلى أعلى معايير الجودة العالمية. بنصمم كل قطعة بعناية فائقة لتجمع بين الفخامة والراحة والأناقة اليومية مع تقفيل دقيق يدوم طويلاً.')
+        content: copy('page.about.content.en', 'Founded with an uncompromising devotion to fabric integrity and architectural silhouettes, RAVE represents modern Egyptian streetwear elevated to luxury standards. Every garment is crafted from 100% combed heavy Egyptian cotton, engineered for lasting comfort and durability.'),
+        contentAr: copy('page.about.content.ar', 'تأسس متجر RAVE انطلاقاً من شغف استثنائي بنقاء خامات القطن المصري 100% ودقة الخطوط التصميمية لتصل بالستريت وير المصري إلى أعلى معايير الجودة العالمية. بنصمم كل قطعة بعناية فائقة لتجمع بين الفخامة والراحة والأناقة اليومية مع تقفيل دقيق يدوم طويلاً.')
       };
     } else {
       return `

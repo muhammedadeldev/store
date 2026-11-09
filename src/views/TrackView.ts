@@ -146,7 +146,7 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
                 <span style="font-family: monospace; font-size: 15px; font-weight: 800; color: #0f172a; margin-right: 8px;">${foundOrder.trackingNumber}</span>
               </div>
               <span style="background: #1e293b; color: #ffffff; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;">
-                EIGHTY-EIGHT Express Courier
+                RAVE Express Courier
               </span>
             </div>
           ` : ''}
@@ -159,7 +159,7 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
             <div style="display: flex; flex-direction: column; gap: 10px;">
               ${(foundOrder.items || []).map((it: any) => `
                 <div style="display: flex; gap: 14px; align-items: center; padding: 12px; background: #f8fafc; border-radius: 16px; border: 1px solid #f1f5f9;">
-                  <img src="${it.image || '/assets/logo-icon.png'}" alt="" style="width: 52px; height: 64px; object-fit: cover; border-radius: 10px; background: #ffffff; border: 1px solid #e2e8f0;" />
+                  <img src="${it.image || '/assets/rave-logo.png'}" alt="" style="width: 52px; height: 64px; object-fit: contain; border-radius: 10px; background: #ffffff; border: 1px solid #e2e8f0;" />
                   <div style="flex: 1;">
                     <strong style="font-size: 14px; color: #0f172a; display: block;">${it.productNameAr || it.productName}</strong>
                     <div style="font-size: 12px; color: #64748b; margin-top: 2px;">

@@ -6,6 +6,8 @@ export function renderFooter(): string {
   const copy = (key: string, fallback: string) => state.getSiteText(key, fallback);
   const brandName = lang === 'ar' ? settings.brandNameAr || settings.brandName : settings.brandName;
   const tagline = lang === 'ar' ? settings.taglineAr || settings.tagline : settings.tagline;
+  const footerLogoWidth = Math.max(16, Math.min(320, Number(settings.footerLogoWidthPx) || 44));
+  const footerLogoHeight = Math.max(16, Math.min(320, Number(settings.footerLogoHeightPx) || 44));
 
   return `
     <footer style="background-color: #121212; color: #a3a19d; padding-top: var(--space-4xl); padding-bottom: var(--space-2xl); border-top: 1px solid #292826;">
@@ -15,7 +17,7 @@ export function renderFooter(): string {
           <!-- Brand Info -->
           <div>
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: var(--space-md);">
-              <img src="${settings.footerLogoUrl || '/assets/logo-icon-white.png'}" alt="${brandName}" style="height: 38px; width: auto;" />
+              <img src="${settings.footerLogoUrl || '/assets/rave-logo-white.png'}" alt="${brandName} logo" style="width:${footerLogoWidth}px;height:${footerLogoHeight}px;object-fit:contain;" />
               <h3 style="color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: 0.08em; margin: 0;">
                 ${brandName}
               </h3>
@@ -72,7 +74,7 @@ export function renderFooter(): string {
           <!-- Newsletter & Concierge -->
           <div>
             <h4 style="color: #ffffff; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: var(--space-md); font-weight: 700;">
-              ${copy(`footer.newsletter.title.${lang}`, lang === 'ar' ? 'انضم لنادي EIGHTY-EIGHT' : 'Join EIGHTY-EIGHT')}
+              ${copy(`footer.newsletter.title.${lang}`, lang === 'ar' ? 'انضم لنادي RAVE' : 'Join RAVE')}
             </h4>
             <p style="font-size: 13px; color: #8c8984; line-height: 1.6; margin-bottom: var(--space-md);">
               ${copy(`footer.newsletter.description.${lang}`, lang === 'ar' ? 'اشترك لتصلك أحدث القطع قبل نزولها وكوبونات خصم حصرية للأعضاء.' : 'Subscribe for exclusive runway drops, VIP discounts, and early access.')}

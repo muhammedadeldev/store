@@ -105,8 +105,8 @@ const userOrder577524 = {
   items: [
     {
       productId: 'prod-cap-05',
-      productName: 'EIGHTY-EIGHT Embroidered 88 Structured Cap',
-      productNameAr: 'كاب بيسبول لوجو 88 مطرز',
+      productName: 'RAVE Embroidered R Structured Cap',
+      productNameAr: 'كاب بيسبول لوجو R مطرز',
       variantSku: '88-CP-005-BLK-OS',
       color: 'Black / White',
       size: 'مقاس موحد قابل للتعديل',
@@ -847,36 +847,43 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
     // 1. Settings
     const settingsRef = doc(db, 'settings', 'store');
     await setDoc(settingsRef, {
-      brandName: "EIGHTY-EIGHT",
-      brandNameAr: "EIGHTY-EIGHT",
-      logoUrl: "/assets/logo-transparent.png",
+      brandName: "RAVE",
+      brandNameAr: "RAVE",
+      logoUrl: "/assets/rave-logo.png",
+      headerLogoUrl: "/assets/rave-logo.png",
+      headerLogoDarkUrl: "/assets/rave-logo-white.png",
+      headerLogoWidthPx: 34,
+      headerLogoHeightPx: 34,
+      footerLogoUrl: "/assets/rave-logo-white.png",
+      footerLogoWidthPx: 44,
+      footerLogoHeightPx: 44,
       tagline: "Contemporary Egyptian Streetwear & Fashion",
       taglineAr: "براند أزياء مصري عصري بخامات قطنية وفخامة استثنائية",
       currency: "EGP",
       currencyAr: "ج.م",
       whatsappNumber: "+201012345678",
-      contactEmail: "contact@eightyeight-eg.com",
+      contactEmail: "contact@rave-eg.com",
       contactPhone: "+20 10 1234 5678",
       address: "التجمع الخامس ومصر الجديدة، القاهرة، مصر",
-      announcementBarText: "Complimentary shipping across Egypt on orders over 1,500 EGP — Use Code: EIGHTY10",
-      announcementBarTextAr: "شحن مجاني لجميع محافظات مصر للطلبات فوق 1,500 ج.م — كود الخصم: EIGHTY10",
+      announcementBarText: "Complimentary shipping across Egypt on orders over 1,500 EGP — Use Code: RAVE10",
+      announcementBarTextAr: "شحن مجاني لجميع محافظات مصر للطلبات فوق 1,500 ج.م — كود الخصم: RAVE10",
       announcementBarActive: true,
-      announcementBarBgColor: "#000000",
+      announcementBarBgColor: "#171819",
       taxPercentage: 0,
       enableTax: false,
       freeShippingThreshold: 1500,
       defaultShippingCost: 65,
-      heroTitle: "EIGHTY-EIGHT",
-      heroTitleAr: "EIGHTY-EIGHT • أسلوبك العصري",
+      heroTitle: "RAVE",
+      heroTitleAr: "RAVE • أسلوبك العصري",
       heroSubtitle: "Discover the Egyptian streetwear edition crafted from 100% premium Egyptian heavy cotton.",
       heroSubtitleAr: "كولكشن أزياء مصري عصري بخامات قطن مصري 100% ثقيل ومعالج، وتصميمات تجمع بين البساطة والفخامة اليومية.",
       heroImageUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1800&q=85",
       heroCtaText: "Shop Collection",
       heroCtaTextAr: "استكشف الكولكشن الآن",
       heroCtaLink: "#shop",
-      socialInstagram: "https://instagram.com/eightyeight_eg",
-      socialFacebook: "https://facebook.com/eightyeight.eg",
-      socialTiktok: "https://tiktok.com/@eightyeight.eg",
+      socialInstagram: "https://instagram.com/rave_eg",
+      socialFacebook: "https://facebook.com/rave.eg",
+      socialTiktok: "https://tiktok.com/@rave.eg",
       updatedAt: new Date().toISOString()
     });
 
@@ -938,7 +945,7 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         name: 'Caps & Accessories',
         nameAr: 'كابات وإكسسوارات',
         slug: 'accessories',
-        description: 'Embroidered 88 logo caps, socks, and street accessories.',
+        description: 'Embroidered R logo caps, socks, and street accessories.',
         imageUrl: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80',
         sortOrder: 5,
         isActive: true
@@ -949,21 +956,21 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
       await setDoc(doc(db, 'categories', cat.id), cat);
     }
 
-    // 4. Products with Multi-Variant Matrix (EIGHTY-EIGHT Egyptian Collection)
+    // 4. Products with Multi-Variant Matrix (RAVE Egyptian Collection)
     const sampleProducts = [
       {
         id: 'prod-hoodie-01',
-        name: "EIGHTY-EIGHT Signature Heavyweight Hoodie",
-        nameAr: "هودي EIGHTY-EIGHT القطني الثقيل المميز",
-        slug: "eighty-eight-signature-heavyweight-hoodie",
+        name: "RAVE Signature Heavyweight Hoodie",
+        nameAr: "هودي RAVE القطني الثقيل المميز",
+        slug: "rave-signature-heavyweight-hoodie",
         sku: "88-HD-001",
         categoryId: "cat-hoodies",
         categoryName: "هوديز وسويت شيرت",
         price: 1450,
         salePrice: 1250,
         cost: 650,
-        description: "Crafted from 100% premium Egyptian heavy French Terry cotton (450 GSM). Features an oversized modern drop-shoulder silhouette, double-layered hood, and the iconic 88 embroidered insignia.",
-        descriptionAr: "مصنوع من قطن مصري 100% ميلتون ثقيل 450 جرام مع بطانة فائقة النعومة. يتميز بقصة أوفرسايز عصرية وأكتاف ساقطة، وكابيشون مزدوج، مع تطريز لوجو 88 الفاخر بدقة عالية.",
+        description: "Crafted from 100% premium Egyptian heavy French Terry cotton (450 GSM). Features an oversized modern drop-shoulder silhouette, double-layered hood, and the iconic embroidered R insignia.",
+        descriptionAr: "مصنوع من قطن مصري 100% ميلتون ثقيل 450 جرام مع بطانة فائقة النعومة. يتميز بقصة أوفرسايز عصرية وأكتاف ساقطة، وكابيشون مزدوج، مع تطريز لوجو R الفاخر بدقة عالية.",
         fabric: "100% قطن مصري ثقيل 450 GSM ميلتون معالج ضد الانكماش.",
         careInstructions: "غسيل آلي بماء بارد ومقلوب. عدم استخدام مبيضات. كوي خفيف على الظهر.",
         images: [
@@ -989,24 +996,24 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         isFeatured: true,
         isNewArrival: true,
         isBestSeller: true,
-        seoTitle: "EIGHTY-EIGHT Signature Heavyweight Hoodie | Egyptian Streetwear",
+        seoTitle: "RAVE Signature Heavyweight Hoodie | Egyptian Streetwear",
         seoDescription: "Shop the iconic 450 GSM Egyptian cotton heavyweight hoodie.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
         id: 'prod-tee-02',
-        name: "EIGHTY-EIGHT Oversized Minimal Graphic Tee",
+        name: "RAVE Oversized Minimal Graphic Tee",
         nameAr: "تيشيرت أوفرسايز قطن مصري 100% أسود",
-        slug: "eighty-eight-oversized-minimal-graphic-tee",
+        slug: "rave-oversized-minimal-graphic-tee",
         sku: "88-TS-002",
         categoryId: "cat-tees",
         categoryName: "تيشيرتات وبولو",
         price: 750,
         salePrice: 650,
         cost: 280,
-        description: "Heavyweight 240 GSM combed Egyptian compact cotton. Retains deep black color through countless washes with zero shrinkage and high-density 88 typography.",
-        descriptionAr: "مصنوع من أنقى خامات القطن المصري الممشط 240 جرام. قماش معالج يحافظ على اللون الأسود ونعومة الملمس مع تطريز وطباعة حفر عالية الدقة لشعار EIGHTY-EIGHT.",
+        description: "Heavyweight 240 GSM combed Egyptian compact cotton. Retains deep black color through countless washes with zero shrinkage and high-density R monogram.",
+        descriptionAr: "مصنوع من أنقى خامات القطن المصري الممشط 240 جرام. قماش معالج يحافظ على اللون الأسود ونعومة الملمس مع تطريز وطباعة حفر عالية الدقة لشعار RAVE.",
         fabric: "100% قطن مصري ممشط ومغزول 240 GSM فائق الجودة.",
         careInstructions: "غسيل مقلوب على درجة حرارة 30 مئوية. عدم كوي الطباعة مباشرة.",
         images: [
@@ -1029,16 +1036,16 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         isFeatured: true,
         isNewArrival: true,
         isBestSeller: true,
-        seoTitle: "EIGHTY-EIGHT Oversized Heavyweight Tee | Premium Cotton",
+        seoTitle: "RAVE Oversized Heavyweight Tee | Premium Cotton",
         seoDescription: "240 GSM combed Egyptian cotton oversized t-shirt.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
         id: 'prod-pants-03',
-        name: "EIGHTY-EIGHT Utility Parachute Cargo Pants",
+        name: "RAVE Utility Parachute Cargo Pants",
         nameAr: "بنطلون كارجو باراشوت زيتي عصري",
-        slug: "eighty-eight-utility-parachute-cargo-pants",
+        slug: "rave-utility-parachute-cargo-pants",
         sku: "88-PT-003",
         categoryId: "cat-pants",
         categoryName: "بنطلونات وكارجو",
@@ -1069,23 +1076,23 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         isFeatured: true,
         isNewArrival: false,
         isBestSeller: true,
-        seoTitle: "EIGHTY-EIGHT Parachute Cargo Pants",
+        seoTitle: "RAVE Parachute Cargo Pants",
         seoDescription: "Multi-pocket baggy utility cargo pants.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
         id: 'prod-jacket-04',
-        name: "EIGHTY-EIGHT Reversible Utility Bomber Jacket",
+        name: "RAVE Reversible Utility Bomber Jacket",
         nameAr: "جاكيت بومبر عصري مبطن أسود",
-        slug: "eighty-eight-utility-bomber-jacket",
+        slug: "rave-utility-bomber-jacket",
         sku: "88-JK-004",
         categoryId: "cat-jackets",
         categoryName: "جواكيت ومعاطف",
         price: 2100,
         salePrice: 1850,
         cost: 890,
-        description: "Windproof and water-resistant nylon shell filled with thermal down alternative. Heavy-duty metal zippers, orange emergency lining, and custom 88 zipper pull.",
+        description: "Windproof and water-resistant nylon shell filled with thermal down alternative. Heavy-duty metal zippers, orange emergency lining, and custom R zipper pull.",
         descriptionAr: "جاكيت بومبر شتوي فاخر ومبطن بالكامل للحماية من البرد والرياح. سوست معدنية ثقيلة وقصة كلاسيكية تناسب جميع الإطلالات اليومية.",
         fabric: "100% نايلون تافيتال عالي الكثافة مع بطانة داخلية دافئة.",
         careInstructions: "تنظيف جاف أو مسح بقطعة قماش مبللة.",
@@ -1107,24 +1114,24 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         isFeatured: true,
         isNewArrival: true,
         isBestSeller: false,
-        seoTitle: "EIGHTY-EIGHT Utility Bomber Jacket",
+        seoTitle: "RAVE Utility Bomber Jacket",
         seoDescription: "Insulated streetwear bomber jacket.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
       {
         id: 'prod-cap-05',
-        name: "EIGHTY-EIGHT Embroidered 88 Structured Cap",
-        nameAr: "كاب بيسبول لوجو 88 مطرز",
-        slug: "eighty-eight-embroidered-88-structured-cap",
+        name: "RAVE Embroidered R Structured Cap",
+        nameAr: "كاب بيسبول لوجو R مطرز",
+        slug: "rave-embroidered-r-structured-cap",
         sku: "88-CP-005",
         categoryId: "cat-accessories",
         categoryName: "كابات وإكسسوارات",
         price: 500,
         salePrice: 450,
         cost: 180,
-        description: "Structured 6-panel baseball cap with 3D embroidered 88 infinity monogram and antique brass buckle closure.",
-        descriptionAr: "كاب كلاسيكي بـ 6 ألواح مقواة وتطريز ثلاثي الأبعاد لشعار 88 مع إبزيم نحاسي خلفي لضبط المقاس بدقة.",
+        description: "Structured 6-panel baseball cap with 3D embroidered R monogram and antique brass buckle closure.",
+        descriptionAr: "كاب كلاسيكي بـ 6 ألواح مقواة وتطريز ثلاثي الأبعاد لشعار R مع إبزيم نحاسي خلفي لضبط المقاس بدقة.",
         fabric: "100% قطن تويل ثقيل مسامي.",
         careInstructions: "تنظيف يدوي بإسفنجة رطبة.",
         images: [
@@ -1142,8 +1149,8 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         isFeatured: false,
         isNewArrival: true,
         isBestSeller: true,
-        seoTitle: "EIGHTY-EIGHT Embroidered Cap",
-        seoDescription: "Structured 88 embroidered cotton cap.",
+        seoTitle: "RAVE Embroidered Cap",
+        seoDescription: "Structured R embroidered cotton cap.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -1157,7 +1164,7 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
     const coupons = [
       {
         id: 'coup-eighty10',
-        code: 'EIGHTY10',
+        code: 'RAVE10',
         discountType: 'percentage',
         discountValue: 10,
         minOrderValue: 1000,
@@ -1171,7 +1178,7 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
       },
       {
         id: 'coup-welcome88',
-        code: 'WELCOME88',
+        code: 'WELCOMERAVE',
         discountType: 'percentage',
         discountValue: 15,
         minOrderValue: 600,
@@ -1245,14 +1252,14 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
     const pages = [
       {
         id: 'page-about',
-        title: "The EIGHTY-EIGHT Story",
-        titleAr: "قصة براند EIGHTY-EIGHT",
+        title: "The RAVE Story",
+        titleAr: "قصة براند RAVE",
         slug: "about",
-        content: `EIGHTY-EIGHT is an avant-garde Egyptian fashion house engineering oversized silhouettes, luxury heavyweight fleece, and bespoke street-tailoring. Founded in Cairo, our garments merge architectural precision with everyday comfort. Every piece is crafted from 100% Egyptian combed cotton with double-stitched durability and custom dyed in small limited batches.`,
-        contentAr: `براند EIGHTY-EIGHT هو براند مصري يقدم أرقى تصميمات الأزياء العصرية وستريت وير فاخر بقصات معمارية وخامات قطن مصري 100% عالية الجودة. بنصمم كل قطعة بعناية فائقة لتجمع بين الفخامة والراحة والأناقة اليومية بأعلى معايير الحياكة والتقفيل الدقيق.`,
+        content: `RAVE is an avant-garde Egyptian fashion house engineering oversized silhouettes, luxury heavyweight fleece, and bespoke street-tailoring. Founded in Cairo, our garments merge architectural precision with everyday comfort. Every piece is crafted from 100% Egyptian combed cotton with double-stitched durability and custom dyed in small limited batches.`,
+        contentAr: `براند RAVE هو براند مصري يقدم أرقى تصميمات الأزياء العصرية وستريت وير فاخر بقصات معمارية وخامات قطن مصري 100% عالية الجودة. بنصمم كل قطعة بعناية فائقة لتجمع بين الفخامة والراحة والأناقة اليومية بأعلى معايير الحياكة والتقفيل الدقيق.`,
         isPublished: true,
-        seoTitle: "About EIGHTY-EIGHT | Luxury Egyptian Streetwear & Fashion",
-        seoDescription: "Discover the heritage, quality cotton, and urban craftsmanship behind EIGHTY-EIGHT.",
+        seoTitle: "About RAVE | Luxury Egyptian Streetwear & Fashion",
+        seoDescription: "Discover the heritage, quality cotton, and urban craftsmanship behind RAVE.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -1261,10 +1268,10 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         title: "Shipping & Delivery Policy",
         titleAr: "سياسة الشحن والتوصيل في مصر",
         slug: "shipping-policy",
-        content: `All EIGHTY-EIGHT orders are packaged in signature magnetic luxury boxes with branded tissue paper. We deliver to all Egyptian governorates (Cairo, Giza, Alexandria, Delta, and Upper Egypt) within 24 to 72 hours via premium courier services. Cash on Delivery (COD) and live parcel inspection at the doorstep are fully supported.`,
-        contentAr: `بيتم تجهيز وتغليف كل أوردرات EIGHTY-EIGHT في علب هدايا فاخرة ومغناطيسية خاصة بالبراند. بنوصل لجميع محافظات مصر (القاهرة، الجيزة، الإسكندرية، محافظات الدلتا، والصعيد) خلال 24 إلى 72 ساعة عبر شركات شحن سريعة وموثوقة مع إمكانية الدفع عند الاستلام والمعاينة قبل الاستلام.`,
+        content: `All RAVE orders are packaged in signature magnetic luxury boxes with branded tissue paper. We deliver to all Egyptian governorates (Cairo, Giza, Alexandria, Delta, and Upper Egypt) within 24 to 72 hours via premium courier services. Cash on Delivery (COD) and live parcel inspection at the doorstep are fully supported.`,
+        contentAr: `بيتم تجهيز وتغليف كل أوردرات RAVE في علب هدايا فاخرة ومغناطيسية خاصة بالبراند. بنوصل لجميع محافظات مصر (القاهرة، الجيزة، الإسكندرية، محافظات الدلتا، والصعيد) خلال 24 إلى 72 ساعة عبر شركات شحن سريعة وموثوقة مع إمكانية الدفع عند الاستلام والمعاينة قبل الاستلام.`,
         isPublished: true,
-        seoTitle: "Shipping & Delivery in Egypt | EIGHTY-EIGHT",
+        seoTitle: "Shipping & Delivery in Egypt | RAVE",
         seoDescription: "Fast shipping across Cairo, Giza, Alexandria, and all Egyptian governorates with cash on delivery.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -1277,7 +1284,7 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         content: `We offer an easy 14-day exchange and return policy across Egypt. Items must be in brand new, unworn condition with all original tags attached. Simply submit your request or contact our customer support team, and our courier will handle the pickup directly from your doorstep.`,
         contentAr: `نوفر لحضرتك إمكانية الاستبدال أو الاسترجاع بكل سهولة خلال 14 يوم من استلام الأوردر، بشرط أن تكون القطعة بحالتها الأصلية وغير مستخدمة مع التيكت الخاص بها. المندوب بيوصل لحد باب بيتك يستلم أو يبدل المقاس بدون أي تعقيد.`,
         isPublished: true,
-        seoTitle: "Returns & Exchanges | EIGHTY-EIGHT",
+        seoTitle: "Returns & Exchanges | RAVE",
         seoDescription: "Hassle-free 14-day exchange and return policy across all Egyptian governorates.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -1285,12 +1292,12 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
       {
         id: 'page-size-guide',
         title: "Size & Fit Guide",
-        titleAr: "دليل المقاسات لبراند EIGHTY-EIGHT",
+        titleAr: "دليل المقاسات لبراند RAVE",
         slug: "size-guide",
-        content: `EIGHTY-EIGHT garments are designed with modern relaxed and oversized silhouettes. If you prefer a relaxed streetwear drape, select your standard size. For a standard tailored fit, consider sizing down one size. Precise chest, shoulder, and length measurements in centimeters are listed on every product page.`,
-        contentAr: `تصميمات EIGHTY-EIGHT بتعتمد على القصات المريحة والـ Oversized العصرية. لو بتفضل المظهر الـ Oversized اطلب مقاسك المعتاد، ولو بتفضل المقاس المظبوط (Regular Fit) تقدر تختار مقاس أصغر نمرة واحدة. قياسات الصدر والكتف والطول متوفرة بالسنتيمتر داخل صفحة كل منتج.`,
+        content: `RAVE garments are designed with modern relaxed and oversized silhouettes. If you prefer a relaxed streetwear drape, select your standard size. For a standard tailored fit, consider sizing down one size. Precise chest, shoulder, and length measurements in centimeters are listed on every product page.`,
+        contentAr: `تصميمات RAVE بتعتمد على القصات المريحة والـ Oversized العصرية. لو بتفضل المظهر الـ Oversized اطلب مقاسك المعتاد، ولو بتفضل المقاس المظبوط (Regular Fit) تقدر تختار مقاس أصغر نمرة واحدة. قياسات الصدر والكتف والطول متوفرة بالسنتيمتر داخل صفحة كل منتج.`,
         isPublished: true,
-        seoTitle: "Size Guide | EIGHTY-EIGHT",
+        seoTitle: "Size Guide | RAVE",
         seoDescription: "Accurate size charts and fitting advice for hoodies, t-shirts, jackets, and trousers.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -1371,7 +1378,7 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         items: [
           {
             productId: 'prod-hoodie-01',
-            productName: "EIGHTY-EIGHT Heavyweight Signature Hoodie",
+            productName: "RAVE Heavyweight Signature Hoodie",
             variantSku: "88-HD-001-BLK-L",
             color: "Onyx Black",
             size: "L",
@@ -1385,7 +1392,7 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         shippingCost: 0,
         shippingZoneName: 'القاهرة والجيزة (توصيل سريع)',
         discountAmount: 145,
-        couponCode: 'EIGHTY10',
+        couponCode: 'RAVE10',
         taxAmount: 0,
         total: 1305,
         currency: 'EGP',
@@ -1416,7 +1423,7 @@ app.post('/api/seed', async (_req: Request, res: Response) => {
         items: [
           {
             productId: 'prod-tee-02',
-            productName: "EIGHTY-EIGHT Architectural Boxy Tee",
+            productName: "RAVE Architectural Boxy Tee",
             variantSku: "88-TEE-002-WHT-M",
             color: "Raw Off-White",
             size: "M",
@@ -1483,7 +1490,7 @@ async function startServer() {
 
   const PORT = Number(process.env.PORT) || 3000;
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`EIGHTY-EIGHT Fashion Platform server running on port ${PORT}`);
+    console.log(`RAVE Fashion Platform server running on port ${PORT}`);
   });
 }
 

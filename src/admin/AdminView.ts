@@ -1,10 +1,10 @@
 /**
- * L'ÉTOILE Haute Couture & Fashion Platform
+ * RAVE Haute Couture & Fashion Platform
  * Admin Dashboard - Production Management System
  * Pure Vanilla JavaScript ES6+ & CSS3 with Cairo Typography & Full Arabic UI
  */
 
-import { state, showToast, openModal, closeModal } from '../state';
+import { state, showToast, openModal, closeModal, normalizeStoreSettings } from '../state';
 import { 
   collection, 
   getDocs, 
@@ -360,8 +360,8 @@ const CMS_CONTENT_GROUPS: Array<{ title: string; fields: Array<{ key: string; la
       { key: `home.${name}.ar`, label: `${label} (عربي)`, fallback: ar },
       { key: `home.${name}.en`, label: `${label} (إنجليزي)`, fallback: en }
     ]),
-    { key: 'home.story.body1.ar', label: 'قصة البراند — الفقرة الأولى (عربي)', fallback: 'في براند EIGHTY-EIGHT، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على القطن المصري 100% الثقيل والمعالج لضمان الراحة التامة والمتانة الاستثنائية.', multiline: true },
-    { key: 'home.story.body1.en', label: 'قصة البراند — الفقرة الأولى (إنجليزي)', fallback: 'At EIGHTY-EIGHT, true streetwear luxury resides in the purity of proportion and the integrity of 100% premium Egyptian heavy cotton.', multiline: true },
+    { key: 'home.story.body1.ar', label: 'قصة البراند — الفقرة الأولى (عربي)', fallback: 'في براند RAVE، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على القطن المصري 100% الثقيل والمعالج لضمان الراحة التامة والمتانة الاستثنائية.', multiline: true },
+    { key: 'home.story.body1.en', label: 'قصة البراند — الفقرة الأولى (إنجليزي)', fallback: 'At RAVE, true streetwear luxury resides in the purity of proportion and the integrity of 100% premium Egyptian heavy cotton.', multiline: true },
     { key: 'home.story.body2.ar', label: 'قصة البراند — الفقرة الثانية (عربي)', fallback: 'كل تصميم يخضع لعشرات الساعات من التعديل اليدوي للتأكد من انسيابيته مع حركة الجسد.', multiline: true },
     { key: 'home.story.body2.en', label: 'قصة البراند — الفقرة الثانية (إنجليزي)', fallback: 'Every piece undergoes rigorous hand draping and tailoring to guarantee an effortless fluid drape.', multiline: true },
     { key: 'home.story.imageAlt.ar', label: 'وصف صورة قصة البراند (عربي)', fallback: 'قصة وحرفية البراند' },
@@ -382,9 +382,9 @@ const CMS_CONTENT_GROUPS: Array<{ title: string; fields: Array<{ key: string; la
   ] },
   { title: 'صفحات الموقع الثابتة', fields: [
     { key: 'page.about.title.ar', label: 'عنوان صفحة عن البراند (عربي)', fallback: 'قصة المتجر والحرفية' },
-    { key: 'page.about.title.en', label: 'عنوان صفحة عن البراند (إنجليزي)', fallback: 'The EIGHTY-EIGHT Story' },
-    { key: 'page.about.content.ar', label: 'محتوى صفحة عن البراند (عربي)', fallback: 'تأسس متجر EIGHTY-EIGHT انطلاقاً من شغف استثنائي بنقاء خامات القطن المصري 100% ودقة الخطوط التصميمية لتصل بالستريت وير المصري إلى أعلى معايير الجودة العالمية. بنصمم كل قطعة بعناية فائقة لتجمع بين الفخامة والراحة والأناقة اليومية مع تقفيل دقيق يدوم طويلاً.', multiline: true },
-    { key: 'page.about.content.en', label: 'محتوى صفحة عن البراند (إنجليزي)', fallback: 'Founded with an uncompromising devotion to fabric integrity and architectural silhouettes, EIGHTY-EIGHT represents modern Egyptian streetwear elevated to luxury standards. Every garment is crafted from 100% combed heavy Egyptian cotton, engineered for lasting comfort and durability.', multiline: true },
+    { key: 'page.about.title.en', label: 'عنوان صفحة عن البراند (إنجليزي)', fallback: 'The RAVE Story' },
+    { key: 'page.about.content.ar', label: 'محتوى صفحة عن البراند (عربي)', fallback: 'تأسس متجر RAVE انطلاقاً من شغف استثنائي بنقاء خامات القطن المصري 100% ودقة الخطوط التصميمية لتصل بالستريت وير المصري إلى أعلى معايير الجودة العالمية. بنصمم كل قطعة بعناية فائقة لتجمع بين الفخامة والراحة والأناقة اليومية مع تقفيل دقيق يدوم طويلاً.', multiline: true },
+    { key: 'page.about.content.en', label: 'محتوى صفحة عن البراند (إنجليزي)', fallback: 'Founded with an uncompromising devotion to fabric integrity and architectural silhouettes, RAVE represents modern Egyptian streetwear elevated to luxury standards. Every garment is crafted from 100% combed heavy Egyptian cotton, engineered for lasting comfort and durability.', multiline: true },
     { key: 'page.heading.ar', label: 'عنوان قسم صفحات المتجر (عربي)', fallback: 'صفحات ومعلومات المتجر' },
     { key: 'page.heading.en', label: 'عنوان قسم صفحات المتجر (إنجليزي)', fallback: 'Store Documentation' },
     { key: 'page.shopButton.ar', label: 'زر العودة للمتجر (عربي)', fallback: 'استعراض تشكيلة المتجر' },
@@ -402,7 +402,7 @@ const CMS_CONTENT_GROUPS: Array<{ title: string; fields: Array<{ key: string; la
     ...([
       ['collections.title', 'عنوان قسم التصنيفات', 'أقسام الكولكشن', 'Collections'],
       ['care.title', 'عنوان خدمة العملاء', 'خدمة العملاء والسياسات', 'Client Care'],
-      ['newsletter.title', 'عنوان النشرة البريدية', 'انضم لنادي EIGHTY-EIGHT', 'Join EIGHTY-EIGHT'],
+      ['newsletter.title', 'عنوان النشرة البريدية', 'انضم لنادي RAVE', 'Join RAVE'],
       ['newsletter.description', 'وصف النشرة البريدية', 'اشترك لتصلك أحدث القطع قبل نزولها وكوبونات خصم حصرية للأعضاء.', 'Subscribe for exclusive runway drops, VIP discounts, and early access.'],
       ['newsletter.placeholder', 'حقل البريد الإلكتروني', 'اكتب بريدك الإلكتروني...', 'Your email address...'],
       ['newsletter.button', 'زر الاشتراك', 'اشتراك', 'Join']
@@ -514,7 +514,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
         inventoryMovements = data.inventoryMovements || [];
         mediaItems = data.mediaItems || [];
         pages = data.pages || [];
-        if (data.settings) settings = { ...settings, ...data.settings };
+        if (data.settings) settings = { ...settings, ...normalizeStoreSettings(data.settings) };
       }
     } catch (e) {
       console.warn('API admin data fetch error, attempting direct Firestore fallback', e);
@@ -544,7 +544,7 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
         mediaItems = (medSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
         pages = (pagesSnap as any).docs?.map((d: any) => ({ id: d.id, ...d.data() })) || [];
         if (setSnap && (setSnap as any).exists && (setSnap as any).exists()) {
-          settings = { ...settings, ...(setSnap as any).data() };
+          settings = { ...settings, ...normalizeStoreSettings((setSnap as any).data()) };
         }
       } catch (err) {
         console.error('Direct Firestore admin data fallback error', err);
@@ -604,8 +604,8 @@ export async function renderAdminView(currentSection: string = 'overview'): Prom
       <aside class="admin-sidebar" id="admin-sidebar" style="font-family: 'Cairo', sans-serif;">
         <div class="admin-sidebar-header" style="direction: rtl;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="/assets/logo-icon-white.png" alt="EIGHTY-EIGHT" style="height: 28px; width: auto;" />
-            <span style="font-weight: 800; letter-spacing: 0.05em; color: #ffffff; font-size: 16px;">EIGHTY-EIGHT</span>
+            <img src="/assets/rave-logo-white.png" alt="RAVE" style="height: 28px; width: 28px; object-fit: contain;" />
+            <span style="font-weight: 800; letter-spacing: 0.05em; color: #ffffff; font-size: 16px;">RAVE</span>
           </div>
           <span style="font-size: 11px; background: #334155; color: #f8fafc; padding: 2px 8px; border-radius: 4px; font-weight: 700;">الإدارة</span>
         </div>
@@ -1252,19 +1252,32 @@ function renderAdminSection(section: string, data: any): string {
               </div>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-md);">
               <div class="form-group">
-                <label class="form-label">شعار الهيدر</label>
-                <input type="url" id="set-header-logo" class="form-input" value="${settings.headerLogoUrl || '/assets/logo-icon.png'}" />
+                <label class="form-label">شعار الهيدر — Light</label>
+                <input type="url" id="set-header-logo" class="form-input" value="${settings.headerLogoUrl || '/assets/rave-logo.png'}" />
                 <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع شعار من الجهاز<input type="file" accept="image/*" data-image-upload-for="set-header-logo" data-image-preview="set-header-logo-preview" style="display:none;" /></label>
-                <img id="set-header-logo-preview" src="${settings.headerLogoUrl || '/assets/logo-icon.png'}" alt="معاينة شعار الهيدر" style="display:block;height:42px;max-width:160px;object-fit:contain;margin-top:8px;" />
+                <img id="set-header-logo-preview" src="${settings.headerLogoUrl || '/assets/rave-logo.png'}" alt="معاينة شعار الهيدر الفاتح" style="display:block;height:42px;max-width:160px;object-fit:contain;margin-top:8px;" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">شعار الهيدر — Dark</label>
+                <input type="url" id="set-header-logo-dark" class="form-input" value="${settings.headerLogoDarkUrl || '/assets/rave-logo-white.png'}" />
+                <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع شعار من الجهاز<input type="file" accept="image/*" data-image-upload-for="set-header-logo-dark" data-image-preview="set-header-logo-dark-preview" style="display:none;" /></label>
+                <img id="set-header-logo-dark-preview" src="${settings.headerLogoDarkUrl || '/assets/rave-logo-white.png'}" alt="معاينة شعار الهيدر الداكن" style="display:block;height:42px;max-width:160px;object-fit:contain;margin-top:8px;background:#111315;padding:5px;" />
               </div>
               <div class="form-group">
                 <label class="form-label">شعار الفوتر</label>
-                <input type="url" id="set-footer-logo" class="form-input" value="${settings.footerLogoUrl || '/assets/logo-icon-white.png'}" />
+                <input type="url" id="set-footer-logo" class="form-input" value="${settings.footerLogoUrl || '/assets/rave-logo-white.png'}" />
                 <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;margin-top:8px;">رفع شعار من الجهاز<input type="file" accept="image/*" data-image-upload-for="set-footer-logo" data-image-preview="set-footer-logo-preview" style="display:none;" /></label>
-                <img id="set-footer-logo-preview" src="${settings.footerLogoUrl || '/assets/logo-icon-white.png'}" alt="معاينة شعار الفوتر" style="display:block;height:42px;max-width:160px;object-fit:contain;margin-top:8px;" />
+                <img id="set-footer-logo-preview" src="${settings.footerLogoUrl || '/assets/rave-logo-white.png'}" alt="معاينة شعار الفوتر" style="display:block;height:42px;max-width:160px;object-fit:contain;margin-top:8px;background:#111315;padding:5px;" />
               </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);padding:var(--space-md);background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+              <div class="form-group"><label class="form-label">عرض شعار الهيدر (px)</label><input type="number" min="16" max="240" step="1" id="set-header-logo-width" class="form-input" value="${settings.headerLogoWidthPx || 34}" /></div>
+              <div class="form-group"><label class="form-label">ارتفاع شعار الهيدر (px)</label><input type="number" min="16" max="240" step="1" id="set-header-logo-height" class="form-input" value="${settings.headerLogoHeightPx || 34}" /></div>
+              <div class="form-group"><label class="form-label">عرض شعار الفوتر (px)</label><input type="number" min="16" max="320" step="1" id="set-footer-logo-width" class="form-input" value="${settings.footerLogoWidthPx || 44}" /></div>
+              <div class="form-group"><label class="form-label">ارتفاع شعار الفوتر (px)</label><input type="number" min="16" max="320" step="1" id="set-footer-logo-height" class="form-input" value="${settings.footerLogoHeightPx || 44}" /></div>
+              <div style="grid-column:1/-1;font-size:12px;color:#64748b;">الأبعاد تُطبّق مباشرة على الموقع بالبكسل، مع حدود أمان لمنع تمدد الشعار بشكل غير مقصود.</div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
               <div class="form-group"><label class="form-label">وصف المتجر (عربي)</label><input id="set-tagline-ar" class="form-input" value="${settings.taglineAr || ''}" /></div>
@@ -1328,7 +1341,7 @@ function renderAdminSection(section: string, data: any): string {
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
               <div class="form-group"><label class="form-label"><input type="checkbox" id="set-ann-active" ${settings.announcementBarActive !== false ? 'checked' : ''} /> إظهار شريط الإعلانات العلوي</label></div>
-              <div class="form-group"><label class="form-label">لون شريط الإعلانات</label><input type="color" id="set-ann-color" class="form-input" value="${settings.announcementBarBgColor || '#15803d'}" /></div>
+              <div class="form-group"><label class="form-label">لون شريط الإعلانات</label><input type="color" id="set-ann-color" class="form-input" value="${settings.announcementBarBgColor || '#171819'}" /></div>
             </div>
             <details class="admin-card" open style="padding:var(--space-md);">
               <summary style="cursor:pointer;font-weight:700;font-size:16px;">إظهار وإخفاء أقسام الصفحة الرئيسية وعناصرها</summary>
@@ -1705,11 +1718,11 @@ export function renderAdminLoginView(): string {
         <!-- Brand & Security Header -->
         <div style="text-align: center; margin-bottom: 28px;">
           <div style="margin-bottom: 16px;">
-            <img src="/assets/logo-white.png" alt="EIGHTY-EIGHT" style="height: 52px; width: auto; max-width: 200px; object-fit: contain; margin: 0 auto; display: block;" />
+            <img src="/assets/rave-logo-white.png" alt="RAVE" style="height: 52px; width: 52px; object-fit: contain; margin: 0 auto; display: block;" />
           </div>
           
           <span style="font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-brand-gold); display: block; margin-bottom: 6px; font-weight: 700;">
-            EIGHTY-EIGHT • لوحة التحكم الإدارية
+            RAVE • لوحة التحكم الإدارية
           </span>
           <h3 style="font-size: 22px; font-weight: 800; color: #ffffff;">
             تسجيل دخول مدير المتجر
@@ -1793,7 +1806,7 @@ export function setupAdminEvents(section: string) {
           if (data.success && data.user) {
             state.setCurrentUser(data.user, true);
             invalidateAdminCache();
-            showToast('تم تسجيل الدخول بنجاح كمدير لبراند EIGHTY-EIGHT!', 'success');
+            showToast('تم تسجيل الدخول بنجاح كمدير لبراند RAVE!', 'success');
             window.location.hash = 'admin/overview';
             return;
           }
@@ -2902,7 +2915,12 @@ export function setupAdminEvents(section: string) {
           heroOverlayActive: homeVisibility['hero.overlay'] !== false,
           announcementBarBgColor: (document.getElementById('set-ann-color') as HTMLInputElement).value,
           headerLogoUrl: (document.getElementById('set-header-logo') as HTMLInputElement).value,
+          headerLogoDarkUrl: (document.getElementById('set-header-logo-dark') as HTMLInputElement).value,
+          headerLogoWidthPx: Math.max(16, Math.min(240, Number((document.getElementById('set-header-logo-width') as HTMLInputElement).value) || 34)),
+          headerLogoHeightPx: Math.max(16, Math.min(240, Number((document.getElementById('set-header-logo-height') as HTMLInputElement).value) || 34)),
           footerLogoUrl: (document.getElementById('set-footer-logo') as HTMLInputElement).value,
+          footerLogoWidthPx: Math.max(16, Math.min(320, Number((document.getElementById('set-footer-logo-width') as HTMLInputElement).value) || 44)),
+          footerLogoHeightPx: Math.max(16, Math.min(320, Number((document.getElementById('set-footer-logo-height') as HTMLInputElement).value) || 44)),
           announcementBarActive: annActive,
           contactEmail,
           contactPhone,

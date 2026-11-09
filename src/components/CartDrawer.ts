@@ -50,7 +50,7 @@ export function renderCartDrawer(): string {
               ${state.t('emptyCart')}
             </p>
             <p style="font-size: 13px; max-width: 240px; margin-bottom: var(--space-lg);">
-              ${lang === 'ar' ? 'استكشف كولكشن EIGHTY-EIGHT من الهوديز والتيشيرتات والملابس العصرية.' : 'Discover our latest hoodies, t-shirts, and streetwear essentials.'}
+              ${lang === 'ar' ? 'استكشف كولكشن RAVE من الهوديز والتيشيرتات والملابس العصرية.' : 'Discover our latest hoodies, t-shirts, and streetwear essentials.'}
             </p>
             <a href="#shop" class="btn btn-secondary btn-sm" onclick="document.getElementById('cart-drawer').classList.remove('open');">
               ${state.t('continueShopping')}

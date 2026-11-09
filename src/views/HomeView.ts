@@ -151,8 +151,8 @@ export async function renderHomeView(): Promise<string> {
               </h3>` : ''}
               ${visible('story.body1') ? `<p style="font-size: 15px; line-height: 1.8; color: #b8b5af; margin-bottom: var(--space-md);">
                 ${lang === 'ar' 
-                  ? copy('home.story.body1.ar', 'في براند EIGHTY-EIGHT، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على القطن المصري 100% الثقيل والمعالج لضمان الراحة التامة والمتانة الاستثنائية.')
-                  : copy('home.story.body1.en', 'At EIGHTY-EIGHT, true streetwear luxury resides in the purity of proportion and the integrity of 100% premium Egyptian heavy cotton.')}
+                  ? copy('home.story.body1.ar', 'في براند RAVE، نؤمن بأن الأناقة الحقيقية تنبع من نقاء القماش والقصة المثالية. نعتمد فقط على القطن المصري 100% الثقيل والمعالج لضمان الراحة التامة والمتانة الاستثنائية.')
+                  : copy('home.story.body1.en', 'At RAVE, true streetwear luxury resides in the purity of proportion and the integrity of 100% premium Egyptian heavy cotton.')}
               </p>` : ''}
               ${visible('story.body2') ? `<p style="font-size: 14px; line-height: 1.8; color: #8c8984; margin-bottom: var(--space-xl);">
                 ${lang === 'ar'

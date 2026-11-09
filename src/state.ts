@@ -44,7 +44,12 @@ export interface StoreSettings {
   heroCtaTextAr: string;
   heroCtaLink: string;
   headerLogoUrl?: string;
+  headerLogoDarkUrl?: string;
+  headerLogoWidthPx?: number;
+  headerLogoHeightPx?: number;
   footerLogoUrl?: string;
+  footerLogoWidthPx?: number;
+  footerLogoHeightPx?: number;
   heroImageMobileUrl?: string;
   heroCtaSecondaryText?: string;
   heroCtaSecondaryTextAr?: string;
@@ -65,32 +70,39 @@ export interface StoreSettings {
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
-  brandName: "EIGHTY-EIGHT",
-  brandNameAr: "EIGHTY-EIGHT",
+  brandName: "RAVE",
+  brandNameAr: "RAVE",
   tagline: "Contemporary Egyptian Fashion & Casual Luxury",
   taglineAr: "براند أزياء مصري عصري بخامات قطنية وفخامة استثنائية",
   currency: "EGP",
   currencyAr: "ج.م",
   whatsappNumber: "+201012345678",
-  contactEmail: "contact@eightyeight-eg.com",
+  contactEmail: "contact@rave-eg.com",
   contactPhone: "+20 10 1234 5678",
   address: "التجمع الخامس ومصر الجديدة، القاهرة، مصر",
-  announcementBarText: "Complimentary shipping across Egypt on orders over 1,500 EGP — Use Code: EIGHTY10",
-  announcementBarTextAr: "شحن مجاني لجميع محافظات مصر للطلبات فوق 1,500 ج.م — كود الخصم: EIGHTY10",
+  announcementBarText: "Complimentary shipping across Egypt on orders over 1,500 EGP — Use Code: RAVE10",
+  announcementBarTextAr: "شحن مجاني لجميع محافظات مصر للطلبات فوق 1,500 ج.م — كود الخصم: RAVE10",
   announcementBarActive: true,
-  announcementBarBgColor: "#15803d",
+  announcementBarBgColor: "#171819",
   taxPercentage: 0,
   enableTax: false,
   freeShippingThreshold: 1500,
   defaultShippingCost: 65,
-  heroTitle: "EIGHTY-EIGHT",
-  heroTitleAr: "EIGHTY-EIGHT • كولكشن الموسم الجديد",
+  heroTitle: "RAVE",
+  heroTitleAr: "RAVE • كولكشن الموسم الجديد",
   heroSubtitle: "Discover the Egyptian streetwear edition crafted from 100% premium Egyptian heavy cotton.",
   heroSubtitleAr: "كولكشن أزياء مصري عصري بخامات قطن مصري 100% ثقيل ومعالج، وتصميمات تجمع بين البساطة والفخامة اليومية.",
   heroImageUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1800&q=85",
   heroCtaText: "Shop Collection",
   heroCtaTextAr: "استكشف الكولكشن الآن",
   heroCtaLink: "#shop",
+  headerLogoUrl: "/assets/rave-logo.png",
+  headerLogoDarkUrl: "/assets/rave-logo-white.png",
+  headerLogoWidthPx: 34,
+  headerLogoHeightPx: 34,
+  footerLogoUrl: "/assets/rave-logo-white.png",
+  footerLogoWidthPx: 44,
+  footerLogoHeightPx: 44,
   heroImageMobileUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=900&h=1200&q=85",
   heroCtaSecondaryText: "Explore Streetwear",
   heroCtaSecondaryTextAr: "اكتشف المجموعة",
@@ -104,10 +116,53 @@ const DEFAULT_SETTINGS: StoreSettings = {
   heroCtaSecondaryActive: true,
   heroOverlayActive: true,
   siteContent: {},
-  socialInstagram: "https://instagram.com/eightyeight_eg",
-  socialFacebook: "https://facebook.com/eightyeight.eg",
-  socialTiktok: "https://tiktok.com/@eightyeight.eg"
+  socialInstagram: "https://instagram.com/rave_eg",
+  socialFacebook: "https://facebook.com/rave.eg",
+  socialTiktok: "https://tiktok.com/@rave.eg"
 };
+
+export function normalizeBrandText(value: string): string {
+  return value
+    .replace(/EIGHTY-EIGHT/gi, 'RAVE')
+    .replace(/EIGHTY10/gi, 'RAVE10')
+    .replace(/WELCOME88/gi, 'WELCOMERAVE')
+    .replace(/eightyeight/gi, 'rave');
+}
+
+function normalizeLogoUrl(url: string | undefined, fallback: string): string {
+  if (!url || /\/assets\/(?:logo-icon|logo-icon-white|logo-transparent|logo-white)\./i.test(url)) return fallback;
+  return url;
+}
+
+function normalizeSettings(input: Partial<StoreSettings>): Partial<StoreSettings> {
+  const normalized: Partial<StoreSettings> = { ...input };
+  Object.keys(normalized).forEach((key) => {
+    const value = normalized[key as keyof StoreSettings];
+    if (typeof value === 'string') {
+      (normalized as any)[key] = normalizeBrandText(value);
+    }
+  });
+
+  normalized.brandName = normalizeBrandText(normalized.brandName || 'RAVE') || 'RAVE';
+  normalized.brandNameAr = normalizeBrandText(normalized.brandNameAr || normalized.brandName || 'RAVE') || 'RAVE';
+  normalized.headerLogoUrl = normalizeLogoUrl(normalized.headerLogoUrl, '/assets/rave-logo.png');
+  normalized.headerLogoDarkUrl = normalizeLogoUrl(normalized.headerLogoDarkUrl, '/assets/rave-logo-white.png');
+  normalized.footerLogoUrl = normalizeLogoUrl(normalized.footerLogoUrl, '/assets/rave-logo-white.png');
+  normalized.headerLogoWidthPx = Math.max(16, Math.min(240, Number(normalized.headerLogoWidthPx) || 34));
+  normalized.headerLogoHeightPx = Math.max(16, Math.min(240, Number(normalized.headerLogoHeightPx) || 34));
+  normalized.footerLogoWidthPx = Math.max(16, Math.min(320, Number(normalized.footerLogoWidthPx) || 44));
+  normalized.footerLogoHeightPx = Math.max(16, Math.min(320, Number(normalized.footerLogoHeightPx) || 44));
+  if (normalized.siteContent) {
+    normalized.siteContent = Object.fromEntries(
+      Object.entries(normalized.siteContent).map(([key, value]) => [key, normalizeBrandText(String(value))])
+    );
+  }
+  return normalized;
+}
+
+export function normalizeStoreSettings(input: Partial<StoreSettings>): Partial<StoreSettings> {
+  return normalizeSettings(input);
+}
 
 // UI Translations Dictionary - Professional Egyptian Tone
 export const translations = {
@@ -364,16 +419,17 @@ class StateManager {
   }
 
   public setSettings(newSettings: Partial<StoreSettings>) {
+    const normalized = normalizeSettings(newSettings);
     this.settings = {
       ...this.settings,
-      ...newSettings,
-      siteContent: { ...(this.settings.siteContent || {}), ...(newSettings.siteContent || {}) }
+      ...normalized,
+      siteContent: { ...(this.settings.siteContent || {}), ...(normalized.siteContent || {}) }
     };
     this.notify();
   }
 
   public getSiteText(key: string, fallback: string): string {
-    return this.settings.siteContent?.[key] ?? fallback;
+    return normalizeBrandText(this.settings.siteContent?.[key] ?? fallback);
   }
 
   // Price & Currency Formatter (Egyptian Pound EGP)
@@ -495,14 +551,14 @@ class StateManager {
     if (isAdmin || (user && user.email?.toLowerCase() === 'muhammedadel.dev@gmail.com')) {
       this.isAdminUser = true;
       try {
-        sessionStorage.setItem('eightyeight_admin_auth', 'true');
-        sessionStorage.setItem('eightyeight_admin_user', JSON.stringify(user || { email: 'muhammedadel.dev@gmail.com' }));
+        sessionStorage.setItem('rave_admin_auth', 'true');
+        sessionStorage.setItem('rave_admin_user', JSON.stringify(user || { email: 'muhammedadel.dev@gmail.com' }));
       } catch {}
     } else if (user === null) {
       this.isAdminUser = false;
       try {
-        sessionStorage.removeItem('eightyeight_admin_auth');
-        sessionStorage.removeItem('eightyeight_admin_user');
+        sessionStorage.removeItem('rave_admin_auth');
+        sessionStorage.removeItem('rave_admin_user');
       } catch {}
     } else {
       this.isAdminUser = false;
@@ -513,7 +569,7 @@ class StateManager {
   public getUser() {
     if (!this.currentUser) {
       try {
-        const saved = sessionStorage.getItem('eightyeight_admin_user');
+        const saved = sessionStorage.getItem('rave_admin_user');
         if (saved) return JSON.parse(saved);
       } catch {}
     }
@@ -524,7 +580,7 @@ class StateManager {
     if (this.isAdminUser) return true;
     if (this.currentUser && this.currentUser.email?.toLowerCase() === 'muhammedadel.dev@gmail.com') return true;
     try {
-      if (sessionStorage.getItem('eightyeight_admin_auth') === 'true') return true;
+      if (sessionStorage.getItem('rave_admin_auth') === 'true') return true;
     } catch {}
     return false;
   }

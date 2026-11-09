@@ -364,7 +364,7 @@ export function setupCheckoutEvents() {
                 </span>
 
                 <h3 style="font-family: var(--font-editorial); font-size: clamp(26px, 4vw, 36px); font-weight: 500; margin-bottom: var(--space-sm);">
-                  ${lang === 'ar' ? 'شكراً لاختيارك براند EIGHTY-EIGHT' : 'Thank You For Choosing EIGHTY-EIGHT'}
+                  ${lang === 'ar' ? 'شكراً لاختيارك براند RAVE' : 'Thank You For Choosing RAVE'}
                 </h3>
 
                 <p style="font-size: 14px; color: var(--color-text-muted); line-height: 1.7; margin-bottom: var(--space-xl);">

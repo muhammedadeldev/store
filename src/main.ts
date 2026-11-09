@@ -1,5 +1,5 @@
 /**
- * L'ÉTOILE Haute Couture & Fashion Platform
+ * RAVE Haute Couture & Fashion Platform
  * Vanilla JavaScript ES6+ Main Entry Point & Router
  */
 

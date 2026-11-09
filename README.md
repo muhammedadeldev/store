@@ -1,4 +1,4 @@
-# منصة L'ÉTOILE Haute Couture & Fashion E-Commerce
+# منصة RAVE Haute Couture & Fashion E-Commerce
 
 منصة تجارة إلكترونية متكاملة واحترافية (Production-Ready) مخصصة لبراند أزياء وملابس فاخرة، مبنية بأحدث معايير الويب بدون أي إطارات عمل ثقيلة (Pure Vanilla JavaScript ES6+ Modules, HTML5, CSS3 Variables, Firebase Modular SDK & Node Express Backend).
 
