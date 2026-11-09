@@ -1,4 +1,4 @@
-import { state, showToast, openModal, closeModal } from '../state';
+import { state, showToast, openModal, closeModal, normalizeBrandText } from '../state';
 import { auth, googleProvider } from '../firebase';
 import { 
   signInWithPopup, 
@@ -174,7 +174,7 @@ export async function renderAccountView(urlParams: URLSearchParams): Promise<str
                       <div style="display: flex; gap: var(--space-sm); align-items: center; font-size: 13px;">
                         <img src="${it.image}" alt="" style="width: 40px; height: 50px; object-fit: cover; border-radius: 2px;" />
                         <div style="flex: 1;">
-                          <strong>${it.productName}</strong>
+                          <strong>${normalizeBrandText(it.productName || '')}</strong>
                           <div style="font-size: 11px; color: var(--color-text-subtle);">${it.color} • ${it.size} • Qty: ${it.quantity}</div>
                         </div>
                         <span>${state.formatPrice(it.total)}</span>

@@ -1,4 +1,4 @@
-import { state } from '../state';
+import { state, normalizeBrandText } from '../state';
 import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -18,7 +18,16 @@ export async function renderHomeView(): Promise<string> {
     categories = catSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
 
     const prodSnap = await getDocs(query(collection(db, 'products'), where('isPublished', '==', true), limit(8)));
-    const allProds: any[] = prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+    const allProds: any[] = prodSnap.docs.map(d => {
+      const product: any = { id: d.id, ...d.data() };
+      return {
+        ...product,
+        name: normalizeBrandText(product.name || ''),
+        nameAr: normalizeBrandText(product.nameAr || ''),
+        description: normalizeBrandText(product.description || ''),
+        descriptionAr: normalizeBrandText(product.descriptionAr || '')
+      };
+    });
     newArrivals = allProds.filter(p => p.isNewArrival);
     bestSellers = allProds.filter(p => p.isBestSeller);
     if (newArrivals.length === 0) newArrivals = allProds.slice(0, 4);

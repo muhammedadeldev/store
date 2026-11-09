@@ -1,4 +1,4 @@
-import { state } from '../state';
+import { state, normalizeBrandText } from '../state';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { renderProductCard } from './HomeView';
@@ -14,7 +14,16 @@ export async function renderShopView(urlParams: URLSearchParams): Promise<string
 
   try {
     const pSnap = await getDocs(query(collection(db, 'products'), where('isPublished', '==', true)));
-    products = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    products = pSnap.docs.map(d => {
+      const product: any = { id: d.id, ...d.data() };
+      return {
+        ...product,
+        name: normalizeBrandText(product.name || ''),
+        nameAr: normalizeBrandText(product.nameAr || ''),
+        description: normalizeBrandText(product.description || ''),
+        descriptionAr: normalizeBrandText(product.descriptionAr || '')
+      };
+    });
 
     const cSnap = await getDocs(query(collection(db, 'categories'), where('isActive', '==', true)));
     categories = cSnap.docs.map(d => ({ id: d.id, ...d.data() }));

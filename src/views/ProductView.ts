@@ -1,4 +1,4 @@
-import { state, showToast, openModal, closeModal } from '../state';
+import { state, showToast, openModal, closeModal, normalizeBrandText } from '../state';
 import { doc, getDoc, collection, getDocs, query, where, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { renderProductCard } from './HomeView';
@@ -18,7 +18,14 @@ export async function renderProductView(productId: string): Promise<string> {
   try {
     const pSnap = await getDoc(doc(db, 'products', productId));
     if (pSnap.exists()) {
-      product = { id: pSnap.id, ...pSnap.data() };
+      const productData: any = { id: pSnap.id, ...pSnap.data() };
+      product = {
+        ...productData,
+        name: normalizeBrandText(productData.name || ''),
+        nameAr: normalizeBrandText(productData.nameAr || ''),
+        description: normalizeBrandText(productData.description || ''),
+        descriptionAr: normalizeBrandText(productData.descriptionAr || '')
+      };
       
       // Load recommendation candidates once, then build both shelves locally.
       const [productsSnap, revSnap] = await Promise.all([
@@ -26,7 +33,14 @@ export async function renderProductView(productId: string): Promise<string> {
         getDocs(query(collection(db, 'reviews'), where('productId', '==', productId)))
       ]);
       const candidates: any[] = productsSnap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
+        .map(d => {
+          const candidate: any = { id: d.id, ...d.data() };
+          return {
+            ...candidate,
+            name: normalizeBrandText(candidate.name || ''),
+            nameAr: normalizeBrandText(candidate.nameAr || '')
+          };
+        })
         .filter(p => p.id !== productId);
       relatedProducts = candidates
         .filter(p => product.categoryId && p.categoryId === product.categoryId)
@@ -335,6 +349,11 @@ export async function renderProductView(productId: string): Promise<string> {
 
 export function setupProductEvents(productData: any) {
   if (!productData) return;
+  productData = {
+    ...productData,
+    name: normalizeBrandText(productData.name || ''),
+    nameAr: normalizeBrandText(productData.nameAr || '')
+  };
   const lang = state.getLang();
   let selectedColor = productData.colors && productData.colors.length > 0 ? productData.colors[0].name : '';
   let selectedSize = productData.sizes && productData.sizes.length > 0 ? productData.sizes[0] : '';

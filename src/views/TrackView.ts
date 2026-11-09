@@ -1,4 +1,4 @@
-import { state, showToast } from '../state';
+import { state, showToast, normalizeBrandText } from '../state';
 
 export async function renderTrackView(urlParams: URLSearchParams): Promise<string> {
   const lang = state.getLang();
@@ -161,7 +161,7 @@ export async function renderTrackView(urlParams: URLSearchParams): Promise<strin
                 <div style="display: flex; gap: 14px; align-items: center; padding: 12px; background: #f8fafc; border-radius: 16px; border: 1px solid #f1f5f9;">
                   <img src="${it.image || '/assets/rave-logo.png'}" alt="" style="width: 52px; height: 64px; object-fit: contain; border-radius: 10px; background: #ffffff; border: 1px solid #e2e8f0;" />
                   <div style="flex: 1;">
-                    <strong style="font-size: 14px; color: #0f172a; display: block;">${it.productNameAr || it.productName}</strong>
+                    <strong style="font-size: 14px; color: #0f172a; display: block;">${normalizeBrandText(it.productNameAr || it.productName || '')}</strong>
                     <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
                       ${it.color ? `${it.color} • ` : ''}${it.size ? `${it.size} • ` : ''}الكمية: <strong>${it.quantity}</strong>
                     </div>

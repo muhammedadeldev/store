@@ -345,7 +345,11 @@ class StateManager {
 
       const savedCart = localStorage.getItem('letoile_cart');
       if (savedCart) {
-        this.cart = JSON.parse(savedCart);
+        this.cart = JSON.parse(savedCart).map((item: CartItem) => ({
+          ...item,
+          name: normalizeBrandText(item.name || ''),
+          nameAr: normalizeBrandText(item.nameAr || '')
+        }));
       }
 
       const savedWishlist = localStorage.getItem('letoile_wishlist');
@@ -457,6 +461,11 @@ class StateManager {
   }
 
   public addToCart(item: CartItem) {
+    item = {
+      ...item,
+      name: normalizeBrandText(item.name || ''),
+      nameAr: normalizeBrandText(item.nameAr || '')
+    };
     const existingIndex = this.cart.findIndex(
       i => i.productId === item.productId && i.variantSku === item.variantSku
     );
